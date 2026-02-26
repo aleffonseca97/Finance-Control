@@ -15,7 +15,7 @@ export function startTelegramBot() {
     const code = match[1];
     try {
       const codeResult = await query(
-        'SELECT user_id FROM linking_codes WHERE code = $1 AND expires_at > NOW()',
+        "SELECT user_id FROM linking_codes WHERE code = $1 AND expires_at > datetime('now')",
         [code]
       );
       if (codeResult.rows.length === 0) {
@@ -25,7 +25,7 @@ export function startTelegramBot() {
       const userId = codeResult.rows[0].user_id;
       await query('DELETE FROM linking_codes WHERE code = $1', [code]);
       await query(
-        'INSERT INTO telegram_links (user_id, telegram_chat_id) VALUES ($1, $2) ON CONFLICT (telegram_chat_id) DO UPDATE SET user_id = $1, linked_at = NOW()',
+        "INSERT INTO telegram_links (user_id, telegram_chat_id) VALUES ($1, $2) ON CONFLICT (telegram_chat_id) DO UPDATE SET user_id = excluded.user_id, linked_at = datetime('now')",
         [userId, String(chatId)]
       );
       await bot.sendMessage(chatId, 'Conta vinculada com sucesso! Agora você pode enviar entradas e saídas aqui.');

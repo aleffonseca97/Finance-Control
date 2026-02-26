@@ -5,16 +5,16 @@ Sistema de controle financeiro pessoal como web app, com integração ao Telegra
 ## Requisitos
 
 - Node.js 18+
-- PostgreSQL (local ou serviço gerenciado: Railway, Render, Supabase, Neon, etc.)
+- SQLite (arquivo local, sem instalação adicional)
 
 ## Configuração
 
 ### 1. Banco de dados
 
-Crie um banco PostgreSQL e defina a variável `DATABASE_URL`:
+O projeto usa SQLite. Defina o caminho do arquivo em `DATABASE_URL` (opcional; padrão: `./database.db`):
 
 ```bash
-DATABASE_URL=postgresql://usuario:senha@host:5432/nome_do_banco
+DATABASE_URL=./database.db
 ```
 
 ### 2. Bot no Telegram
@@ -87,7 +87,7 @@ O app estará disponível na URL do servidor (ex.: `https://seu-app.exemplo.com`
 
 ## Estrutura
 
-- `backend/` – API Express, autenticação JWT, Telegram bot, PostgreSQL
+- `backend/` – API Express, autenticação JWT, Telegram bot, SQLite
 - `frontend/` – React + Vite, dashboard, transações, integrações
 - Migrações em `backend/src/migrations/`
 

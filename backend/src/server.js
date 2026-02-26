@@ -44,7 +44,7 @@ app.use((err, req, res, next) => {
 
 const ok = await checkConnection();
 if (!ok) {
-  console.warn('Aviso: não foi possível conectar ao PostgreSQL. Verifique DATABASE_URL.');
+  console.warn('Aviso: não foi possível conectar ao SQLite. Verifique DATABASE_URL.');
 }
 
 if (process.env.TELEGRAM_BOT_TOKEN) {

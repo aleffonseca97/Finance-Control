@@ -24,11 +24,11 @@ router.get('/summary', async (req, res) => {
     }
     const [entradas, saidas] = await Promise.all([
       query(
-        `SELECT COALESCE(SUM(amount), 0)::numeric as total FROM transactions ${whereClause} AND type = 'entrada'`,
+        `SELECT COALESCE(SUM(amount), 0) as total FROM transactions ${whereClause} AND type = 'entrada'`,
         params
       ),
       query(
-        `SELECT COALESCE(SUM(amount), 0)::numeric as total FROM transactions ${whereClause} AND type = 'saida'`,
+        `SELECT COALESCE(SUM(amount), 0) as total FROM transactions ${whereClause} AND type = 'saida'`,
         params
       ),
     ]);
@@ -62,7 +62,7 @@ router.get('/recent', async (req, res) => {
 router.get('/by-category', async (req, res) => {
   try {
     const { type, startDate, endDate } = req.query;
-    let sql = 'SELECT category, SUM(amount)::numeric as total FROM transactions WHERE user_id = $1 AND category IS NOT NULL AND category != \'\'';
+    let sql = 'SELECT category, SUM(amount) as total FROM transactions WHERE user_id = $1 AND category IS NOT NULL AND category != \'\'';
     const params = [req.user.id];
     let i = 2;
     if (type) {

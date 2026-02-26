@@ -20,7 +20,7 @@ router.post('/register', async (req, res) => {
     const token = signToken({ userId: user.id });
     return res.status(201).json({ user: { id: user.id, email: user.email, name: user.name }, token });
   } catch (err) {
-    if (err.code === '23505') {
+    if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') {
       return res.status(409).json({ error: 'Email já cadastrado' });
     }
     console.error(err);

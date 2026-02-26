@@ -1,0 +1,21 @@
+{
+  "name": "controle-financeiro-backend",
+  "version": "1.0.0",
+  "description": "Backend API + Telegram bot para controle financeiro pessoal",
+  "main": "src/server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "migrate": "node src/migrations/run.js",
+    "dev": "node --watch src/server.js"
+  },
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "node-telegram-bot-api": "^0.66.0",
+    "pg": "^8.11.3"
+  }
+}

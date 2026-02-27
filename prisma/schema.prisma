@@ -8,24 +8,26 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
+  id            String       @id @default(cuid())
+  email         String       @unique
   passwordHash  String
   name          String?
-  createdAt     DateTime  @default(now())
+  createdAt     DateTime     @default(now())
   categories    Category[]
   transactions  Transaction[]
   investments   Investment[]
+  creditCards   CreditCard[]
 }
 
 model Category {
-  id          String   @id @default(cuid())
-  userId      String
-  name        String
-  icon        String   @default("CircleDollarSign")
-  type        String   // income | expense | investment
-  isFixed     Boolean  @default(false) // only for expense
-  color       String?  @default("#6366f1")
+  id            String   @id @default(cuid())
+  userId        String
+  name          String
+  icon          String   @default("CircleDollarSign")
+  type          String   // income | expense | investment
+  isFixed       Boolean  @default(false) // only for expense
+  defaultValue  Float?   // valor prefixado para despesas fixas
+  color         String?  @default("#6366f1")
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions Transaction[]
   investments  Investment[]
@@ -35,19 +37,22 @@ model Category {
 }
 
 model Transaction {
-  id          String   @id @default(cuid())
-  userId      String
-  categoryId  String
-  amount      Float
-  description String?
-  date        DateTime
-  type        String   // income | expense
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  id            String     @id @default(cuid())
+  userId        String
+  categoryId    String
+  amount        Float
+  description   String?
+  date          DateTime
+  type          String     // income | expense
+  creditCardId  String?    // quando preenchido, a saída foi no cartão e reduz o limite
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category      Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  creditCard    CreditCard? @relation(fields: [creditCardId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@index([userId, date])
   @@index([categoryId])
+  @@index([creditCardId])
 }
 
 model Investment {
@@ -63,4 +68,19 @@ model Investment {
   @@index([userId])
   @@index([userId, date])
   @@index([categoryId])
+}
+
+model CreditCard {
+  id           String        @id @default(cuid())
+  userId       String
+  name         String
+  lastFour     String?       // últimos 4 dígitos (ex: "1234")
+  limit        Float
+  closingDay   Int           // dia do fechamento (1-31)
+  dueDay       Int           // dia do vencimento (1-31)
+  color        String?       @default("#6366f1")
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@index([userId])
 }

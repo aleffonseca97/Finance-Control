@@ -5,6 +5,7 @@ export const transactionSchema = z.object({
   amount: z.coerce.number().positive('Valor deve ser positivo'),
   description: z.string().optional(),
   date: z.string().min(1, 'Data é obrigatória'),
+  creditCardId: z.string().optional().nullable(),
 })
 
 export const investmentSchema = z.object({

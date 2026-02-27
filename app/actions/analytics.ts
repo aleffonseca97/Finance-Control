@@ -3,12 +3,20 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 
-export async function getLastTransactions(limit = 10) {
+export async function getLastTransactions(limit = 10, excludeCreditCard = false) {
   const session = await auth()
   if (!session?.user?.id) return []
 
   return prisma.transaction.findMany({
-    where: { userId: session.user.id },
+    where: {
+      userId: session.user.id,
+      ...(excludeCreditCard && {
+        OR: [
+          { type: 'income' },
+          { type: 'expense', creditCardId: null },
+        ],
+      }),
+    },
     include: { category: true },
     orderBy: { date: 'desc' },
     take: limit,

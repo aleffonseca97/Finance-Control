@@ -2,17 +2,27 @@
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'
 
-const COLORS = ['#22c55e', '#ef4444', '#3b82f6']
+const COLORS = ['#22c55e', '#ef4444', '#f59e0b'] // emerald, red, amber
 
 interface DataPoint {
   name: string
   value: number
 }
 
-export function IncomeExpensePieChart({ income, expense }: { income: number; expense: number }) {
+export function IncomeExpensePieChart({
+  income,
+  expense,
+  creditCardExpense = 0,
+}: {
+  income: number
+  expense: number
+  creditCardExpense?: number
+}) {
+  const expenseWithoutCard = Math.max(0, expense - creditCardExpense)
   const data: DataPoint[] = [
     { name: 'Entradas', value: income },
-    { name: 'Saídas', value: expense },
+    { name: 'Saídas', value: expenseWithoutCard },
+    { name: 'Gastos Cartão', value: creditCardExpense },
   ].filter((d) => d.value > 0)
 
   if (data.length === 0) {
@@ -45,6 +55,7 @@ export function IncomeExpensePieChart({ income, expense }: { income: number; exp
               backgroundColor: 'hsl(var(--card))',
               border: '1px solid hsl(var(--border))',
               borderRadius: '8px',
+              color: 'white',
             }}
             formatter={(value: number) =>
               `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`

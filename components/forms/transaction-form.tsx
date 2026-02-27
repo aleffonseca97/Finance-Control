@@ -9,9 +9,18 @@ import { Select } from '@/components/ui/select'
 import { CategoryIcon } from '@/components/category/category-icon'
 import type { Category } from '@prisma/client'
 
+interface CreditCard {
+  id: string
+  name: string
+  lastFour: string | null
+  limit: number
+  color: string | null
+}
+
 interface TransactionFormProps {
   type: 'income' | 'expense'
   categories: Category[]
+  creditCards?: CreditCard[]
   action: (formData: FormData) => Promise<{ error?: string; success?: boolean }>
 }
 
@@ -24,9 +33,20 @@ function SubmitButton({ type }: { type: 'income' | 'expense' }) {
   )
 }
 
-export function TransactionForm({ type, categories, action }: TransactionFormProps) {
+export function TransactionForm({ type, categories, creditCards = [], action }: TransactionFormProps) {
   const [error, setError] = useState('')
   const today = new Date().toISOString().slice(0, 10)
+
+  function handleCategoryChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    if (type !== 'expense') return
+    const categoryId = e.target.value
+    const category = categories.find((c) => c.id === categoryId)
+    const amountInput = document.getElementById('amount') as HTMLInputElement | null
+    const defVal = category && 'defaultValue' in category ? (category as { defaultValue?: number | null }).defaultValue : null
+    if (defVal != null && amountInput) {
+      amountInput.value = String(defVal)
+    }
+  }
 
   async function handleSubmit(formData: FormData) {
     setError('')
@@ -56,7 +76,12 @@ export function TransactionForm({ type, categories, action }: TransactionFormPro
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-2">
           <Label htmlFor="categoryId">Categoria</Label>
-          <Select id="categoryId" name="categoryId" required>
+          <Select
+            id="categoryId"
+            name="categoryId"
+            required
+            onChange={handleCategoryChange}
+          >
             <option value="">Selecione...</option>
             {categories.map((cat) => (
               <option key={cat.id} value={cat.id}>
@@ -85,6 +110,20 @@ export function TransactionForm({ type, categories, action }: TransactionFormPro
           <Label htmlFor="description">Descrição</Label>
           <Input id="description" name="description" type="text" placeholder="Opcional" />
         </div>
+        {type === 'expense' && creditCards.length > 0 && (
+          <div className="space-y-2">
+            <Label htmlFor="creditCardId">Método de pagamento</Label>
+            <Select id="creditCardId" name="creditCardId">
+              <option value="">À vista (dinheiro/PIX)</option>
+              {creditCards.map((card) => (
+                <option key={card.id} value={card.id}>
+                  {card.name}
+                  {card.lastFour ? ` •••• ${card.lastFour}` : ''} (R$ {card.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} disponível)
+                </option>
+              ))}
+            </Select>
+          </div>
+        )}
       </div>
       <SubmitButton type={type} />
     </form>

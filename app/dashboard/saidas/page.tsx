@@ -1,4 +1,5 @@
 import { getCategoriesByType } from '@/app/actions/categories'
+import { getCreditCards } from '@/app/actions/credit-cards'
 import { getTransactions, createExpense } from '@/app/actions/transactions'
 import { TransactionForm } from '@/components/forms/transaction-form'
 import { MonthFilter } from '@/components/forms/month-filter'
@@ -15,13 +16,14 @@ export default async function SaidasPage({
   const month = params.month ? parseInt(params.month, 10) : undefined
   const year = params.year ? parseInt(params.year, 10) : undefined
 
-  const [categories, { transactions, total }] = await Promise.all([
+  const [categories, creditCards, { transactions, total }] = await Promise.all([
     getCategoriesByType('expense'),
+    getCreditCards(),
     getTransactions('expense', month, year),
   ])
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 pt-8 md:p-8 md:pt-10">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Saídas</h1>
@@ -30,7 +32,12 @@ export default async function SaidasPage({
         <MonthFilter />
       </div>
 
-      <TransactionForm type="expense" categories={categories} action={createExpense as (formData: FormData) => Promise<{ error?: string; success?: boolean }>} />
+      <TransactionForm
+        type="expense"
+        categories={categories}
+        creditCards={creditCards}
+        action={createExpense as (formData: FormData) => Promise<{ error?: string; success?: boolean }>}
+      />
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -60,6 +67,12 @@ export default async function SaidasPage({
                       <p className="font-medium">{t.category.name}</p>
                       <p className="text-sm text-muted-foreground">
                         {t.description || new Date(t.date).toLocaleDateString('pt-BR')}
+                        {t.creditCard && (
+                          <span className="ml-1 text-amber-600">
+                            • Cartão: {t.creditCard.name}
+                            {t.creditCard.lastFour ? ` •••• ${t.creditCard.lastFour}` : ''}
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>

@@ -31,7 +31,7 @@ export default async function AnalisePage({
     : 0
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6 pt-8 md:p-8 md:pt-10">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold">Análise Financeira</h1>

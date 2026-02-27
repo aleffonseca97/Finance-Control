@@ -12,6 +12,8 @@ import {
   Menu,
   X,
   Wallet,
+  Settings,
+  CreditCard,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
@@ -21,8 +23,10 @@ const navItems = [
   { href: '/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
   { href: '/dashboard/entradas', label: 'Entradas', icon: TrendingUp },
   { href: '/dashboard/saidas', label: 'Saídas', icon: TrendingDown },
+  { href: '/dashboard/cartao-credito', label: 'Cartão de Crédito', icon: CreditCard },
   { href: '/dashboard/investimentos', label: 'Investimentos', icon: PiggyBank },
   { href: '/dashboard/analise', label: 'Análise', icon: BarChart3 },
+  { href: '/dashboard/configuracoes', label: 'Configurações', icon: Settings },
 ]
 
 export function Sidebar() {

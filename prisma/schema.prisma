@@ -1,0 +1,66 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  passwordHash  String
+  name          String?
+  createdAt     DateTime  @default(now())
+  categories    Category[]
+  transactions  Transaction[]
+  investments   Investment[]
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  icon        String   @default("CircleDollarSign")
+  type        String   // income | expense | investment
+  isFixed     Boolean  @default(false) // only for expense
+  color       String?  @default("#6366f1")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+  investments  Investment[]
+
+  @@index([userId])
+  @@index([userId, type])
+}
+
+model Transaction {
+  id          String   @id @default(cuid())
+  userId      String
+  categoryId  String
+  amount      Float
+  description String?
+  date        DateTime
+  type        String   // income | expense
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category    Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, date])
+  @@index([categoryId])
+}
+
+model Investment {
+  id         String   @id @default(cuid())
+  userId     String
+  categoryId String
+  amount     Float
+  date       DateTime
+  notes      String?
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, date])
+  @@index([categoryId])
+}

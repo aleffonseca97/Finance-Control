@@ -70,8 +70,12 @@ export async function createCategory(formData: FormData) {
   const session = await auth()
   if (!session?.user?.id) return { error: 'Não autorizado' }
 
-  const type = formData.get('type') as 'income' | 'expense'
+  const type = formData.get('type') as 'income' | 'expense' | 'investment'
   const isFixed = formData.get('isFixed') === 'true'
+
+  if (!['income', 'expense', 'investment'].includes(type)) {
+    return { error: 'Tipo de categoria inválido' }
+  }
 
   const parsed = categorySchema.safeParse({
     name: formData.get('name'),
@@ -104,6 +108,8 @@ export async function createCategory(formData: FormData) {
   await prisma.category.create({ data })
 
   revalidatePath('/dashboard/configuracoes')
+  revalidatePath('/dashboard/configuracoes/categorias')
+  revalidatePath('/dashboard/configuracoes/investimentos')
   revalidatePath('/dashboard/entradas')
   revalidatePath('/dashboard/saidas')
   revalidatePath('/dashboard/investimentos')
@@ -114,8 +120,12 @@ export async function updateCategory(id: string, formData: FormData) {
   const session = await auth()
   if (!session?.user?.id) return { error: 'Não autorizado' }
 
-  const type = formData.get('type') as 'income' | 'expense'
+  const type = formData.get('type') as 'income' | 'expense' | 'investment'
   const isFixed = formData.get('isFixed') === 'true'
+
+  if (!['income', 'expense', 'investment'].includes(type)) {
+    return { error: 'Tipo de categoria inválido' }
+  }
 
   const parsed = categorySchema.safeParse({
     name: formData.get('name'),
@@ -150,6 +160,8 @@ export async function updateCategory(id: string, formData: FormData) {
   await prisma.category.update({ where: { id }, data })
 
   revalidatePath('/dashboard/configuracoes')
+  revalidatePath('/dashboard/configuracoes/categorias')
+  revalidatePath('/dashboard/configuracoes/investimentos')
   revalidatePath('/dashboard/entradas')
   revalidatePath('/dashboard/saidas')
   revalidatePath('/dashboard/investimentos')
@@ -172,6 +184,8 @@ export async function deleteCategory(id: string) {
   })
 
   revalidatePath('/dashboard/configuracoes')
+  revalidatePath('/dashboard/configuracoes/categorias')
+  revalidatePath('/dashboard/configuracoes/investimentos')
   revalidatePath('/dashboard/entradas')
   revalidatePath('/dashboard/saidas')
   revalidatePath('/dashboard/investimentos')

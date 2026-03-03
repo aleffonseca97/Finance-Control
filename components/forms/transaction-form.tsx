@@ -22,6 +22,8 @@ interface TransactionFormProps {
   categories: Category[]
   creditCards?: CreditCard[]
   action: (formData: FormData) => Promise<{ error?: string; success?: boolean }>
+  /** When provided, hides the date input and uses this value (for day selector card) */
+  dateValue?: string
 }
 
 function SubmitButton({ type }: { type: 'income' | 'expense' }) {
@@ -33,7 +35,7 @@ function SubmitButton({ type }: { type: 'income' | 'expense' }) {
   )
 }
 
-export function TransactionForm({ type, categories, creditCards = [], action }: TransactionFormProps) {
+export function TransactionForm({ type, categories, creditCards = [], action, dateValue }: TransactionFormProps) {
   const [error, setError] = useState('')
   const today = new Date().toISOString().slice(0, 10)
 
@@ -58,7 +60,7 @@ export function TransactionForm({ type, categories, creditCards = [], action }: 
       if (form) {
         form.reset()
         const dateInput = form.querySelector<HTMLInputElement>('[name="date"]')
-        if (dateInput) dateInput.value = today
+        if (dateInput) dateInput.value = dateValue ?? today
       }
     }
   }
@@ -102,10 +104,14 @@ export function TransactionForm({ type, categories, creditCards = [], action }: 
             required
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="date">Data</Label>
-          <Input id="date" name="date" type="date" defaultValue={today} required />
-        </div>
+        {dateValue == null ? (
+          <div className="space-y-2">
+            <Label htmlFor="date">Data</Label>
+            <Input id="date" name="date" type="date" defaultValue={today} required />
+          </div>
+        ) : (
+          <input type="hidden" name="date" value={dateValue} />
+        )}
         <div className="space-y-2">
           <Label htmlFor="description">Descrição</Label>
           <Input id="description" name="description" type="text" placeholder="Opcional" />

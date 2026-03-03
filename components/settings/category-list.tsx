@@ -10,7 +10,7 @@ import { Plus, Pencil, Trash2 } from 'lucide-react'
 
 interface CategoryListProps {
   categories: Category[]
-  type: 'income' | 'expense'
+  type: 'income' | 'expense' | 'investment'
   isFixed: boolean
   title: string
 }

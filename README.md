@@ -58,3 +58,9 @@ npm start
 ## Tema
 
 O sistema usa tema **night** (dark mode) por padrão.
+
+crie uma nova janela de análise parecidado com estrutura em excel sendo uma coluna de entrada vs coluna saida (fixa) vs coluna saida (variavel) = coluna saldo final. sendo essas informações referente ao mês e as linhas são os dias do mês.
+
+essa janela será de analise diaria, mensal e anual todos representando em uma unica janela de side-scroll.
+
+em "saldo final" crie uma lógica para referenciar em cores o saldo, sendo valor 0 a cor vermelho, 100 verde. uma lógica para transição de cor do verde ao vermelho ao diminuir o valor.

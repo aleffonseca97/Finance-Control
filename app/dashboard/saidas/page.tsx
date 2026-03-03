@@ -1,11 +1,10 @@
 import { getCategoriesByType } from '@/app/actions/categories'
 import { getCreditCards } from '@/app/actions/credit-cards'
 import { getTransactions, createExpense } from '@/app/actions/transactions'
-import { TransactionForm } from '@/components/forms/transaction-form'
-import { MonthFilter } from '@/components/forms/month-filter'
 import { DeleteTransactionButton } from '@/components/forms/delete-transaction-button'
 import { CategoryIcon } from '@/components/category/category-icon'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { SaidasGrid } from './saidas-grid'
 
 export default async function SaidasPage({
   searchParams,
@@ -22,22 +21,34 @@ export default async function SaidasPage({
     getTransactions('expense', month, year),
   ])
 
+  const now = new Date()
+  const m = month ?? now.getMonth()
+  const y = year ?? now.getFullYear()
+  const daysInMonth = new Date(y, m + 1, 0).getDate()
+  const monthLabel = new Date(y, m, 1).toLocaleDateString('pt-BR', {
+    month: 'long',
+  })
+
   return (
     <div className="space-y-6 p-6 pt-8 md:p-8 md:pt-10">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Saídas</h1>
-          <p className="text-muted-foreground">Controle suas despesas</p>
+      <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold">Saídas</h1>
+            <p className="text-muted-foreground">Controle suas despesas</p>
+          </div>
         </div>
-        <MonthFilter />
-      </div>
 
-      <TransactionForm
-        type="expense"
-        categories={categories}
-        creditCards={creditCards}
-        action={createExpense as (formData: FormData) => Promise<{ error?: string; success?: boolean }>}
-      />
+        <SaidasGrid
+          monthLabel={`${monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)} de ${y}`}
+          month={m}
+          year={y}
+          daysInMonth={daysInMonth}
+          categories={categories}
+          creditCards={creditCards}
+          action={createExpense as (formData: FormData) => Promise<{ error?: string; success?: boolean }>}
+        />
+      </div>
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">

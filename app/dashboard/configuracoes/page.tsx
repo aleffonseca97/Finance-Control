@@ -1,28 +1,18 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { prisma } from '@/lib/db'
-import { getCategoriesByType } from '@/app/actions/categories'
-import { ProfileForm } from '@/components/settings/profile-form'
-import { CategoryList } from '@/components/settings/category-list'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import Link from 'next/link'
+import { User, Tags, PiggyBank } from 'lucide-react'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 
 export default async function ConfiguracoesPage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
 
-  const [user, expenseCategories, incomeCategories] = await Promise.all([
-    prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { name: true, email: true },
-    }),
-    getCategoriesByType('expense'),
-    getCategoriesByType('income'),
-  ])
-
-  if (!user) redirect('/login')
-
-  const variableExpenses = expenseCategories.filter((c) => !c.isFixed)
-  const fixedExpenses = expenseCategories.filter((c) => c.isFixed)
+  const links = [
+    { href: '/dashboard/configuracoes/perfil', label: 'Perfil', description: 'Edite suas informações pessoais e senha', icon: User },
+    { href: '/dashboard/configuracoes/categorias', label: 'Categorias', description: 'Gerencie categorias de entradas e saídas', icon: Tags },
+    { href: '/dashboard/configuracoes/investimentos', label: 'Investimentos', description: 'Gerencie categorias de investimentos', icon: PiggyBank },
+  ]
 
   return (
     <div className="space-y-8 p-6 pt-8 md:p-8 md:pt-10">
@@ -31,64 +21,23 @@ export default async function ConfiguracoesPage() {
         <p className="text-muted-foreground">Gerencie seu perfil e categorias</p>
       </div>
 
-      <div className="space-y-6">
-        <ProfileForm name={user.name} email={user.email} />
-
-        <div className="space-y-4">
-          <h2 className="text-xl font-semibold">Categorias</h2>
-          <div className="grid gap-6 lg:grid-cols-1">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Despesas variáveis</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Categorias para gastos que variam de mês a mês
-                </p>
-              </CardHeader>
-              <CardContent>
-                <CategoryList
-                  categories={variableExpenses}
-                  type="expense"
-                  isFixed={false}
-                  title=""
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Despesas fixas</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Categorias para gastos recorrentes e previsíveis
-                </p>
-              </CardHeader>
-              <CardContent>
-                <CategoryList
-                  categories={fixedExpenses}
-                  type="expense"
-                  isFixed={true}
-                  title=""
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Opções de entrada</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Categorias para registrar suas receitas
-                </p>
-              </CardHeader>
-              <CardContent>
-                <CategoryList
-                  categories={incomeCategories}
-                  type="income"
-                  isFixed={false}
-                  title=""
-                />
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {links.map((item) => {
+          const Icon = item.icon
+          return (
+            <Link key={item.href} href={item.href}>
+              <Card className="h-full transition-colors hover:bg-accent/50">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">{item.label}</CardTitle>
+                  </div>
+                  <CardDescription>{item.description}</CardDescription>
+                </CardHeader>
+              </Card>
+            </Link>
+          )
+        })}
       </div>
     </div>
   )

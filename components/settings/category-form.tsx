@@ -11,7 +11,7 @@ import { CATEGORY_ICONS } from '@/components/category/category-icon'
 import type { Category } from '@prisma/client'
 
 interface CategoryFormProps {
-  type: 'income' | 'expense'
+  type: 'income' | 'expense' | 'investment'
   isFixed?: boolean
   initialCategory?: Category | null
   createAction: (formData: FormData) => Promise<{ error?: string; success?: boolean }>

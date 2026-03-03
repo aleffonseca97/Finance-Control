@@ -11,6 +11,8 @@ import type { Category } from '@prisma/client'
 interface InvestmentFormProps {
   categories: Category[]
   action: (formData: FormData) => Promise<{ error?: string; success?: boolean }>
+  /** When provided, hides the date input and uses this value (for day selector card) */
+  dateValue?: string
 }
 
 function SubmitButton() {
@@ -22,7 +24,7 @@ function SubmitButton() {
   )
 }
 
-export function InvestmentForm({ categories, action }: InvestmentFormProps) {
+export function InvestmentForm({ categories, action, dateValue }: InvestmentFormProps) {
   const [error, setError] = useState('')
   const today = new Date().toISOString().slice(0, 10)
 
@@ -36,7 +38,7 @@ export function InvestmentForm({ categories, action }: InvestmentFormProps) {
       if (form) {
         form.reset()
         const dateInput = form.querySelector<HTMLInputElement>('[name="date"]')
-        if (dateInput) dateInput.value = today
+        if (dateInput) dateInput.value = dateValue ?? today
       }
     }
   }
@@ -74,10 +76,14 @@ export function InvestmentForm({ categories, action }: InvestmentFormProps) {
             required
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="date">Data</Label>
-          <Input id="date" name="date" type="date" defaultValue={today} required />
-        </div>
+        {dateValue == null ? (
+          <div className="space-y-2">
+            <Label htmlFor="date">Data</Label>
+            <Input id="date" name="date" type="date" defaultValue={today} required />
+          </div>
+        ) : (
+          <input type="hidden" name="date" value={dateValue} />
+        )}
         <div className="space-y-2">
           <Label htmlFor="notes">Observações</Label>
           <Input id="notes" name="notes" type="text" placeholder="Opcional" />

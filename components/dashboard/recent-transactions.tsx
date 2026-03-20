@@ -1,11 +1,6 @@
 import Link from 'next/link'
 import { CategoryIcon } from '@/components/category/category-icon'
-import type { Transaction } from '@prisma/client'
-import type { Category } from '@prisma/client'
-
-interface TransactionWithCategory extends Transaction {
-  category: Category
-}
+import type { TransactionWithCategory } from '@/lib/transaction-types'
 
 export function RecentTransactions({ transactions }: { transactions: TransactionWithCategory[] }) {
   if (transactions.length === 0) {

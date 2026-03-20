@@ -9,7 +9,8 @@ import { Select } from '@/components/ui/select'
 import type { Category } from '@prisma/client'
 
 interface InvestmentFormProps {
-  categories: Category[]
+  reserveCategories: Category[]
+  walletCategories: Category[]
   action: (formData: FormData) => Promise<{ error?: string; success?: boolean }>
   /** When provided, hides the date input and uses this value (for day selector card) */
   dateValue?: string
@@ -24,7 +25,7 @@ function SubmitButton() {
   )
 }
 
-export function InvestmentForm({ categories, action, dateValue }: InvestmentFormProps) {
+export function InvestmentForm({ reserveCategories, walletCategories, action, dateValue }: InvestmentFormProps) {
   const [error, setError] = useState('')
   const today = new Date().toISOString().slice(0, 10)
 
@@ -52,12 +53,23 @@ export function InvestmentForm({ categories, action, dateValue }: InvestmentForm
       {error && (
         <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>
       )}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div className="space-y-2">
-          <Label htmlFor="categoryId">Categoria</Label>
-          <Select id="categoryId" name="categoryId" required>
-            <option value="">Selecione...</option>
-            {categories.map((cat) => (
+          <Label htmlFor="reserveCategoryId">Reserva</Label>
+          <Select id="reserveCategoryId" name="reserveCategoryId" required>
+            <option value="">Selecione a reserva...</option>
+            {reserveCategories.map((cat) => (
+              <option key={cat.id} value={cat.id}>
+                {cat.name}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="walletCategoryId">Carteira</Label>
+          <Select id="walletCategoryId" name="walletCategoryId" required>
+            <option value="">Selecione a carteira...</option>
+            {walletCategories.map((cat) => (
               <option key={cat.id} value={cat.id}>
                 {cat.name}
               </option>

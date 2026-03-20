@@ -1,108 +1,123 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
-import { MonthFilter } from '@/components/forms/month-filter'
-import { TransactionForm } from '@/components/forms/transaction-form'
-import type { Category } from '@prisma/client'
+import Link from 'next/link';
+import { useMemo } from 'react';
+import { CalendarDays } from 'lucide-react';
+import { TransactionForm } from '@/components/forms/transaction-form';
+import { createExpense } from '@/app/actions/transactions';
+import { buttonVariants } from '@/components/ui/button';
+import type { Category } from '@prisma/client';
+import { cn } from '@/lib/utils';
 
 interface CreditCard {
-  id: string
-  name: string
-  lastFour: string | null
-  limit: number
-  color: string | null
+  id: string;
+  name: string;
+  lastFour: string | null;
+  limit: number;
+  color: string | null;
 }
 
-interface SaidasGridProps {
-  monthLabel: string
-  month: number
-  year: number
-  daysInMonth: number
-  categories: Category[]
-  creditCards: CreditCard[]
-  action: (formData: FormData) => Promise<{ error?: string; success?: boolean }>
-}
+type Props = {
+  categories: Category[];
+  creditCards: CreditCard[];
+  selectedDay: number;
+  month: number;
+  year: number;
+};
 
 export function SaidasGrid({
-  monthLabel,
-  month,
-  year,
-  daysInMonth,
   categories,
   creditCards,
-  action,
-}: SaidasGridProps) {
-  const now = new Date()
-  const isCurrentMonth = now.getMonth() === month && now.getFullYear() === year
-  const defaultDay = isCurrentMonth ? now.getDate() : 1
-  const [selectedDay, setSelectedDay] = useState(defaultDay)
+  selectedDay,
+  month,
+  year,
+}: Props) {
+  const dateValue = `${year}-${String(month + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
 
-  const dateValue = `${year}-${String(month + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`
+  const dateLabelLong = useMemo(
+    () =>
+      new Date(year, month, selectedDay).toLocaleDateString('pt-BR', {
+        weekday: 'long',
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }),
+    [year, month, selectedDay],
+  );
 
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
+  const dateLabelShort = useMemo(
+    () =>
+      new Date(year, month, selectedDay).toLocaleDateString('pt-BR', {
+        day: '2-digit',
+        month: 'short',
+        year: 'numeric',
+      }),
+    [year, month, selectedDay],
+  );
+
+  if (categories.length === 0) {
+    return (
+      <div
+        role="status"
+        className="rounded-xl border border-dashed border-muted-foreground/30 bg-muted/25 px-4 py-8 text-center sm:px-8"
+      >
+        <p className="mx-auto max-w-md text-sm leading-relaxed text-muted-foreground sm:text-base">
+          Não há categorias de despesa. Cadastre ao menos uma em Configurações para
+          lançar saídas.
+        </p>
+        <Link
+          href="/dashboard/configuracoes/categorias"
+          className={cn(
+            buttonVariants({ variant: 'default' }),
+            'mt-5 inline-flex min-h-11 w-full max-w-xs touch-manipulation sm:w-auto',
+          )}
+        >
+          Ir para categorias
+        </Link>
+      </div>
+    );
+  }
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-[340px,1fr] gap-6">
-      <div className="space-y-4">
-        <Card className="border-primary/40 bg-primary/5 h-fit">
-          <CardContent className="flex flex-col gap-4 py-4">
-            <div>
-              <p className="text-xs font-medium uppercase text-primary/70 tracking-wide">
-                Mês em edição
-              </p>
-              <p className="text-lg font-semibold">{monthLabel}</p>
-            </div>
-            <div className="w-full">
-              <MonthFilter />
-            </div>
-          </CardContent>
-        </Card>
+    <section aria-labelledby="saidas-lancamento-title" className="space-y-5">
+      <h2 id="saidas-lancamento-title" className="sr-only">
+        Formulário de nova saída na data selecionada no calendário
+      </h2>
 
-        <Card className="border-primary/40 bg-primary/5 h-fit">
-          <CardContent className="flex flex-col gap-4 py-4">
-            <div>
-              <p className="text-xs font-medium uppercase text-primary/70 tracking-wide">
-                Dia para lançamento
-              </p>
-            </div>
-            <div className="w-full">
-              <Label htmlFor="day-select" className="sr-only">
-                Selecionar dia
-              </Label>
-              <Select
-                id="day-select"
-                value={String(selectedDay)}
-                onChange={(e) => setSelectedDay(parseInt(e.target.value, 10))}
-                className="w-full"
-              >
-                {days.map((day) => (
-                  <option key={day} value={day}>
-                    Dia {String(day).padStart(2, '0')}
-                  </option>
-                ))}
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+      <div className="flex items-start gap-3 rounded-xl border border-red-500/25 bg-red-500/[0.06] px-3 py-3 sm:items-center sm:gap-4 sm:px-4 sm:py-3.5">
+        <CalendarDays
+          className="mt-0.5 h-5 w-5 shrink-0 text-red-600 dark:text-red-400 sm:mt-0 sm:h-5 sm:w-5"
+          aria-hidden
+        />
+        <div className="min-w-0 flex-1">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">
+            Data do lançamento
+          </p>
+          <p className="mt-0.5 text-sm font-semibold leading-snug text-foreground sm:text-base">
+            <time dateTime={dateValue} className="block tabular-nums">
+              <span className="sm:hidden">{dateLabelShort}</span>
+              <span className="hidden sm:inline">{dateLabelLong}</span>
+            </time>
+          </p>
+          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+            Altere o dia no calendário ao lado para mudar esta data.
+          </p>
+        </div>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Adicionar saída</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <TransactionForm
-            type="expense"
-            categories={categories}
-            creditCards={creditCards}
-            action={action}
-            dateValue={dateValue}
-          />
-        </CardContent>
-      </Card>
-    </div>
-  )
+      <TransactionForm
+        type="expense"
+        categories={categories}
+        creditCards={creditCards}
+        action={createExpense}
+        dateValue={dateValue}
+        className={cn(
+          'rounded-none border-0 bg-transparent p-0 shadow-none',
+          'space-y-5',
+          '[&_input:not([type=hidden])]:min-h-11 [&_input:not([type=hidden])]:text-base sm:[&_input:not([type=hidden])]:min-h-10 sm:[&_input:not([type=hidden])]:text-sm',
+          '[&_select]:min-h-11 [&_select]:text-base sm:[&_select]:min-h-10 sm:[&_select]:text-sm',
+        )}
+      />
+    </section>
+  );
 }

@@ -2,6 +2,7 @@
 
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { budgetExpenseWhere } from '@/lib/budget-expense';
 
 export type AnalysisRow = {
   label: string;
@@ -44,18 +45,18 @@ export async function getFixedVsVariable(month?: number, year?: number) {
     prisma.transaction.aggregate({
       where: {
         userId: session.user.id,
-        type: 'expense',
         categoryId: { in: fixedIds },
         date: { gte: start, lte: end },
+        ...budgetExpenseWhere,
       },
       _sum: { amount: true },
     }),
     prisma.transaction.aggregate({
       where: {
         userId: session.user.id,
-        type: 'expense',
         categoryId: { in: variableIds },
         date: { gte: start, lte: end },
+        ...budgetExpenseWhere,
       },
       _sum: { amount: true },
     }),
@@ -85,8 +86,8 @@ export async function getExpensesByCategory(
     by: ['categoryId'],
     where: {
       userId: session.user.id,
-      type: 'expense',
       date: { gte: start, lte: end },
+      ...budgetExpenseWhere,
     },
     _sum: { amount: true },
   });
@@ -138,8 +139,8 @@ export async function getMonthComparison(month?: number, year?: number) {
       prisma.transaction.aggregate({
         where: {
           userId: session.user.id,
-          type: 'expense',
           date: { gte: currentStart, lte: currentEnd },
+          ...budgetExpenseWhere,
         },
         _sum: { amount: true },
       }),
@@ -154,8 +155,8 @@ export async function getMonthComparison(month?: number, year?: number) {
       prisma.transaction.aggregate({
         where: {
           userId: session.user.id,
-          type: 'expense',
           date: { gte: prevStart, lte: prevEnd },
+          ...budgetExpenseWhere,
         },
         _sum: { amount: true },
       }),
@@ -208,16 +209,24 @@ export async function getDailyAnalysis(
       type: true,
       amount: true,
       date: true,
+      creditCardId: true,
+      paysCreditCardId: true,
       category: { select: { isFixed: true } },
     },
   });
 
   for (const transaction of transactions) {
-    const index = transaction.date.getDate() - 1;
+    const isoDate = transaction.date.toISOString();
+    const day = parseInt(isoDate.slice(8, 10), 10);
+    const index = day - 1;
     if (index < 0 || index >= rows.length) continue;
 
     if (transaction.type === 'income') {
       rows[index].income += transaction.amount;
+      continue;
+    }
+
+    if (transaction.creditCardId || transaction.paysCreditCardId) {
       continue;
     }
 
@@ -272,6 +281,8 @@ export async function getMonthlyAnalysis(year?: number): Promise<AnalysisRow[]> 
       type: true,
       amount: true,
       date: true,
+      creditCardId: true,
+      paysCreditCardId: true,
       category: { select: { isFixed: true } },
     },
   });
@@ -282,6 +293,10 @@ export async function getMonthlyAnalysis(year?: number): Promise<AnalysisRow[]> 
 
     if (transaction.type === 'income') {
       rows[monthIndex].income += transaction.amount;
+      continue;
+    }
+
+    if (transaction.creditCardId || transaction.paysCreditCardId) {
       continue;
     }
 
@@ -325,6 +340,8 @@ export async function getAnnualAnalysis(yearsBack = 5): Promise<AnalysisRow[]> {
       type: true,
       amount: true,
       date: true,
+      creditCardId: true,
+      paysCreditCardId: true,
       category: { select: { isFixed: true } },
     },
   });
@@ -336,6 +353,10 @@ export async function getAnnualAnalysis(yearsBack = 5): Promise<AnalysisRow[]> {
 
     if (transaction.type === 'income') {
       row.income += transaction.amount;
+      continue;
+    }
+
+    if (transaction.creditCardId || transaction.paysCreditCardId) {
       continue;
     }
 

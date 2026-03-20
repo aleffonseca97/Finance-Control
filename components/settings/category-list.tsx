@@ -13,6 +13,7 @@ interface CategoryListProps {
   type: 'income' | 'expense' | 'investment'
   isFixed: boolean
   title: string
+  investmentSubtype?: 'reserva' | 'carteira'
 }
 
 export function CategoryList({ categories, type, isFixed, title }: CategoryListProps) {
@@ -58,6 +59,7 @@ export function CategoryList({ categories, type, isFixed, title }: CategoryListP
           createAction={createCategory}
           updateAction={updateCategory}
           onCancel={handleCancel}
+          investmentSubtype={investmentSubtype}
         />
       )}
 

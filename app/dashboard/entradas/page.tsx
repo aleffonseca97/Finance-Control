@@ -1,107 +1,139 @@
+import { Suspense } from 'react';
 import { getCategoriesByType } from '@/app/actions/categories';
 import { getTransactions } from '@/app/actions/transactions';
-import { MonthFilter } from '@/components/forms/month-filter';
+import { MonthStepper } from '@/components/forms/month-stepper';
 import { DeleteTransactionButton } from '@/components/forms/delete-transaction-button';
 import { CategoryIcon } from '@/components/category/category-icon';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { EntradasTable } from './entradas-table';
+import { EntradasCalendar } from './entradas-calendar';
+
+function CalendarFallback() {
+  return (
+    <div
+      className="h-[280px] w-full animate-pulse rounded-lg bg-muted/60 sm:h-[300px]"
+      aria-hidden
+    />
+  );
+}
 
 export default async function EntradasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; year?: string }>;
+  searchParams: Promise<{ month?: string; year?: string; day?: string }>;
 }) {
   const params = await searchParams;
   const month = params.month ? parseInt(params.month, 10) : undefined;
   const year = params.year ? parseInt(params.year, 10) : undefined;
+  const dayParam = params.day ? parseInt(params.day, 10) : undefined;
 
   const [categories, { transactions, total }] = await Promise.all([
     getCategoriesByType('income'),
     getTransactions('income', month, year),
   ]);
 
-  const transactionsByDay: Record<number, (typeof transactions)[number]> = {};
+  const transactionsByDay: Record<number, typeof transactions> = {};
   transactions.forEach((t) => {
-    const day = new Date(t.date).getDate();
-    if (!(day in transactionsByDay)) {
-      transactionsByDay[day] = t;
-    }
+    const isoDate = new Date(t.date).toISOString();
+    const d = parseInt(isoDate.slice(8, 10), 10);
+    if (!transactionsByDay[d]) transactionsByDay[d] = [];
+    transactionsByDay[d].push(t);
   });
 
   const now = new Date();
   const m = month ?? now.getMonth();
   const y = year ?? now.getFullYear();
   const daysInMonth = new Date(y, m + 1, 0).getDate();
+
+  const defaultDay =
+    now.getFullYear() === y && now.getMonth() === m ? now.getDate() : 1;
+  const selectedDay =
+    dayParam !== undefined &&
+    !Number.isNaN(dayParam) &&
+    dayParam >= 1 &&
+    dayParam <= daysInMonth
+      ? dayParam
+      : defaultDay;
+
   const monthLabel = new Date(y, m, 1).toLocaleDateString('pt-BR', {
     month: 'long',
   });
+  const monthTitle = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
+
+  const daysWithEntries = Object.keys(transactionsByDay).map(Number);
 
   return (
-    <div className="space-y-6 p-6 pt-8 md:p-8 md:pt-10">
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">Entradas</h1>
-            <p className="text-muted-foreground">Controle suas receitas</p>
-          </div>
-        </div>
+    <div className="mx-auto w-full max-w-6xl space-y-6 py-2 sm:py-0">
+      <header className="space-y-1">
+        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Entradas</h1>
+        <p className="text-sm text-muted-foreground sm:text-base">
+          Controle suas receitas
+        </p>
+      </header>
 
-        <div className="grid grid-cols-1 xl:grid-cols-[340px,1fr] gap-6">
-          <Card className="border-primary/40 bg-primary/5 h-fit">
-            <CardContent className="flex flex-col gap-4 py-4">
-              <div>
-                <p className="text-xs font-medium uppercase text-primary/70 tracking-wide">
-                  Mês em edição
-                </p>
-                <p className="text-lg font-semibold">
-                  {monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1)} de {y}
-                </p>
-              </div>
-              <div className="w-full">
-                <MonthFilter />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Lançamentos diários do mês</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <EntradasTable
-                categories={categories}
-                transactionsByDay={transactionsByDay}
-                daysInMonth={daysInMonth}
-                month={m}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,320px)_1fr] xl:gap-8">
+        <Card className="border-primary/40 bg-primary/5 h-fit lg:sticky lg:top-24">
+          <CardContent className="flex flex-col gap-4 py-4 sm:py-5">
+            <div>
+              <p className="text-xs font-medium uppercase text-primary/70 tracking-wide">
+                Mês em edição
+              </p>
+              <p className="text-lg font-semibold">
+                {monthTitle} de {y}
+              </p>
+            </div>
+            <div className="w-full min-w-0">
+              <MonthStepper />
+            </div>
+            <Suspense fallback={<CalendarFallback />}>
+              <EntradasCalendar
                 year={y}
+                month={m}
+                daysInMonth={daysInMonth}
+                selectedDay={selectedDay}
+                daysWithEntries={daysWithEntries}
+                todayYear={now.getFullYear()}
+                todayMonth={now.getMonth()}
+                todayDay={now.getDate()}
               />
-            </CardContent>
-          </Card>
-        </div>
+            </Suspense>
+          </CardContent>
+        </Card>
+
+        <Card className="min-w-0 border-border/80 shadow-sm">
+          <CardContent className="px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
+            <EntradasTable
+              categories={categories}
+              selectedDay={selectedDay}
+              month={m}
+              year={y}
+            />
+          </CardContent>
+        </Card>
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">Total do período</CardTitle>
-          <p className="text-xl font-bold text-emerald-500">
+      <Card className="overflow-hidden">
+        <CardHeader className="flex flex-col gap-2 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <CardTitle className="text-base sm:text-lg">Total do período</CardTitle>
+          <p className="text-xl font-bold text-emerald-500 tabular-nums sm:text-2xl">
             R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
           </p>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
           {transactions.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">
+            <p className="text-muted-foreground text-center py-8 text-sm sm:text-base">
               Nenhuma entrada neste período
             </p>
           ) : (
-            <div className="space-y-2">
+            <ul className="divide-y rounded-lg border">
               {transactions.map((t) => (
-                <div
+                <li
                   key={t.id}
-                  className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50"
+                  className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-4 hover:bg-muted/50"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
                     <div
-                      className="rounded-full p-2"
+                      className="shrink-0 rounded-full p-2"
                       style={{ backgroundColor: `${t.category.color}20` }}
                     >
                       <CategoryIcon
@@ -109,16 +141,21 @@ export default async function EntradasPage({
                         className="text-foreground"
                       />
                     </div>
-                    <div>
+                    <div className="min-w-0">
                       <p className="font-medium">{t.category.name}</p>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-muted-foreground break-words">
                         {t.description ||
-                          new Date(t.date).toLocaleDateString('pt-BR')}
+                          new Date(t.date)
+                            .toISOString()
+                            .slice(0, 10)
+                            .split('-')
+                            .reverse()
+                            .join('/')}
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-emerald-500">
+                  <div className="flex shrink-0 items-center justify-between gap-3 pl-11 sm:justify-end sm:pl-0">
+                    <span className="font-semibold tabular-nums text-emerald-500">
                       R${' '}
                       {t.amount.toLocaleString('pt-BR', {
                         minimumFractionDigits: 2,
@@ -126,9 +163,9 @@ export default async function EntradasPage({
                     </span>
                     <DeleteTransactionButton id={t.id} />
                   </div>
-                </div>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </CardContent>
       </Card>

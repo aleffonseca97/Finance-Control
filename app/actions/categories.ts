@@ -10,13 +10,22 @@ const categorySchema = z.object({
   name: z.string().min(1, 'Nome é obrigatório'),
   icon: z.string().min(1, 'Ícone é obrigatório'),
   color: z.string().min(1, 'Cor é obrigatória'),
+  investmentSubtype: z.enum(['reserva', 'carteira']).optional(),
 })
 
 export async function ensureUserCategories(userId: string) {
   const count = await prisma.category.count({ where: { userId } })
   if (count > 0) return
 
-  const categories: { userId: string; name: string; icon: string; type: string; isFixed: boolean; color: string }[] = []
+  const categories: {
+    userId: string
+    name: string
+    icon: string
+    type: string
+    isFixed: boolean
+    color: string
+    investmentSubtype?: string
+  }[] = []
 
   for (const cat of DEFAULT_CATEGORIES.income) {
     categories.push({
@@ -40,7 +49,7 @@ export async function ensureUserCategories(userId: string) {
     })
   }
 
-  for (const cat of DEFAULT_CATEGORIES.investment) {
+  for (const cat of DEFAULT_CATEGORIES.investment_reserve) {
     categories.push({
       userId,
       name: cat.name,
@@ -48,6 +57,18 @@ export async function ensureUserCategories(userId: string) {
       type: 'investment',
       isFixed: false,
       color: cat.color,
+      investmentSubtype: 'reserva',
+    })
+  }
+  for (const cat of DEFAULT_CATEGORIES.investment_wallet) {
+    categories.push({
+      userId,
+      name: cat.name,
+      icon: cat.icon,
+      type: 'investment',
+      isFixed: false,
+      color: cat.color,
+      investmentSubtype: 'carteira',
     })
   }
 
@@ -62,6 +83,26 @@ export async function getCategoriesByType(type: 'income' | 'expense' | 'investme
 
   return prisma.category.findMany({
     where: { userId: session.user.id, type },
+    orderBy: { name: 'asc' },
+  })
+}
+
+export async function getReserveCategories() {
+  const session = await auth()
+  if (!session?.user?.id) return []
+  await ensureUserCategories(session.user.id)
+  return prisma.category.findMany({
+    where: { userId: session.user.id, type: 'investment', investmentSubtype: 'reserva' },
+    orderBy: { name: 'asc' },
+  })
+}
+
+export async function getWalletCategories() {
+  const session = await auth()
+  if (!session?.user?.id) return []
+  await ensureUserCategories(session.user.id)
+  return prisma.category.findMany({
+    where: { userId: session.user.id, type: 'investment', investmentSubtype: 'carteira' },
     orderBy: { name: 'asc' },
   })
 }
@@ -81,6 +122,7 @@ export async function createCategory(formData: FormData) {
     name: formData.get('name'),
     icon: formData.get('icon'),
     color: formData.get('color') || '#6366f1',
+    investmentSubtype: formData.get('investmentSubtype') || undefined,
   })
 
   if (!parsed.success) {
@@ -93,6 +135,10 @@ export async function createCategory(formData: FormData) {
     : null
   const defaultValue = defaultNum != null && !isNaN(defaultNum) && defaultNum >= 0 ? defaultNum : null
 
+  if (type === 'investment' && !parsed.data.investmentSubtype) {
+    return { error: 'Selecione o tipo: Reserva ou Carteira' }
+  }
+
   await ensureUserCategories(session.user.id)
 
   const data = {
@@ -103,6 +149,9 @@ export async function createCategory(formData: FormData) {
     type,
     isFixed: type === 'expense' ? isFixed : false,
     ...(type === 'expense' && isFixed && defaultValue != null && { defaultValue }),
+    ...(type === 'investment' && parsed.data.investmentSubtype && {
+      investmentSubtype: parsed.data.investmentSubtype,
+    }),
   }
 
   await prisma.category.create({ data })
@@ -131,6 +180,7 @@ export async function updateCategory(id: string, formData: FormData) {
     name: formData.get('name'),
     icon: formData.get('icon'),
     color: formData.get('color') || '#6366f1',
+    investmentSubtype: formData.get('investmentSubtype') || undefined,
   })
 
   if (!parsed.success) {
@@ -149,12 +199,19 @@ export async function updateCategory(id: string, formData: FormData) {
 
   if (!existing) return { error: 'Categoria não encontrada' }
 
+  if (type === 'investment' && !parsed.data.investmentSubtype) {
+    return { error: 'Selecione o tipo: Reserva ou Carteira' }
+  }
+
   const data = {
     name: parsed.data.name,
     icon: parsed.data.icon,
     color: parsed.data.color,
     isFixed: type === 'expense' ? isFixed : false,
     defaultValue: type === 'expense' && isFixed ? defaultValue : null,
+    ...(type === 'investment' && parsed.data.investmentSubtype && {
+      investmentSubtype: parsed.data.investmentSubtype,
+    }),
   }
 
   await prisma.category.update({ where: { id }, data })

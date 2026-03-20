@@ -23,6 +23,12 @@ export function MonthFilter() {
     const params = new URLSearchParams(searchParams.toString())
     params.set('month', m)
     params.set('year', y)
+    if (searchParams.has('day')) {
+      const prev = parseInt(searchParams.get('day') ?? '1', 10)
+      const maxDay = new Date(parseInt(y, 10), parseInt(m, 10) + 1, 0).getDate()
+      const clamped = Math.min(Math.max(1, prev), maxDay)
+      params.set('day', String(clamped))
+    }
     router.push(`${pathname}?${params.toString()}`)
   }
 

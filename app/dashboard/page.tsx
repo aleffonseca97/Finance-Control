@@ -8,17 +8,26 @@ import {
   PiggyBank,
   Wallet,
   CreditCard,
+  AlertTriangle,
 } from 'lucide-react';
 import { getLastTransactions, getMonthlyEvolution } from '@/app/actions/analytics';
 import { ensureFixedExpensesForMonth } from '@/app/actions/transactions';
+import {
+  ensureCreditCardClosedInvoices,
+  getCreditCardOverdueNotices,
+} from '@/app/actions/credit-cards';
+import { serializeOverdueNotices } from '@/lib/credit-card-overdue';
+import { budgetExpenseWhere } from '@/lib/budget-expense';
 import { MonthlyEvolutionChart } from '@/components/charts/monthly-evolution-chart';
 import { IncomeExpensePieChart } from '@/components/charts/pie-chart';
 import { RecentTransactions } from '@/components/dashboard/recent-transactions';
 import { CategoryIcon } from '@/components/category/category-icon';
+import type { TransactionWithCategory } from '@/lib/transaction-types';
 
 async function getDashboardData(userId: string) {
   const now = new Date();
   await ensureFixedExpensesForMonth(userId, now.getMonth(), now.getFullYear());
+  await ensureCreditCardClosedInvoices(userId);
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
@@ -29,6 +38,7 @@ async function getDashboardData(userId: string) {
     creditCardExpenses,
     creditCardTransactions,
     creditCards,
+    overdueRaw,
   ] = await Promise.all([
     prisma.transaction.aggregate({
       where: {
@@ -41,8 +51,8 @@ async function getDashboardData(userId: string) {
     prisma.transaction.aggregate({
       where: {
         userId,
-        type: 'expense',
         date: { gte: startOfMonth, lte: endOfMonth },
+        ...budgetExpenseWhere,
       },
       _sum: { amount: true },
     }),
@@ -72,8 +82,8 @@ async function getDashboardData(userId: string) {
     }),
     prisma.creditCard.findMany({
       where: { userId },
-      select: { limit: true },
     }),
+    getCreditCardOverdueNotices(userId),
   ]);
 
   const totalIncome = incomes._sum.amount ?? 0;
@@ -81,7 +91,13 @@ async function getDashboardData(userId: string) {
   const totalInvestment = investments._sum.amount ?? 0;
   const creditCardTotal = creditCardExpenses._sum.amount ?? 0;
   const creditCardLimit = creditCards.reduce((acc, cc) => acc + cc.limit, 0);
+  const creditCardTotalLine = creditCards.reduce(
+    (acc, cc) =>
+      acc + ((cc as { totalLimit?: number }).totalLimit ?? cc.limit),
+    0,
+  );
   const balance = totalIncome - totalExpense - totalInvestment;
+  const overdueNotices = serializeOverdueNotices(overdueRaw);
 
   return {
     totalIncome,
@@ -89,8 +105,10 @@ async function getDashboardData(userId: string) {
     totalInvestment,
     creditCardTotal,
     creditCardLimit,
+    creditCardTotalLine,
     creditCardTransactions,
     balance,
+    overdueNotices,
   };
 }
 
@@ -105,8 +123,10 @@ export default async function DashboardPage() {
       totalInvestment,
       creditCardTotal,
       creditCardLimit,
+      creditCardTotalLine,
       creditCardTransactions,
       balance,
+      overdueNotices,
     },
     lastTransactions,
     evolution,
@@ -116,7 +136,16 @@ export default async function DashboardPage() {
     getMonthlyEvolution(6),
   ]);
 
-  const cards = [
+  const userName =
+    session.user.name?.split(' ')?.[0] || session.user.name || 'Usuário';
+
+  const cards: {
+    title: string;
+    value: number;
+    icon: typeof Wallet;
+    color: string;
+    footnote?: string;
+  }[] = [
     {
       title: 'Saldo do Mês',
       value: balance,
@@ -124,8 +153,9 @@ export default async function DashboardPage() {
       color: balance >= 0 ? 'text-emerald-500' : 'text-red-500',
     },
     {
-      title: 'Cartão de Crédito',
+      title: 'Limite disponível (cartões)',
       value: creditCardLimit,
+      footnote: `Total contratado: R$ ${creditCardTotalLine.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
       icon: CreditCard,
       color: 'text-amber-500',
     },
@@ -152,10 +182,39 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-6 p-6 pt-8 md:p-8 md:pt-10">
-      <div>
-        <h1 className="text-2xl font-bold">Visão Geral</h1>
-        <p className="text-muted-foreground">Resumo financeiro do mês atual</p>
+      <div className="space-y-1">
+        <h1 className="text-2xl font-bold">Bem-vindo, {userName}</h1>
+        <p className="text-sm text-muted-foreground">
+          Aqui está a sua visão geral do mês atual.
+        </p>
       </div>
+      {overdueNotices.length > 0 ? (
+        <div
+          role="status"
+          className="flex gap-3 rounded-lg border border-destructive/50 bg-destructive/10 px-4 py-3 text-sm"
+        >
+          <AlertTriangle className="h-5 w-5 shrink-0 text-destructive" />
+          <div className="space-y-1">
+            <p className="font-semibold text-destructive">
+              Fatura do cartão em atraso
+            </p>
+            <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
+              {overdueNotices.map((n) => (
+                <li key={`${n.cardId}-${n.closingLabel}`}>
+                  <span className="text-foreground font-medium">
+                    {n.cardName}
+                  </span>
+                  {n.lastFour ? ` •••• ${n.lastFour}` : ''}: R${' '}
+                  {n.unpaid.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                  })}{' '}
+                  (venc. {n.dueDateLabel}, fech. {n.closingLabel})
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      ) : null}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {cards.map((item) => {
           const Icon = item.icon;
@@ -170,6 +229,11 @@ export default async function DashboardPage() {
                   R${' '}
                   {item.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
+                {item.footnote ? (
+                  <p className="text-xs text-muted-foreground mt-1.5">
+                    {item.footnote}
+                  </p>
+                ) : null}
               </CardContent>
             </Card>
           );
@@ -184,7 +248,7 @@ export default async function DashboardPage() {
             <IncomeExpensePieChart
               income={totalIncome}
               expense={totalExpense}
-              creditCardExpense={creditCardTotal}
+              creditCardExpense={0}
             />
           </CardContent>
         </Card>
@@ -193,7 +257,9 @@ export default async function DashboardPage() {
             <CardTitle>Últimas transações</CardTitle>
           </CardHeader>
           <CardContent>
-            <RecentTransactions transactions={lastTransactions} />
+            <RecentTransactions
+              transactions={lastTransactions as TransactionWithCategory[]}
+            />
           </CardContent>
         </Card>
       </div>
@@ -216,7 +282,9 @@ export default async function DashboardPage() {
               R${' '}
               {creditCardTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
             </p>
-            <p className="text-xs text-muted-foreground">Total do mês atual</p>
+            <p className="text-xs text-muted-foreground">
+              Compras no cartão no mês (entram no orçamento após o fechamento da fatura)
+            </p>
             {creditCardTransactions.length > 0 ? (
               <div className="space-y-2 pt-2 border-t">
                 <p className="text-xs font-medium text-muted-foreground">

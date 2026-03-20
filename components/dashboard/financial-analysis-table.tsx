@@ -10,7 +10,10 @@ type AnalysisRow = {
   balance: number;
 };
 
+export type TableView = 'daily' | 'monthly' | 'annual'
+
 type FinancialAnalysisTableProps = {
+  view: TableView;
   dailyData: AnalysisRow[];
   monthlyData: AnalysisRow[];
   annualData: AnalysisRow[];
@@ -95,11 +98,26 @@ function SectionTable({
   );
 }
 
+const VIEW_CONFIG = {
+  daily: { title: 'Diário', labelTitle: 'Dia' },
+  monthly: { title: 'Mensal', labelTitle: 'Mês' },
+  annual: { title: 'Anual', labelTitle: 'Ano' },
+} as const
+
 export function FinancialAnalysisTable({
+  view,
   dailyData,
   monthlyData,
   annualData,
 }: FinancialAnalysisTableProps) {
+  const data =
+    view === 'daily'
+      ? dailyData
+      : view === 'monthly'
+        ? monthlyData
+        : annualData
+  const config = VIEW_CONFIG[view]
+
   return (
     <Card>
       <CardHeader>
@@ -107,11 +125,11 @@ export function FinancialAnalysisTable({
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto pb-2">
-          <div className="flex min-w-max gap-6">
-            <SectionTable title="Diario" labelTitle="Dia" rows={dailyData} />
-            <SectionTable title="Mensal" labelTitle="Mes" rows={monthlyData} />
-            <SectionTable title="Anual" labelTitle="Ano" rows={annualData} />
-          </div>
+          <SectionTable
+            title={config.title}
+            labelTitle={config.labelTitle}
+            rows={data}
+          />
         </div>
       </CardContent>
     </Card>

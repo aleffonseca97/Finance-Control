@@ -1,9 +1,13 @@
 'use server';
 
+import type { Prisma } from '@prisma/client';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { transactionSchema } from '@/lib/validations';
 import { revalidatePath } from 'next/cache';
+import { ensureCreditCardClosedInvoices } from '@/app/actions/credit-cards';
+import { budgetExpenseWhere } from '@/lib/budget-expense';
+import { roundMoney } from '@/lib/credit-card-billing';
 
 export async function createTransaction(
   type: 'income' | 'expense',
@@ -40,8 +44,8 @@ export async function createTransaction(
       where: { id: creditCardId, userId: session.user.id },
     });
     if (!card) return { error: 'Cartão de crédito inválido' };
-    if (card.limit < parsed.data.amount)
-      return { error: 'Limite do cartão insuficiente' };
+    if (card.limit + 1e-6 < parsed.data.amount)
+      return { error: 'Limite disponível insuficiente' };
   }
 
   await prisma.$transaction(async (tx) => {
@@ -58,10 +62,20 @@ export async function createTransaction(
     });
 
     if (creditCardId) {
-      await tx.creditCard.update({
+      const card = await tx.creditCard.findUnique({
         where: { id: creditCardId },
-        data: { limit: { decrement: parsed.data.amount } },
       });
+      if (card) {
+        await tx.creditCard.update({
+          where: { id: creditCardId },
+          data: {
+            limit: Math.max(
+              0,
+              roundMoney(card.limit - parsed.data.amount),
+            ),
+          },
+        });
+      }
     }
   });
 
@@ -94,11 +108,17 @@ export async function updateTransaction(
   });
   if (!tx) return { error: 'Transação não encontrada' };
 
-  if (tx.type !== 'income') return { error: 'Tipo de transação inválido' };
+  if (!['income', 'expense'].includes(tx.type)) {
+    return { error: 'Tipo de transação inválido' };
+  }
 
   if (data.categoryId) {
     const category = await prisma.category.findFirst({
-      where: { id: data.categoryId, userId: session.user.id, type: 'income' },
+      where: {
+        id: data.categoryId,
+        userId: session.user.id,
+        type: tx.type,
+      },
     });
     if (!category) return { error: 'Categoria inválida' };
   }
@@ -116,6 +136,7 @@ export async function updateTransaction(
 
   revalidatePath('/dashboard');
   revalidatePath('/dashboard/entradas');
+  revalidatePath('/dashboard/saidas');
   revalidatePath('/dashboard/analise');
   return { success: true };
 }
@@ -133,7 +154,7 @@ export async function deleteTransaction(id: string) {
 
   const tx = await prisma.transaction.findFirst({
     where: { id, userId: session.user.id },
-    select: { amount: true, creditCardId: true },
+    select: { amount: true, creditCardId: true, paysCreditCardId: true },
   });
 
   if (!tx) return { error: 'Transação não encontrada' };
@@ -143,10 +164,36 @@ export async function deleteTransaction(id: string) {
       where: { id, userId: session.user.id },
     });
     if (tx.creditCardId) {
-      await db.creditCard.update({
+      const card = await db.creditCard.findUnique({
         where: { id: tx.creditCardId },
-        data: { limit: { increment: tx.amount } },
       });
+      if (card) {
+        await db.creditCard.update({
+          where: { id: tx.creditCardId },
+          data: {
+            limit: Math.min(
+              card.totalLimit,
+              roundMoney(card.limit + tx.amount),
+            ),
+          },
+        });
+      }
+    }
+    if (tx.paysCreditCardId) {
+      const card = await db.creditCard.findUnique({
+        where: { id: tx.paysCreditCardId },
+      });
+      if (card) {
+        await db.creditCard.update({
+          where: { id: tx.paysCreditCardId },
+          data: {
+            limit: Math.max(
+              0,
+              roundMoney(card.limit - tx.amount),
+            ),
+          },
+        });
+      }
     }
   });
 
@@ -203,11 +250,15 @@ export async function ensureFixedExpensesForMonth(
   }
 }
 
+export type TransactionWithRelations = Prisma.TransactionGetPayload<{
+  include: { category: true; creditCard: true; paysCreditCard: true };
+}>;
+
 export async function getTransactions(
   type: 'income' | 'expense',
   month?: number,
   year?: number,
-) {
+): Promise<{ transactions: TransactionWithRelations[]; total: number }> {
   const session = await auth();
   if (!session?.user?.id) return { transactions: [], total: 0 };
 
@@ -219,16 +270,21 @@ export async function getTransactions(
 
   if (type === 'expense') {
     await ensureFixedExpensesForMonth(session.user.id, m, y);
+    await ensureCreditCardClosedInvoices(session.user.id);
   }
 
   const [transactions, agg] = await Promise.all([
     prisma.transaction.findMany({
       where: { userId: session.user.id, type, date: { gte: start, lte: end } },
-      include: { category: true, creditCard: true },
+      include: { category: true, creditCard: true, paysCreditCard: true },
       orderBy: { date: 'desc' },
     }),
     prisma.transaction.aggregate({
-      where: { userId: session.user.id, type, date: { gte: start, lte: end } },
+      where: {
+        userId: session.user.id,
+        date: { gte: start, lte: end },
+        ...(type === 'expense' ? budgetExpenseWhere : { type: 'income' }),
+      },
       _sum: { amount: true },
     }),
   ]);

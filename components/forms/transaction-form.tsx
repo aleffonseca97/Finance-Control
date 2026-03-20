@@ -6,8 +6,8 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
-import { CategoryIcon } from '@/components/category/category-icon'
 import type { Category } from '@prisma/client'
+import { cn } from '@/lib/utils'
 
 interface CreditCard {
   id: string
@@ -24,18 +24,31 @@ interface TransactionFormProps {
   action: (formData: FormData) => Promise<{ error?: string; success?: boolean }>
   /** When provided, hides the date input and uses this value (for day selector card) */
   dateValue?: string
+  /** Extra classes for the form root (e.g. strip inner card when already inside a Card) */
+  className?: string
 }
 
 function SubmitButton({ type }: { type: 'income' | 'expense' }) {
   const { pending } = useFormStatus()
   return (
-    <Button type="submit" disabled={pending}>
+    <Button
+      type="submit"
+      disabled={pending}
+      className="min-h-11 w-full touch-manipulation sm:min-h-10 sm:w-auto"
+    >
       {pending ? 'Salvando...' : type === 'income' ? 'Adicionar entrada' : 'Adicionar saída'}
     </Button>
   )
 }
 
-export function TransactionForm({ type, categories, creditCards = [], action, dateValue }: TransactionFormProps) {
+export function TransactionForm({
+  type,
+  categories,
+  creditCards = [],
+  action,
+  dateValue,
+  className,
+}: TransactionFormProps) {
   const [error, setError] = useState('')
   const today = new Date().toISOString().slice(0, 10)
 
@@ -69,13 +82,13 @@ export function TransactionForm({ type, categories, creditCards = [], action, da
     <form
       id="transaction-form"
       action={handleSubmit}
-      className="space-y-4 p-4 rounded-lg border bg-card"
+      className={cn('space-y-4 p-4 rounded-lg border bg-card', className)}
     >
       <input type="hidden" name="type" value={type} />
       {error && (
         <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>
       )}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-2">
           <Label htmlFor="categoryId">Categoria</Label>
           <Select

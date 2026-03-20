@@ -2,8 +2,13 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { budgetExpenseWhere } from '@/lib/budget-expense'
+import type { TransactionWithCategory } from '@/lib/transaction-types'
 
-export async function getLastTransactions(limit = 10, excludeCreditCard = false) {
+export async function getLastTransactions(
+  limit = 10,
+  excludeCreditCard = false,
+): Promise<TransactionWithCategory[]> {
   const session = await auth()
   if (!session?.user?.id) return []
 
@@ -13,7 +18,7 @@ export async function getLastTransactions(limit = 10, excludeCreditCard = false)
       ...(excludeCreditCard && {
         OR: [
           { type: 'income' },
-          { type: 'expense', creditCardId: null },
+          { type: 'expense', creditCardId: null, paysCreditCardId: null },
         ],
       }),
     },
@@ -41,7 +46,11 @@ export async function getMonthlyEvolution(months = 6) {
         _sum: { amount: true },
       }),
       prisma.transaction.aggregate({
-        where: { userId: session.user.id, type: 'expense', date: { gte: start, lte: end } },
+        where: {
+          userId: session.user.id,
+          date: { gte: start, lte: end },
+          ...budgetExpenseWhere,
+        },
         _sum: { amount: true },
       }),
       prisma.investment.aggregate({

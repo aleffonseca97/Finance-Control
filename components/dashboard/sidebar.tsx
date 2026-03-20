@@ -35,8 +35,15 @@ const navItems = [
     icon: CreditCard,
   },
   { href: '/dashboard/investimentos', label: 'Investimentos', icon: PiggyBank },
-  { href: '/dashboard/analise', label: 'Análise', icon: BarChart3 },
-  { href: '/dashboard/tabela-anual', label: 'Tabela Anual', icon: Table2 },
+  {
+    href: '/dashboard/analise',
+    label: 'Análise',
+    icon: BarChart3,
+    children: [
+      { href: '/dashboard/analise', label: 'Resumo', icon: BarChart3 },
+      { href: '/dashboard/tabela-anual', label: 'Tabela Anual', icon: Table2 },
+    ],
+  },
   {
     href: '/dashboard/configuracoes',
     label: 'Configurações',
@@ -55,10 +62,19 @@ export function Sidebar() {
   const [configOpen, setConfigOpen] = useState(
     pathname.startsWith('/dashboard/configuracoes')
   );
+  const [analiseOpen, setAnaliseOpen] = useState(
+    pathname.startsWith('/dashboard/analise') || pathname.startsWith('/dashboard/tabela-anual')
+  );
 
   useEffect(() => {
     if (pathname.startsWith('/dashboard/configuracoes')) {
       setConfigOpen(true);
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname.startsWith('/dashboard/analise') || pathname.startsWith('/dashboard/tabela-anual')) {
+      setAnaliseOpen(true);
     }
   }, [pathname]);
 
@@ -110,17 +126,23 @@ export function Sidebar() {
           {navItems.map((item) => {
             const Icon = item.icon;
             const hasChildren = 'children' in item && item.children;
+            const isAnaliseSection = item.href === '/dashboard/analise';
+            const isConfigSection = item.href === '/dashboard/configuracoes';
+            const isAnaliseActive = pathname.startsWith('/dashboard/analise') || pathname.startsWith('/dashboard/tabela-anual');
             const isConfigActive = pathname.startsWith('/dashboard/configuracoes');
-            const isParentActive = item.href === '/dashboard/configuracoes' && isConfigActive;
+            const isParentActive = (isAnaliseSection && isAnaliseActive) || (isConfigSection && isConfigActive);
             const isActive = !hasChildren && pathname === item.href;
 
             if (hasChildren && item.children) {
-              const expanded = configOpen || isConfigActive;
+              const expanded = isAnaliseSection
+                ? analiseOpen || isAnaliseActive
+                : configOpen || isConfigActive;
+              const toggleOpen = isAnaliseSection ? () => setAnaliseOpen(!analiseOpen) : () => setConfigOpen(!configOpen);
               return (
                 <div key={item.href}>
                   <button
                     type="button"
-                    onClick={() => setConfigOpen(!configOpen)}
+                    onClick={toggleOpen}
                     className={cn(
                       'flex w-full items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors',
                       isParentActive

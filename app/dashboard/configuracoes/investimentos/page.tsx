@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { getCategoriesByType } from '@/app/actions/categories'
+import { getReserveCategories, getWalletCategories } from '@/app/actions/categories'
 import { CategoryList } from '@/components/settings/category-list'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 
@@ -8,31 +8,53 @@ export default async function InvestimentosConfigPage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
 
-  const investmentCategories = await getCategoriesByType('investment')
+  const [reserveCategories, walletCategories] = await Promise.all([
+    getReserveCategories(),
+    getWalletCategories(),
+  ])
 
   return (
     <div className="space-y-8 p-6 pt-8 md:p-8 md:pt-10">
       <div>
         <h1 className="text-2xl font-bold">Categorias de Investimentos</h1>
         <p className="text-muted-foreground">
-          Gerencie as categorias para registrar seus investimentos
+          Gerencie reservas (objetivos) e carteiras (aplicações) para seus investimentos
         </p>
       </div>
 
       <div className="space-y-6">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">Tipos de investimento</CardTitle>
+            <CardTitle className="text-lg">Reservas</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Categorias como Reserva Emergência, CDB, Tesouro Direto, Ações, etc.
+              Objetivos da economia: Reserva Emergência, Reserva Viagem, Reserva Longo Prazo, Compra Alto Valor, etc.
             </p>
           </CardHeader>
           <CardContent>
             <CategoryList
-              categories={investmentCategories}
+              categories={reserveCategories}
               type="investment"
               isFixed={false}
               title=""
+              investmentSubtype="reserva"
+            />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Carteiras</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Onde o dinheiro está aplicado: CDB, Poupança, Tesouro Direto, Ações, etc.
+            </p>
+          </CardHeader>
+          <CardContent>
+            <CategoryList
+              categories={walletCategories}
+              type="investment"
+              isFixed={false}
+              title=""
+              investmentSubtype="carteira"
             />
           </CardContent>
         </Card>

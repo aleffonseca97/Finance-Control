@@ -1,20 +1,30 @@
 'use client'
 
-import { useState } from 'react'
+import { Suspense } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
-import { Select } from '@/components/ui/select'
-import { MonthFilter } from '@/components/forms/month-filter'
+import { MonthStepper } from '@/components/forms/month-stepper'
 import { InvestmentForm } from '@/components/forms/investment-form'
+import { WithdrawalForm } from '@/components/forms/withdrawal-form'
+import { InvestimentosCalendar } from './investimentos-calendar'
 import type { Category } from '@prisma/client'
+import type { ReserveWalletBalance } from '@/app/actions/investments'
 
 interface InvestimentosGridProps {
   monthLabel: string
   month: number
   year: number
   daysInMonth: number
-  categories: Category[]
-  action: (formData: FormData) => Promise<{ error?: string; success?: boolean }>
+  selectedDay: number
+  daysWithEntries: number[]
+  todayYear: number
+  todayMonth: number
+  todayDay: number
+  reserveCategories: Category[]
+  walletCategories: Category[]
+  withdrawalBalances: ReserveWalletBalance[]
+  createInvestment: (formData: FormData) => Promise<{ error?: string; success?: boolean }>
+  createWithdrawal: (formData: FormData) => Promise<{ error?: string; success?: boolean }>
+  calendarFallback: React.ReactNode
 }
 
 export function InvestimentosGrid({
@@ -22,75 +32,78 @@ export function InvestimentosGrid({
   month,
   year,
   daysInMonth,
-  categories,
-  action,
+  selectedDay,
+  daysWithEntries,
+  todayYear,
+  todayMonth,
+  todayDay,
+  reserveCategories,
+  walletCategories,
+  withdrawalBalances,
+  createInvestment,
+  createWithdrawal,
+  calendarFallback,
 }: InvestimentosGridProps) {
-  const now = new Date()
-  const isCurrentMonth = now.getMonth() === month && now.getFullYear() === year
-  const defaultDay = isCurrentMonth ? now.getDate() : 1
-  const [selectedDay, setSelectedDay] = useState(defaultDay)
-
   const dateValue = `${year}-${String(month + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`
 
-  const days = Array.from({ length: daysInMonth }, (_, i) => i + 1)
-
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-[340px,1fr] gap-6">
-      <div className="space-y-4">
-        <Card className="border-primary/40 bg-primary/5 h-fit">
-          <CardContent className="flex flex-col gap-4 py-4">
-            <div>
-              <p className="text-xs font-medium uppercase text-primary/70 tracking-wide">
-                Mês em edição
-              </p>
-              <p className="text-lg font-semibold">{monthLabel}</p>
-            </div>
-            <div className="w-full">
-              <MonthFilter />
-            </div>
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,320px)_1fr] xl:gap-8">
+      <Card className="h-fit border-primary/40 bg-primary/5 lg:sticky lg:top-24">
+        <CardContent className="flex flex-col gap-4 px-4 py-4 sm:px-6 sm:py-5">
+          <div>
+            <p className="text-xs font-medium uppercase tracking-wide text-primary/70">
+              Mês em edição
+            </p>
+            <p className="text-lg font-semibold">{monthLabel}</p>
+          </div>
+          <div className="w-full min-w-0">
+            <MonthStepper />
+          </div>
+          <Suspense fallback={calendarFallback}>
+            <InvestimentosCalendar
+              year={year}
+              month={month}
+              daysInMonth={daysInMonth}
+              selectedDay={selectedDay}
+              daysWithEntries={daysWithEntries}
+              todayYear={todayYear}
+              todayMonth={todayMonth}
+              todayDay={todayDay}
+            />
+          </Suspense>
+        </CardContent>
+      </Card>
+
+      <div className="min-w-0 space-y-6">
+        <Card className="border-border/80 shadow-sm">
+          <CardHeader className="px-4 pt-4 sm:px-6 sm:pt-5">
+            <CardTitle className="text-base sm:text-lg">Adicionar aporte</CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
+            <InvestmentForm
+              reserveCategories={reserveCategories}
+              walletCategories={walletCategories}
+              action={createInvestment}
+              dateValue={dateValue}
+            />
           </CardContent>
         </Card>
-
-        <Card className="border-primary/40 bg-primary/5 h-fit">
-          <CardContent className="flex flex-col gap-4 py-4">
-            <div>
-              <p className="text-xs font-medium uppercase text-primary/70 tracking-wide">
-                Dia para lançamento
-              </p>
-            </div>
-            <div className="w-full">
-              <Label htmlFor="day-select" className="sr-only">
-                Selecionar dia
-              </Label>
-              <Select
-                id="day-select"
-                value={String(selectedDay)}
-                onChange={(e) => setSelectedDay(parseInt(e.target.value, 10))}
-                className="w-full"
-              >
-                {days.map((day) => (
-                  <option key={day} value={day}>
-                    Dia {String(day).padStart(2, '0')}
-                  </option>
-                ))}
-              </Select>
-            </div>
+        <Card className="border-border/80 shadow-sm">
+          <CardHeader className="px-4 pt-4 sm:px-6 sm:pt-5">
+            <CardTitle className="text-base sm:text-lg">Realizar saque</CardTitle>
+            <p className="text-sm font-normal text-muted-foreground">
+              O valor sacado será adicionado ao seu saldo mensal
+            </p>
+          </CardHeader>
+          <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
+            <WithdrawalForm
+              balances={withdrawalBalances}
+              action={createWithdrawal}
+              dateValue={dateValue}
+            />
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Adicionar aporte</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <InvestmentForm
-            categories={categories}
-            action={action}
-            dateValue={dateValue}
-          />
-        </CardContent>
-      </Card>
     </div>
   )
 }

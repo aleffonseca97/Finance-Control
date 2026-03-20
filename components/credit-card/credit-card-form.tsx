@@ -78,17 +78,20 @@ export function CreditCardForm({
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="limit">Limite (R$)</Label>
+          <Label htmlFor="totalLimit">Limite total (R$)</Label>
           <Input
-            id="limit"
-            name="limit"
+            id="totalLimit"
+            name="totalLimit"
             type="number"
             step="0.01"
             min="0"
-            defaultValue={initialCard?.limit}
+            defaultValue={initialCard?.totalLimit ?? initialCard?.limit}
             placeholder="0,00"
             required
           />
+          <p className="text-xs text-muted-foreground">
+            O disponível para compras só aumenta quando você registrar o pagamento da fatura.
+          </p>
         </div>
         <div className="space-y-2">
           <Label htmlFor="closingDay">Dia do fechamento</Label>

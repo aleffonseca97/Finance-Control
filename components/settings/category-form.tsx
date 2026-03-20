@@ -17,6 +17,7 @@ interface CategoryFormProps {
   createAction: (formData: FormData) => Promise<{ error?: string; success?: boolean }>
   updateAction: (id: string, formData: FormData) => Promise<{ error?: string; success?: boolean }>
   onCancel?: () => void
+  investmentSubtype?: 'reserva' | 'carteira'
 }
 
 function SubmitButton({ isEdit }: { isEdit: boolean }) {
@@ -35,6 +36,7 @@ export function CategoryForm({
   createAction,
   updateAction,
   onCancel,
+  investmentSubtype,
 }: CategoryFormProps) {
   const [error, setError] = useState('')
   const isEdit = !!initialCategory
@@ -102,6 +104,25 @@ export function CategoryForm({
             className="h-10 w-20 p-1 cursor-pointer"
           />
         </div>
+        {type === 'investment' && (
+          <div className="space-y-2">
+            <Label htmlFor="investmentSubtype">Tipo</Label>
+            <Select
+              id="investmentSubtype"
+              name="investmentSubtype"
+              defaultValue={
+                initialCategory && 'investmentSubtype' in initialCategory
+                  ? initialCategory.investmentSubtype ?? investmentSubtype ?? ''
+                  : investmentSubtype ?? ''
+              }
+              required
+            >
+              <option value="">Selecione...</option>
+              <option value="reserva">Reserva (objetivo da economia)</option>
+              <option value="carteira">Carteira (onde o dinheiro está aplicado)</option>
+            </Select>
+          </div>
+        )}
         {type === 'expense' && isFixed && (
           <div className="space-y-2">
             <Label htmlFor="defaultValue">Valor prefixado (R$)</Label>

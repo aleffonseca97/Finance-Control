@@ -1,6 +1,6 @@
 {
   "name": "personal-finance-control",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -9,6 +9,7 @@
     "lint": "next lint",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
+    "db:migrate-investment-data": "npx tsx prisma/migrate-investment-data.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {

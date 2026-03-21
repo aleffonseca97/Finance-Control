@@ -1,3 +1,5 @@
+'use client'
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CategoryIcon } from '@/components/category/category-icon'
 import { DeleteConfirmButton } from '@/components/shared/delete-confirm-button'

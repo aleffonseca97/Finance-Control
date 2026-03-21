@@ -3,15 +3,24 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Trash2 } from 'lucide-react'
-import { deleteTransaction } from '@/app/actions/transactions'
 
-export function DeleteTransactionButton({ id }: { id: string }) {
+type Props = {
+  confirmMessage: string
+  onDelete: () => Promise<unknown>
+  ariaLabel?: string
+}
+
+export function DeleteConfirmButton({
+  confirmMessage,
+  onDelete,
+  ariaLabel = 'Excluir',
+}: Props) {
   const [pending, setPending] = useState(false)
 
   async function handleDelete() {
-    if (!confirm('Excluir esta transação?')) return
+    if (!confirm(confirmMessage)) return
     setPending(true)
-    await deleteTransaction(id)
+    await onDelete()
     setPending(false)
   }
 
@@ -22,7 +31,7 @@ export function DeleteTransactionButton({ id }: { id: string }) {
       className="text-muted-foreground hover:text-destructive cursor-pointer"
       onClick={handleDelete}
       disabled={pending}
-      aria-label="Excluir"
+      aria-label={ariaLabel}
     >
       <Trash2 className="h-4 w-4" />
     </Button>

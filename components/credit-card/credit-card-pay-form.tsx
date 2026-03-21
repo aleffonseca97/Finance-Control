@@ -12,7 +12,12 @@ import type { CreditCard } from '@prisma/client'
 function SubmitPayButton() {
   const { pending } = useFormStatus()
   return (
-    <Button type="submit" size="sm" disabled={pending}>
+    <Button
+      type="submit"
+      size="sm"
+      disabled={pending}
+      className="min-h-10 touch-manipulation sm:min-h-9"
+    >
       {pending ? 'Registrando...' : 'Confirmar pagamento'}
     </Button>
   )
@@ -55,7 +60,7 @@ export function CreditCardPayForm({
   }
 
   return (
-    <form action={handleSubmit} className="space-y-3 pt-2 border-t">
+    <form action={handleSubmit} className="space-y-3 pt-3 border-t">
       {error ? (
         <div className="text-sm text-destructive bg-destructive/10 p-2 rounded-md">
           {error}
@@ -66,18 +71,22 @@ export function CreditCardPayForm({
         despesas do orçamento e investimentos — já inclui a fatura após o fechamento) e
         <strong> só devolve limite</strong>, sem nova despesa no orçamento.
       </p>
-      <p className="text-xs text-muted-foreground">
-        Disponível em caixa:{' '}
-        <span className="font-medium text-foreground">
-          R${' '}
-          {availableCash.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+      <div className="flex flex-col gap-1 text-xs text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-2">
+        <span>
+          Disponível em caixa:{' '}
+          <span className="font-medium text-foreground">
+            R${' '}
+            {availableCash.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </span>
         </span>
-        {' · '}
-        Máx. a pagar neste cartão:{' '}
-        <span className="font-medium text-foreground">
-          R$ {maxPay.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+        <span className="hidden sm:inline">·</span>
+        <span>
+          Máx. a pagar:{' '}
+          <span className="font-medium text-foreground">
+            R$ {maxPay.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+          </span>
         </span>
-      </p>
+      </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
           <Label htmlFor={`pay-amount-${card.id}`}>Valor (R$)</Label>
@@ -106,7 +115,13 @@ export function CreditCardPayForm({
       <div className="flex flex-wrap gap-2">
         <SubmitPayButton />
         {onDone ? (
-          <Button type="button" variant="outline" size="sm" onClick={onDone}>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onDone}
+            className="min-h-10 touch-manipulation sm:min-h-9"
+          >
             Cancelar
           </Button>
         ) : null}

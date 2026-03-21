@@ -1,36 +1,26 @@
-import { Suspense } from 'react';
-import { getReserveCategories, getWalletCategories } from '@/app/actions/categories';
+import { getReserveCategories, getWalletCategories } from '@/app/actions/categories'
 import {
   getInvestments,
   getInvestmentsSummary,
   createInvestment,
   createWithdrawal,
+  deleteInvestment,
   getReserveWalletBalancesForUser,
-} from '@/app/actions/investments';
-import { DeleteInvestmentButton } from '@/components/forms/delete-investment-button';
-import { CategoryIcon } from '@/components/category/category-icon';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { InvestmentsPieChart } from '@/components/charts/investments-pie-chart';
-import { InvestimentosGrid } from './investimentos-grid';
-
-function CalendarFallback() {
-  return (
-    <div
-      className="h-[280px] w-full animate-pulse rounded-lg bg-muted/60 sm:h-[300px]"
-      aria-hidden
-    />
-  );
-}
+} from '@/app/actions/investments'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { CategoryIcon } from '@/components/category/category-icon'
+import { InvestmentsPieChart } from '@/components/charts/investments-pie-chart'
+import { InvestimentosGrid } from './investimentos-grid'
+import { InvestmentListCard } from './investment-list-card'
+import { parseMonthYearParams, getMonthTitle, groupByDay, formatBRL } from '@/lib/date-utils'
+import { CalendarFallback } from '@/components/shared/calendar-fallback'
 
 export default async function InvestimentosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; year?: string; day?: string }>;
+  searchParams: Promise<{ month?: string; year?: string; day?: string }>
 }) {
-  const params = await searchParams;
-  const month = params.month ? parseInt(params.month, 10) : undefined;
-  const year = params.year ? parseInt(params.year, 10) : undefined;
-  const dayParam = params.day ? parseInt(params.day, 10) : undefined;
+  const params = await searchParams
 
   const [
     reserveCategories,
@@ -41,39 +31,22 @@ export default async function InvestimentosPage({
   ] = await Promise.all([
     getReserveCategories(),
     getWalletCategories(),
-    getInvestments(month, year),
+    getInvestments(
+      params.month ? parseInt(params.month, 10) : undefined,
+      params.year ? parseInt(params.year, 10) : undefined,
+    ),
     getInvestmentsSummary(),
     getReserveWalletBalancesForUser(),
-  ]);
+  ])
 
-  const investmentsByDay: Record<number, typeof investments> = {};
-  investments.forEach((inv) => {
-    const isoDate = new Date(inv.date).toISOString();
-    const d = parseInt(isoDate.slice(8, 10), 10);
-    if (!investmentsByDay[d]) investmentsByDay[d] = [];
-    investmentsByDay[d].push(inv);
-  });
+  const { month, year, daysInMonth, selectedDay, now } = parseMonthYearParams(
+    params.month,
+    params.year,
+    params.day,
+  )
 
-  const now = new Date();
-  const m = month ?? now.getMonth();
-  const y = year ?? now.getFullYear();
-  const daysInMonth = new Date(y, m + 1, 0).getDate();
-  const monthLabel = new Date(y, m, 1).toLocaleDateString('pt-BR', {
-    month: 'long',
-  });
-  const monthTitle = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
-
-  const defaultDay =
-    now.getFullYear() === y && now.getMonth() === m ? now.getDate() : 1;
-  const selectedDay =
-    dayParam !== undefined &&
-    !Number.isNaN(dayParam) &&
-    dayParam >= 1 &&
-    dayParam <= daysInMonth
-      ? dayParam
-      : defaultDay;
-
-  const daysWithEntries = Object.keys(investmentsByDay).map(Number);
+  const daysWithEntries = Object.keys(groupByDay(investments)).map(Number)
+  const monthTitle = getMonthTitle(year, month)
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 py-2 sm:py-0">
@@ -88,9 +61,9 @@ export default async function InvestimentosPage({
 
       <div className="min-w-0">
         <InvestimentosGrid
-          monthLabel={`${monthTitle} de ${y}`}
-          month={m}
-          year={y}
+          monthLabel={`${monthTitle} de ${year}`}
+          month={month}
+          year={year}
           daysInMonth={daysInMonth}
           selectedDay={selectedDay}
           daysWithEntries={daysWithEntries}
@@ -114,81 +87,19 @@ export default async function InvestimentosPage({
         />
       </div>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="flex flex-col gap-2 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <CardTitle className="text-base sm:text-lg">Total do período</CardTitle>
-          <p className="text-xl font-bold text-blue-500 tabular-nums sm:text-2xl">
-            R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </p>
-        </CardHeader>
-        <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
-          {investments.length === 0 ? (
-            <p className="py-8 text-center text-sm text-muted-foreground sm:text-base">
-              Nenhum aporte ou saque neste período
-            </p>
-          ) : (
-            <ul className="divide-y rounded-lg border">
-              {investments.map((inv) => {
-                const displayCategory = inv.reserveCategory && inv.walletCategory
-                  ? { ...inv.reserveCategory, name: `${inv.reserveCategory.name} → ${inv.walletCategory.name}` }
-                  : inv.category;
-                const isWithdrawal = inv.amount < 0;
-                return (
-                  <li
-                    key={inv.id}
-                    className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-4 hover:bg-muted/50"
-                  >
-                    <div className="flex min-w-0 flex-1 items-start gap-3">
-                      <div
-                        className="shrink-0 rounded-full p-2"
-                        style={{
-                          backgroundColor: `${(displayCategory?.color ?? '#6366f1')}20`,
-                        }}
-                      >
-                        <CategoryIcon
-                          icon={displayCategory?.icon ?? 'CircleDollarSign'}
-                          className="text-foreground"
-                        />
-                      </div>
-                      <div className="min-w-0">
-                        <p className="font-medium">
-                          {displayCategory?.name ?? 'Investimento'}
-                          {isWithdrawal && ' (saque)'}
-                        </p>
-                        <p className="break-words text-sm text-muted-foreground">
-                          {new Date(inv.date).toLocaleDateString('pt-BR')}
-                          {inv.notes && ` • ${inv.notes}`}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex shrink-0 items-center justify-between gap-3 pl-11 sm:justify-end sm:pl-0">
-                      <span
-                        className={`font-semibold tabular-nums ${isWithdrawal ? 'text-green-600' : 'text-blue-500'}`}
-                      >
-                        {isWithdrawal ? '+' : ''}R${' '}
-                        {Math.abs(inv.amount).toLocaleString('pt-BR', {
-                          minimumFractionDigits: 2,
-                        })}
-                        {isWithdrawal && ' (saldo)'}
-                      </span>
-                      <DeleteInvestmentButton id={inv.id} />
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      <InvestmentListCard
+        title="Total do período"
+        total={total}
+        investments={investments}
+        emptyMessage="Nenhum aporte ou saque neste período"
+        onDelete={deleteInvestment}
+      />
 
       <Card className="overflow-hidden">
         <CardHeader className="flex flex-col gap-2 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <CardTitle className="text-base sm:text-lg">Total geral investido</CardTitle>
           <p className="text-xl font-bold text-blue-500 tabular-nums sm:text-2xl">
-            R${' '}
-            {investmentsSummary.total.toLocaleString('pt-BR', {
-              minimumFractionDigits: 2,
-            })}
+            R$ {formatBRL(investmentsSummary.total)}
           </p>
         </CardHeader>
         <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
@@ -224,10 +135,7 @@ export default async function InvestimentosPage({
                       </div>
                     </div>
                     <span className="shrink-0 font-semibold tabular-nums text-blue-500">
-                      R${' '}
-                      {item.total.toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                      })}
+                      R$ {formatBRL(item.total)}
                     </span>
                   </li>
                 ))}
@@ -247,5 +155,5 @@ export default async function InvestimentosPage({
         </CardContent>
       </Card>
     </div>
-  );
+  )
 }

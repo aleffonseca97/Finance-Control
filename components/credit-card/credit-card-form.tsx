@@ -17,7 +17,11 @@ interface CreditCardFormProps {
 function SubmitButton({ isEdit }: { isEdit: boolean }) {
   const { pending } = useFormStatus()
   return (
-    <Button type="submit" disabled={pending}>
+    <Button
+      type="submit"
+      disabled={pending}
+      className="min-h-10 touch-manipulation sm:min-h-9"
+    >
       {pending ? 'Salvando...' : isEdit ? 'Salvar' : 'Adicionar'}
     </Button>
   )
@@ -135,10 +139,15 @@ export function CreditCardForm({
             className="h-10 w-20 p-1 cursor-pointer"
           />
         </div>
-        <div className="flex items-end gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:gap-2">
           <SubmitButton isEdit={isEdit} />
           {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              className="min-h-10 touch-manipulation sm:min-h-9"
+            >
               Cancelar
             </Button>
           )}

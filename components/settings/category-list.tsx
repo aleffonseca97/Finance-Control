@@ -16,7 +16,7 @@ interface CategoryListProps {
   investmentSubtype?: 'reserva' | 'carteira'
 }
 
-export function CategoryList({ categories, type, isFixed, title }: CategoryListProps) {
+export function CategoryList({ categories, type, isFixed, title, investmentSubtype }: CategoryListProps) {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 

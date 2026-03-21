@@ -1,66 +1,35 @@
-import { Suspense } from 'react';
-import { getCategoriesByType } from '@/app/actions/categories';
-import { getTransactions } from '@/app/actions/transactions';
-import { MonthStepper } from '@/components/forms/month-stepper';
-import { DeleteTransactionButton } from '@/components/forms/delete-transaction-button';
-import { CategoryIcon } from '@/components/category/category-icon';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { EntradasTable } from './entradas-table';
-import { EntradasCalendar } from './entradas-calendar';
-
-function CalendarFallback() {
-  return (
-    <div
-      className="h-[280px] w-full animate-pulse rounded-lg bg-muted/60 sm:h-[300px]"
-      aria-hidden
-    />
-  );
-}
+import { Suspense } from 'react'
+import { getCategoriesByType } from '@/app/actions/categories'
+import { getTransactions, deleteTransaction } from '@/app/actions/transactions'
+import { createIncome } from '@/app/actions/transactions'
+import { MonthStepper } from '@/components/forms/month-stepper'
+import { Card, CardContent } from '@/components/ui/card'
+import { MonthCalendar } from '@/components/shared/month-calendar'
+import { CalendarFallback } from '@/components/shared/calendar-fallback'
+import { TransactionEntryForm } from '@/components/shared/transaction-entry-form'
+import { TransactionListCard } from '@/components/shared/transaction-list-card'
+import { parseMonthYearParams, getMonthTitle, groupByDay } from '@/lib/date-utils'
 
 export default async function EntradasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; year?: string; day?: string }>;
+  searchParams: Promise<{ month?: string; year?: string; day?: string }>
 }) {
-  const params = await searchParams;
-  const month = params.month ? parseInt(params.month, 10) : undefined;
-  const year = params.year ? parseInt(params.year, 10) : undefined;
-  const dayParam = params.day ? parseInt(params.day, 10) : undefined;
+  const params = await searchParams
 
   const [categories, { transactions, total }] = await Promise.all([
     getCategoriesByType('income'),
-    getTransactions('income', month, year),
-  ]);
+    getTransactions('income', params.month ? parseInt(params.month, 10) : undefined, params.year ? parseInt(params.year, 10) : undefined),
+  ])
 
-  const transactionsByDay: Record<number, typeof transactions> = {};
-  transactions.forEach((t) => {
-    const isoDate = new Date(t.date).toISOString();
-    const d = parseInt(isoDate.slice(8, 10), 10);
-    if (!transactionsByDay[d]) transactionsByDay[d] = [];
-    transactionsByDay[d].push(t);
-  });
+  const { month, year, daysInMonth, selectedDay, now } = parseMonthYearParams(
+    params.month,
+    params.year,
+    params.day,
+  )
 
-  const now = new Date();
-  const m = month ?? now.getMonth();
-  const y = year ?? now.getFullYear();
-  const daysInMonth = new Date(y, m + 1, 0).getDate();
-
-  const defaultDay =
-    now.getFullYear() === y && now.getMonth() === m ? now.getDate() : 1;
-  const selectedDay =
-    dayParam !== undefined &&
-    !Number.isNaN(dayParam) &&
-    dayParam >= 1 &&
-    dayParam <= daysInMonth
-      ? dayParam
-      : defaultDay;
-
-  const monthLabel = new Date(y, m, 1).toLocaleDateString('pt-BR', {
-    month: 'long',
-  });
-  const monthTitle = monthLabel.charAt(0).toUpperCase() + monthLabel.slice(1);
-
-  const daysWithEntries = Object.keys(transactionsByDay).map(Number);
+  const daysWithEntries = Object.keys(groupByDay(transactions)).map(Number)
+  const monthTitle = getMonthTitle(year, month)
 
   return (
     <div className="mx-auto w-full max-w-6xl space-y-6 py-2 sm:py-0">
@@ -79,22 +48,24 @@ export default async function EntradasPage({
                 Mês em edição
               </p>
               <p className="text-lg font-semibold">
-                {monthTitle} de {y}
+                {monthTitle} de {year}
               </p>
             </div>
             <div className="w-full min-w-0">
               <MonthStepper />
             </div>
             <Suspense fallback={<CalendarFallback />}>
-              <EntradasCalendar
-                year={y}
-                month={m}
+              <MonthCalendar
+                year={year}
+                month={month}
                 daysInMonth={daysInMonth}
                 selectedDay={selectedDay}
                 daysWithEntries={daysWithEntries}
                 todayYear={now.getFullYear()}
                 todayMonth={now.getMonth()}
                 todayDay={now.getDate()}
+                accentColor="emerald"
+                entryLabel="com lançamento"
               />
             </Suspense>
           </CardContent>
@@ -102,73 +73,28 @@ export default async function EntradasPage({
 
         <Card className="min-w-0 border-border/80 shadow-sm">
           <CardContent className="px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
-            <EntradasTable
+            <TransactionEntryForm
+              type="income"
               categories={categories}
               selectedDay={selectedDay}
-              month={m}
-              year={y}
+              month={month}
+              year={year}
+              action={createIncome}
+              emptyCategoryMessage="Não há categorias de receita. Cadastre ao menos uma em Configurações para lançar entradas."
             />
           </CardContent>
         </Card>
       </div>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="flex flex-col gap-2 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <CardTitle className="text-base sm:text-lg">Total do período</CardTitle>
-          <p className="text-xl font-bold text-emerald-500 tabular-nums sm:text-2xl">
-            R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-          </p>
-        </CardHeader>
-        <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
-          {transactions.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8 text-sm sm:text-base">
-              Nenhuma entrada neste período
-            </p>
-          ) : (
-            <ul className="divide-y rounded-lg border">
-              {transactions.map((t) => (
-                <li
-                  key={t.id}
-                  className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:p-4 hover:bg-muted/50"
-                >
-                  <div className="flex min-w-0 flex-1 items-start gap-3">
-                    <div
-                      className="shrink-0 rounded-full p-2"
-                      style={{ backgroundColor: `${t.category.color}20` }}
-                    >
-                      <CategoryIcon
-                        icon={t.category.icon}
-                        className="text-foreground"
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-medium">{t.category.name}</p>
-                      <p className="text-sm text-muted-foreground break-words">
-                        {t.description ||
-                          new Date(t.date)
-                            .toISOString()
-                            .slice(0, 10)
-                            .split('-')
-                            .reverse()
-                            .join('/')}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex shrink-0 items-center justify-between gap-3 pl-11 sm:justify-end sm:pl-0">
-                    <span className="font-semibold tabular-nums text-emerald-500">
-                      R${' '}
-                      {t.amount.toLocaleString('pt-BR', {
-                        minimumFractionDigits: 2,
-                      })}
-                    </span>
-                    <DeleteTransactionButton id={t.id} />
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
+      <TransactionListCard
+        title="Total do período"
+        total={total}
+        items={transactions}
+        emptyMessage="Nenhuma entrada neste período"
+        colorClass="text-emerald-500"
+        onDelete={deleteTransaction}
+        deleteConfirmMessage="Excluir esta transação?"
+      />
     </div>
-  );
+  )
 }

@@ -71,7 +71,53 @@ export async function getAvailableCashForMonth(
   return roundMoney(income - investment - cashExpense)
 }
 
-/** Gera lançamento de fatura (despesa variável) no dia seguinte ao fechamento do ciclo. */
+type ChargeRecord = { amount: number; date: Date; creditCardId: string | null }
+type PaymentRecord = { amount: number; date: Date; paysCreditCardId: string | null }
+type CardWithBilling = { id: string; name: string; closingDay: number; dueDay: number; lastFour: string | null; color: string | null }
+
+function buildCyclesForCard(
+  card: CardWithBilling,
+  charges: ChargeRecord[],
+  payments: PaymentRecord[],
+  today: Date,
+) {
+  const cardCharges = charges.filter((c) => c.creditCardId === card.id)
+  const cardPayments = payments
+    .filter((p) => p.paysCreditCardId === card.id)
+    .map((p) => ({ date: p.date, amount: p.amount }))
+
+  const closingEnds = listClosingEndsOnOrBefore(today, card.closingDay, 48)
+  const cyclesData = closingEnds.map((closingEnd) => {
+    const cycle = billingCycleForClosingEnd(closingEnd, card.closingDay, card.dueDay)
+    const invoice = roundMoney(
+      cardCharges
+        .filter((t) => dateOnlyInRange(t.date, cycle.periodStart, cycle.periodEnd))
+        .reduce((s, t) => s + t.amount, 0),
+    )
+    return { ...cycle, closingEnd, invoice }
+  })
+
+  const allocMap = allocatePaymentsFifo(
+    cyclesData.map((x) => ({ periodEnd: x.periodEnd, invoice: x.invoice })),
+    cardPayments,
+  )
+
+  return { cyclesData, allocMap }
+}
+
+async function fetchChargesAndPayments(userId: string) {
+  return Promise.all([
+    prisma.transaction.findMany({
+      where: { userId, type: 'expense', creditCardId: { not: null } },
+      select: { amount: true, date: true, creditCardId: true },
+    }),
+    prisma.transaction.findMany({
+      where: { userId, type: 'expense', paysCreditCardId: { not: null } },
+      select: { amount: true, date: true, paysCreditCardId: true },
+    }),
+  ])
+}
+
 export async function ensureCreditCardClosedInvoices(userId: string) {
   await ensureUserCategories(userId)
   const today = new Date()
@@ -84,52 +130,17 @@ export async function ensureCreditCardClosedInvoices(userId: string) {
   })
   if (!variableCat) return
 
-  const [charges, payments] = await Promise.all([
-    prisma.transaction.findMany({
-      where: { userId, type: 'expense', creditCardId: { not: null } },
-      select: { amount: true, date: true, creditCardId: true },
-    }),
-    prisma.transaction.findMany({
-      where: { userId, type: 'expense', paysCreditCardId: { not: null } },
-      select: { amount: true, date: true, paysCreditCardId: true },
-    }),
-  ])
+  const [charges, payments] = await fetchChargesAndPayments(userId)
 
   for (const card of cards) {
-    const cardCharges = charges.filter((c) => c.creditCardId === card.id)
-    const cardPayments = payments
-      .filter((p) => p.paysCreditCardId === card.id)
-      .map((p) => ({ date: p.date, amount: p.amount }))
-
-    const closingEnds = listClosingEndsOnOrBefore(today, card.closingDay, 48)
-    const cyclesData = closingEnds.map((closingEnd) => {
-      const cycle = billingCycleForClosingEnd(
-        closingEnd,
-        card.closingDay,
-        card.dueDay,
-      )
-      const invoice = roundMoney(
-        cardCharges
-          .filter((t) =>
-            dateOnlyInRange(t.date, cycle.periodStart, cycle.periodEnd),
-          )
-          .reduce((s, t) => s + t.amount, 0),
-      )
-      return { ...cycle, closingEnd, invoice }
-    })
-
-    const allocMap = allocatePaymentsFifo(
-      cyclesData.map((x) => ({ periodEnd: x.periodEnd, invoice: x.invoice })),
-      cardPayments,
-    )
+    const { cyclesData, allocMap } = buildCyclesForCard(card, charges, payments, today)
 
     for (const c of cyclesData) {
       if (c.invoice <= 1e-6) continue
       if (!isClosingDatePassed(c.periodEnd, today)) continue
 
       const key = startOfDay(c.periodEnd).getTime()
-      const paidTowardCycle = allocMap.get(key) ?? 0
-      const toBook = roundMoney(c.invoice - paidTowardCycle)
+      const toBook = roundMoney(c.invoice - (allocMap.get(key) ?? 0))
       if (toBook <= 1e-6) continue
 
       const periodEndKey = normalizePeriodEndKey(c.periodEnd)
@@ -143,15 +154,13 @@ export async function ensureCreditCardClosedInvoices(userId: string) {
       })
       if (exists) continue
 
-      const bookDate = closedInvoiceBookingDate(c.periodEnd)
-
       await prisma.transaction.create({
         data: {
           userId,
           categoryId: variableCat.id,
           amount: toBook,
           description: `Fatura fechada — ${card.name} (fech. ${periodEndKey.toLocaleDateString('pt-BR')})`,
-          date: bookDate,
+          date: closedInvoiceBookingDate(c.periodEnd),
           type: 'expense',
           creditCarryoverCardId: card.id,
           creditCarryoverPeriodEnd: periodEndKey,
@@ -165,7 +174,6 @@ export async function ensureCreditCardClosedInvoices(userId: string) {
   revalidatePath('/dashboard')
 }
 
-/** Ciclos com vencimento ultrapassado e saldo em aberto (após pagamentos FIFO). */
 export async function getCreditCardOverdueNotices(
   userId: string,
 ): Promise<CreditCardOverdueNotice[]> {
@@ -173,51 +181,14 @@ export async function getCreditCardOverdueNotices(
   const cards = await prisma.creditCard.findMany({ where: { userId } })
   if (cards.length === 0) return []
 
-  const [charges, payments] = await Promise.all([
-    prisma.transaction.findMany({
-      where: { userId, type: 'expense', creditCardId: { not: null } },
-      select: { amount: true, date: true, creditCardId: true },
-    }),
-    prisma.transaction.findMany({
-      where: { userId, type: 'expense', paysCreditCardId: { not: null } },
-      select: { amount: true, date: true, paysCreditCardId: true },
-    }),
-  ])
-
+  const [charges, payments] = await fetchChargesAndPayments(userId)
   const notices: CreditCardOverdueNotice[] = []
 
   for (const card of cards) {
-    const cardCharges = charges.filter((c) => c.creditCardId === card.id)
-    const cardPayments = payments
-      .filter((p) => p.paysCreditCardId === card.id)
-      .map((p) => ({ date: p.date, amount: p.amount }))
-
-    const closingEnds = listClosingEndsOnOrBefore(today, card.closingDay, 48)
-    const cyclesData = closingEnds.map((closingEnd) => {
-      const cycle = billingCycleForClosingEnd(
-        closingEnd,
-        card.closingDay,
-        card.dueDay,
-      )
-      const invoice = roundMoney(
-        cardCharges
-          .filter((t) =>
-            dateOnlyInRange(t.date, cycle.periodStart, cycle.periodEnd),
-          )
-          .reduce((s, t) => s + t.amount, 0),
-      )
-      return { ...cycle, closingEnd, invoice }
-    })
-
-    const allocMap = allocatePaymentsFifo(
-      cyclesData.map((x) => ({ periodEnd: x.periodEnd, invoice: x.invoice })),
-      cardPayments,
-    )
+    const { cyclesData, allocMap } = buildCyclesForCard(card, charges, payments, today)
 
     for (const c of cyclesData) {
-      const key = startOfDay(c.periodEnd).getTime()
-      const paid = allocMap.get(key) ?? 0
-      const unpaid = roundMoney(c.invoice - paid)
+      const unpaid = roundMoney(c.invoice - (allocMap.get(startOfDay(c.periodEnd).getTime()) ?? 0))
       if (unpaid <= 1e-6) continue
       if (!isDueDatePassed(c.dueDate, today)) continue
 
@@ -228,9 +199,7 @@ export async function getCreditCardOverdueNotices(
         color: card.color,
         unpaid,
         dueDate: c.dueDate,
-        closingLabel: normalizePeriodEndKey(c.periodEnd).toLocaleDateString(
-          'pt-BR',
-        ),
+        closingLabel: normalizePeriodEndKey(c.periodEnd).toLocaleDateString('pt-BR'),
       })
     }
   }
@@ -457,9 +426,4 @@ export async function deleteCreditCard(id: string) {
 
   revalidatePath('/dashboard/cartao-credito')
   return { success: true }
-}
-
-/** @deprecated use ensureCreditCardClosedInvoices */
-export async function ensureCreditCardCarryovers(userId: string) {
-  return ensureCreditCardClosedInvoices(userId)
 }

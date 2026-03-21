@@ -2,8 +2,7 @@
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
-
-const WEEKDAYS = ['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb']
+import { WEEKDAYS } from '@/lib/constants'
 
 type Props = {
   year: number
@@ -14,9 +13,11 @@ type Props = {
   todayYear: number
   todayMonth: number
   todayDay: number
+  accentColor?: string
+  entryLabel?: string
 }
 
-export function EntradasCalendar({
+export function MonthCalendar({
   year,
   month,
   daysInMonth,
@@ -25,6 +26,8 @@ export function EntradasCalendar({
   todayYear,
   todayMonth,
   todayDay,
+  accentColor = 'emerald',
+  entryLabel = 'com lançamento',
 }: Props) {
   const router = useRouter()
   const pathname = usePathname()
@@ -47,6 +50,9 @@ export function EntradasCalendar({
 
   const isToday = (day: number) =>
     todayYear === year && todayMonth === month && todayDay === day
+
+  const ringClass = `ring-1 ring-${accentColor}-500/45 dark:ring-${accentColor}-400/40`
+  const dotClass = `bg-${accentColor}-500`
 
   return (
     <div className="w-full space-y-2">
@@ -89,7 +95,7 @@ export function EntradasCalendar({
               role="gridcell"
               aria-pressed={selected}
               aria-current={today ? 'date' : undefined}
-              aria-label={`Dia ${day}${hasEntry ? ', com lançamento' : ''}`}
+              aria-label={`Dia ${day}${hasEntry ? `, ${entryLabel}` : ''}`}
               onClick={() => selectDay(day)}
               className={cn(
                 'relative flex aspect-square min-h-[2.5rem] w-full flex-col items-center justify-center rounded-lg border text-sm font-medium transition-colors',
@@ -102,9 +108,7 @@ export function EntradasCalendar({
                 !selected &&
                   !today &&
                   'border-transparent bg-muted/50 text-foreground hover:bg-muted',
-                hasEntry &&
-                  !selected &&
-                  'ring-1 ring-emerald-500/45 dark:ring-emerald-400/40',
+                hasEntry && !selected && ringClass,
               )}
             >
               <span className="tabular-nums">{day}</span>
@@ -112,7 +116,7 @@ export function EntradasCalendar({
                 <span
                   className={cn(
                     'absolute bottom-1 h-1.5 w-1.5 rounded-full',
-                    selected ? 'bg-primary-foreground' : 'bg-emerald-500',
+                    selected ? 'bg-primary-foreground' : dotClass,
                   )}
                   aria-hidden
                 />

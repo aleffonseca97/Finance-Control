@@ -2,11 +2,7 @@
 
 import { useRouter, usePathname, useSearchParams } from 'next/navigation'
 import { Select } from '@/components/ui/select'
-
-const MONTHS = [
-  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-]
+import { MONTHS } from '@/lib/constants'
 
 export function MonthFilter() {
   const router = useRouter()

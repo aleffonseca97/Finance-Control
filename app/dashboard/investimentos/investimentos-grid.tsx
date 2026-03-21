@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { MonthStepper } from '@/components/forms/month-stepper'
 import { InvestmentForm } from '@/components/forms/investment-form'
 import { WithdrawalForm } from '@/components/forms/withdrawal-form'
-import { InvestimentosCalendar } from './investimentos-calendar'
+import { MonthCalendar } from '@/components/shared/month-calendar'
 import type { Category } from '@prisma/client'
 import type { ReserveWalletBalance } from '@/app/actions/investments'
 
@@ -60,7 +60,7 @@ export function InvestimentosGrid({
             <MonthStepper />
           </div>
           <Suspense fallback={calendarFallback}>
-            <InvestimentosCalendar
+            <MonthCalendar
               year={year}
               month={month}
               daysInMonth={daysInMonth}
@@ -69,6 +69,8 @@ export function InvestimentosGrid({
               todayYear={todayYear}
               todayMonth={todayMonth}
               todayDay={todayDay}
+              accentColor="blue"
+              entryLabel="com aporte"
             />
           </Suspense>
         </CardContent>

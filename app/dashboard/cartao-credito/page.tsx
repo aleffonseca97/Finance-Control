@@ -17,23 +17,23 @@ export default async function CartaoCreditoPage() {
   const { cards, availableCash, overdueNotices } = payload
 
   return (
-    <div className="space-y-8 p-6 pt-8 md:p-8 md:pt-10">
-      <div>
-        <h1 className="text-2xl font-bold">Cartão de Crédito</h1>
-        <p className="text-muted-foreground">
+    <div className="space-y-6 p-4 pt-6 sm:p-6 sm:pt-8 md:p-8 md:pt-10">
+      <div className="space-y-1">
+        <h1 className="text-xl font-bold sm:text-2xl">Cartão de Crédito</h1>
+        <p className="text-sm text-muted-foreground sm:text-base">
           Fatura no orçamento após o fechamento; pagamento com caixa restaura o limite
         </p>
       </div>
 
       <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Cartões e pagamentos</CardTitle>
-            <p className="text-sm text-muted-foreground">
+        <Card className="overflow-hidden">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base sm:text-lg">Cartões e pagamentos</CardTitle>
+            <p className="text-xs text-muted-foreground sm:text-sm">
               Fechamento gera a despesa variável; vencimento em atraso dispara o alerta
             </p>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
             <CreditCardList
               cards={cards}
               availableCash={availableCash}

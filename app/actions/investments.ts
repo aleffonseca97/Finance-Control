@@ -159,12 +159,12 @@ export async function getAllReserveWalletBalances(
   }
 
   const categories = await prisma.category.findMany({
-    where: { id: { in: [...categoryIds] } },
+    where: { id: { in: Array.from(categoryIds) } },
   })
   const categoriesById = new Map(categories.map((c) => [c.id, c]))
 
   const result: ReserveWalletBalance[] = []
-  for (const [key, balance] of balanceMap) {
+  for (const [key, balance] of Array.from(balanceMap.entries())) {
     if (balance <= 0) continue
     const [reserveId, walletId] = key.split(':')
     const reserve = categoriesById.get(reserveId)
@@ -272,7 +272,7 @@ export async function getInvestmentsSummary(): Promise<{
   }
 
   const items: InvestmentSummaryItem[] = []
-  for (const [key, total] of cellTotals) {
+  for (const [key, total] of Array.from(cellTotals.entries())) {
     if (total <= 0) continue
     const [reserveId, walletId] = key.split(':')
     const reserve = categoriesById.get(reserveId)
@@ -294,14 +294,14 @@ export async function getInvestmentsSummary(): Promise<{
       )
     }
   }
-  for (const [catId, total] of legacyCategoryTotals) {
+  for (const [catId, total] of Array.from(legacyCategoryTotals.entries())) {
     if (total <= 0) continue
     const cat = categoriesById.get(catId)
     if (cat) {
       items.push({ category: cat, total })
     }
   }
-  const byReserve = [...reserveTotals.entries()]
+  const byReserve = Array.from(reserveTotals.entries())
     .filter(([, t]) => t > 0)
     .map(([id, total]) => ({
       category: categoriesById.get(id)!,
@@ -310,7 +310,7 @@ export async function getInvestmentsSummary(): Promise<{
     .filter((x) => x.category)
     .sort((a, b) => b.total - a.total)
 
-  const byWallet = [...walletTotals.entries()]
+  const byWallet = Array.from(walletTotals.entries())
     .filter(([, t]) => t > 0)
     .map(([id, total]) => ({
       category: categoriesById.get(id)!,

@@ -80,3 +80,5 @@ npm start
 ## Tema
 
 O sistema usa tema **night** (dark mode) por padrão.
+
+by Alef, Henrique

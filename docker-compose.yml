@@ -5,11 +5,7 @@ services:
       dockerfile: dockerfile
     restart: unless-stopped
     ports:
-      - '3000:3000'
+      - '3030:3030'
     container_name: logos-finance-app
     env_file:
       - .env
-    environment:
-      DATABASE_URL: ${DATABASE_URL}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-      NEXTAUTH_URL: ${NEXTAUTH_URL}

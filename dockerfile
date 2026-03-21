@@ -1,7 +1,7 @@
 # Stage 1: Dependencies
 FROM node:20-bullseye-slim AS deps
 WORKDIR /app
-COPY package.json package-lock.json* ./
+COPY package.json package-lock.json* ./ 
 RUN npm ci
 
 # Stage 2: Builder
@@ -29,14 +29,16 @@ COPY --from=builder /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 
-# Copy Prisma for migrations
+# Copy Prisma for migrations (CLI + engines)
+COPY --from=builder /app/package.json ./package.json
 COPY --from=builder /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+COPY --from=builder /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder /app/prisma ./prisma
 
 USER nextjs
-EXPOSE 3030
-ENV PORT=3030
-ENV HOSTNAME="0.0.0.0"
+EXPOSE 4000
+ENV PORT=4000
+ENV DATABASE_URL="postgresql://6V8VkZh5oOxgJLeJ:SEeKApKwaO9q7XKqbxMXiXtcB1BJrE2F@72.62.108.253:32768/financemaimo?schema=public"
 
-CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
+CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node server.js"]

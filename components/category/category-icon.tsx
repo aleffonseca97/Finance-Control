@@ -29,6 +29,10 @@ import {
   Fuel,
   LucideIcon,
   Video,
+  Banknote,
+  Building2,
+  Droplet,
+  Flame,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -61,7 +65,11 @@ const iconMap: Record<string, LucideIcon> = {
   Gift,
   Bus,
   Fuel,
-  Video
+  Video,
+  Banknote,
+  Building2,
+  Droplet,
+  Flame,
 }
 
 export const CATEGORY_ICONS = [
@@ -94,6 +102,10 @@ export const CATEGORY_ICONS = [
   'Bus',
   'Fuel',
   'Video',
+  'Banknote',
+  'Building2',
+  'Droplet',
+  'Flame',
 ] as const
 
 interface CategoryIconProps {

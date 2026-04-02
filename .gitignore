@@ -22,8 +22,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env*.local
+# local env files (não versionar)
 .env
 
 # vercel
@@ -37,5 +36,6 @@ next-env.d.ts
 prisma/dev.db
 prisma/dev.db-journal
 
-/.agents/
+# Cursor e .agents (local)
 /.cursor/
+.agents/

@@ -54,19 +54,30 @@ export function AuthCard({
         <form onSubmit={onSubmit}>
           <CardContent className="space-y-4">
             {error && (
-              <div className="rounded-md bg-destructive/10 text-destructive text-sm p-3">
+              <div
+                role="alert"
+                className="rounded-md bg-destructive/10 text-destructive text-sm p-3 leading-relaxed"
+              >
                 {error}
               </div>
             )}
             {children}
           </CardContent>
           <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={loading}
+              aria-busy={loading}
+            >
               {loading ? loadingLabel : submitLabel}
             </Button>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               {footerText}{' '}
-              <Link href={footerLinkHref} className="text-primary hover:underline">
+              <Link
+                href={footerLinkHref}
+                className="text-primary underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-sm"
+              >
                 {footerLinkText}
               </Link>
             </p>

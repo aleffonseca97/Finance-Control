@@ -56,6 +56,8 @@ const navItems = [
   },
 ];
 
+const MOBILE_NAV_ID = 'dashboard-mobile-nav';
+
 export function Sidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
@@ -85,22 +87,32 @@ export function Sidebar() {
           <Wallet className="h-6 w-6 text-primary" />
           <span className="font-semibold">Financeiro</span>
         </Link>
-        <Button variant="ghost" size="icon" onClick={() => setOpen(!open)}>
-          {open ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setOpen(!open)}
+          aria-expanded={open}
+          aria-controls={MOBILE_NAV_ID}
+          aria-label={open ? 'Fechar menu de navegação' : 'Abrir menu de navegação'}
+        >
+          {open ? <X className="h-6 w-6" aria-hidden /> : <Menu className="h-6 w-6" aria-hidden />}
         </Button>
       </header>
 
       {open && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+        <button
+          type="button"
+          className="fixed inset-0 z-40 cursor-default bg-black/50 lg:hidden motion-reduce:transition-none"
           onClick={() => setOpen(false)}
-          aria-hidden="true"
+          aria-label="Fechar menu de navegação"
         />
       )}
 
       <aside
+        id={MOBILE_NAV_ID}
+        aria-label="Navegação principal"
         className={cn(
-          'fixed top-0 left-0 z-50 h-full w-64 bg-card border-r flex flex-col transition-transform duration-200 lg:translate-x-0',
+          'fixed top-0 left-0 z-50 h-full w-64 max-w-[85vw] bg-card border-r flex flex-col transition-transform duration-200 ease-out motion-reduce:transition-none lg:translate-x-0',
           open ? 'translate-x-0' : '-translate-x-full',
         )}
       >
@@ -118,11 +130,12 @@ export function Sidebar() {
             size="icon"
             className="lg:hidden"
             onClick={() => setOpen(false)}
+            aria-label="Fechar menu de navegação"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" aria-hidden />
           </Button>
         </div>
-        <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 p-4 space-y-1 overflow-y-auto" aria-label="Seções">
           {navItems.map((item) => {
             const Icon = item.icon;
             const hasChildren = 'children' in item && item.children;
@@ -143,19 +156,20 @@ export function Sidebar() {
                   <button
                     type="button"
                     onClick={toggleOpen}
+                    aria-expanded={expanded}
                     className={cn(
-                      'flex w-full items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors',
+                      'flex w-full min-h-11 items-center gap-3 px-3 py-2 rounded-md text-sm font-medium touch-manipulation transition-colors duration-200 motion-reduce:transition-none cursor-pointer',
                       isParentActive
                         ? 'bg-primary/10 text-primary'
                         : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                     )}
                   >
-                    <Icon className="h-5 w-5 shrink-0" />
+                    <Icon className="h-5 w-5 shrink-0" aria-hidden />
                     {item.label}
                     {expanded ? (
-                      <ChevronDown className="h-4 w-4 ml-auto" />
+                      <ChevronDown className="h-4 w-4 ml-auto shrink-0" aria-hidden />
                     ) : (
-                      <ChevronRight className="h-4 w-4 ml-auto" />
+                      <ChevronRight className="h-4 w-4 ml-auto shrink-0" aria-hidden />
                     )}
                   </button>
                   {expanded && (
@@ -169,13 +183,13 @@ export function Sidebar() {
                             href={child.href}
                             onClick={() => setOpen(false)}
                             className={cn(
-                              'flex items-center gap-2 px-2 py-2 rounded-md text-sm font-medium transition-colors',
+                              'flex min-h-11 items-center gap-2 px-2 py-2 rounded-md text-sm font-medium touch-manipulation transition-colors duration-200 motion-reduce:transition-none',
                               isChildActive
                                 ? 'bg-primary text-primary-foreground'
                                 : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                             )}
                           >
-                            <ChildIcon className="h-4 w-4 shrink-0" />
+                            <ChildIcon className="h-4 w-4 shrink-0" aria-hidden />
                             {child.label}
                           </Link>
                         );
@@ -192,13 +206,13 @@ export function Sidebar() {
                 href={item.href}
                 onClick={() => setOpen(false)}
                 className={cn(
-                  'flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors',
+                  'flex min-h-11 items-center gap-3 px-3 py-2 rounded-md text-sm font-medium touch-manipulation transition-colors duration-200 motion-reduce:transition-none',
                   isActive
                     ? 'bg-primary text-primary-foreground'
                     : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
                 )}
               >
-                <Icon className="h-5 w-5 shrink-0" />
+                <Icon className="h-5 w-5 shrink-0" aria-hidden />
                 {item.label}
               </Link>
             );

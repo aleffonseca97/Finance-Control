@@ -12,6 +12,7 @@ import {
   MessageCircle,
 } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DashboardPageHeader } from '@/components/dashboard/dashboard-page-header'
 import { ContinuarButton } from './continuar-button'
 
 export default async function BoasVindasPage() {
@@ -61,10 +62,10 @@ export default async function BoasVindasPage() {
             <strong>Cadastro:</strong> Nome, limite total, dia de fechamento e vencimento. Opcional: últimos 4 dígitos.
           </li>
           <li>
-            <strong>Compras:</strong> Reduzem o limite na hora, mas não entram no orçamento até o fechamento.
+            <strong>Compras:</strong> Reduzem o limite na hora e não entram no orçamento de caixa.
           </li>
           <li>
-            <strong>Fatura:</strong> No dia seguinte ao fechamento, o valor em aberto vira despesa variável.
+            <strong>Fatura:</strong> Ao pagar na aba do cartão, a saída entra no orçamento de caixa e o limite é restaurado.
           </li>
           <li>
             <strong>Pagamento:</strong> Usa o saldo em caixa e restaura o limite do cartão.
@@ -80,25 +81,21 @@ export default async function BoasVindasPage() {
   ]
 
   return (
-    <div className="space-y-8 p-6 pt-8 md:p-8 md:pt-10 max-w-4xl">
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-8 w-8 text-primary" />
-          <h1 className="text-2xl font-bold">Bem-vindo, {userName}!</h1>
-        </div>
-        <p className="text-muted-foreground">
-          Veja algumas orientações para começar a usar o Controle Financeiro.
-        </p>
-      </div>
+    <div className="mx-auto max-w-4xl space-y-8">
+      <DashboardPageHeader
+        leading={<Sparkles className="h-8 w-8 shrink-0 text-primary" aria-hidden />}
+        title={`Bem-vindo, ${userName}!`}
+        description="Veja algumas orientações para começar a usar o Controle Financeiro."
+      />
 
       <div className="space-y-4">
         {sections.map((section) => {
           const Icon = section.icon
           return (
-            <Card key={section.title}>
+            <Card key={section.title} className="dashboard-bento-card-muted transition-shadow hover:shadow-md">
               <CardHeader className="pb-2">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Icon className="h-5 w-5 text-primary" />
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Icon className="h-5 w-5 text-primary" aria-hidden />
                   {section.title}
                 </CardTitle>
               </CardHeader>
@@ -121,7 +118,7 @@ export default async function BoasVindasPage() {
         })}
       </div>
 
-      <Card className="border-muted bg-muted/30">
+      <Card className="dashboard-bento-card-muted border-dashed">
         <CardContent className="flex items-center gap-3 py-4">
           <MessageCircle className="h-5 w-5 shrink-0 text-muted-foreground" />
           <div className="space-y-0.5">

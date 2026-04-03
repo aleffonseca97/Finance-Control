@@ -19,11 +19,11 @@ export default async function DashboardLayout({
   const hasSeenWelcome = user?.hasSeenWelcome ?? false
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-dvh bg-background">
       <OnboardingRedirect hasSeenWelcome={hasSeenWelcome}>
         <Sidebar />
-        <main className="lg:pl-64 pt-16 lg:pt-0 min-h-screen p-6">
-          {children}
+        <main className="dashboard-surface min-h-dvh px-4 pb-[max(2.5rem,env(safe-area-inset-bottom,0px))] pt-[calc(4.75rem+env(safe-area-inset-top,0px))] sm:px-6 lg:pb-10 lg:pl-[var(--dashboard-sidebar-width,16rem)] lg:pr-6 lg:pt-10 transition-[padding] duration-200 ease-out motion-reduce:transition-none">
+          <div className="mx-auto w-full min-w-0 max-w-7xl space-y-8">{children}</div>
         </main>
       </OnboardingRedirect>
     </div>

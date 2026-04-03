@@ -48,12 +48,10 @@ export function InvestimentosGrid({
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,320px)_1fr] xl:gap-8">
-      <Card className="h-fit border-primary/40 bg-primary/5 lg:sticky lg:top-24">
+      <Card className="dashboard-bento-card-hero h-fit lg:sticky lg:top-24">
         <CardContent className="flex flex-col gap-4 px-4 py-4 sm:px-6 sm:py-5">
           <div>
-            <p className="text-xs font-medium uppercase tracking-wide text-primary/70">
-              Mês em edição
-            </p>
+            <p className="dashboard-section-label text-primary/80">Mês em edição</p>
             <p className="text-lg font-semibold">{monthLabel}</p>
           </div>
           <div className="w-full min-w-0">
@@ -77,7 +75,7 @@ export function InvestimentosGrid({
       </Card>
 
       <div className="min-w-0 space-y-6">
-        <Card className="border-border/80 shadow-sm">
+        <Card className="dashboard-bento-card shadow-md">
           <CardHeader className="px-4 pt-4 sm:px-6 sm:pt-5">
             <CardTitle className="text-base sm:text-lg">Adicionar aporte</CardTitle>
           </CardHeader>
@@ -90,7 +88,7 @@ export function InvestimentosGrid({
             />
           </CardContent>
         </Card>
-        <Card className="border-border/80 shadow-sm">
+        <Card className="dashboard-bento-card-muted shadow-md">
           <CardHeader className="px-4 pt-4 sm:px-6 sm:pt-5">
             <CardTitle className="text-base sm:text-lg">Realizar saque</CardTitle>
             <p className="text-sm font-normal text-muted-foreground">

@@ -9,6 +9,7 @@ import { CalendarFallback } from '@/components/shared/calendar-fallback'
 import { TransactionEntryForm } from '@/components/shared/transaction-entry-form'
 import { TransactionListCard } from '@/components/shared/transaction-list-card'
 import { parseMonthYearParams, getMonthTitle, groupByDay } from '@/lib/date-utils'
+import { DashboardPageHeader } from '@/components/dashboard/dashboard-page-header'
 
 export default async function SaidasPage({
   searchParams,
@@ -33,21 +34,14 @@ export default async function SaidasPage({
   const monthTitle = getMonthTitle(year, month)
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 py-2 sm:py-0">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">Saídas</h1>
-        <p className="text-sm text-muted-foreground sm:text-base">
-          Controle suas despesas
-        </p>
-      </header>
+    <div className="mx-auto w-full max-w-6xl space-y-8">
+      <DashboardPageHeader title="Saídas" description="Controle suas despesas" />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,320px)_1fr] xl:gap-8">
-        <Card className="border-primary/40 bg-primary/5 h-fit lg:sticky lg:top-24">
+        <Card className="dashboard-bento-card-hero h-fit lg:sticky lg:top-24">
           <CardContent className="flex flex-col gap-4 py-4 sm:py-5">
             <div>
-              <p className="text-xs font-medium uppercase text-primary/70 tracking-wide">
-                Mês em edição
-              </p>
+              <p className="dashboard-section-label text-primary/80">Mês em edição</p>
               <p className="text-lg font-semibold">
                 {monthTitle} de {year}
               </p>
@@ -72,7 +66,7 @@ export default async function SaidasPage({
           </CardContent>
         </Card>
 
-        <Card className="min-w-0 border-border/80 shadow-sm">
+        <Card className="dashboard-bento-card min-w-0 shadow-md">
           <CardContent className="px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
             <TransactionEntryForm
               type="expense"

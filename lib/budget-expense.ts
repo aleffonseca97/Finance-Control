@@ -1,8 +1,8 @@
 import type { Prisma } from '@prisma/client'
 
 /**
- * Compras no cartão não entram no orçamento até a fatura fechar.
- * Pagamentos de fatura reduzem o saldo mensal (saída de caixa).
+ * Despesas de caixa: compras no cartão (creditCardId preenchido) ficam fora.
+ * Pagamentos de fatura (paysCreditCardId) contam como saída de caixa.
  */
 export const budgetExpenseWhere: Pick<
   Prisma.TransactionWhereInput,

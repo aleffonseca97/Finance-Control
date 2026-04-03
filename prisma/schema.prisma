@@ -8,12 +8,15 @@ datasource db {
 }
 
 model User {
-  id              String       @id @default(cuid())
-  email           String       @unique
-  passwordHash    String
-  name            String?
-  createdAt       DateTime     @default(now())
-  hasSeenWelcome  Boolean      @default(false)
+  id                      String    @id @default(cuid())
+  email                   String    @unique
+  passwordHash            String
+  name                    String?
+  createdAt               DateTime  @default(now())
+  hasSeenWelcome          Boolean   @default(false)
+  marketingOptIn          Boolean   @default(false)
+  passwordResetTokenHash  String?
+  passwordResetExpires    DateTime?
   categories      Category[]
   transactions    Transaction[]
   investments     Investment[]

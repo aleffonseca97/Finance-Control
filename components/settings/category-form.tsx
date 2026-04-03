@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { CategoryIcon } from '@/components/category/category-icon'
-import { CATEGORY_ICONS } from '@/components/category/category-icon'
+import { CATEGORY_ICON_OPTIONS } from '@/components/category/category-icon'
 import type { Category } from '@prisma/client'
 
 interface CategoryFormProps {
@@ -87,9 +87,9 @@ export function CategoryForm({
             defaultValue={initialCategory?.icon ?? 'CircleDollarSign'}
             required
           >
-            {CATEGORY_ICONS.map((icon) => (
-              <option key={icon} value={icon}>
-                {icon}
+            {CATEGORY_ICON_OPTIONS.map(({ key, label }) => (
+              <option key={key} value={key}>
+                {label}
               </option>
             ))}
           </Select>

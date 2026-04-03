@@ -17,7 +17,7 @@ export function RecentTransactions({ transactions }: { transactions: Transaction
         <Link
           key={t.id}
           href={t.type === 'income' ? '/dashboard/entradas' : '/dashboard/saidas'}
-          className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 transition-colors"
+          className="flex items-center justify-between gap-2 rounded-lg border border-transparent p-2.5 transition-colors hover:border-border/80 hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
         >
           <div className="flex items-center gap-2">
             <div

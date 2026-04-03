@@ -68,8 +68,8 @@ export function CreditCardPayForm({
       ) : null}
       <p className="text-xs text-muted-foreground">
         O pagamento usa apenas o <strong>saldo em caixa do mês</strong> (entradas menos
-        despesas do orçamento e investimentos — já inclui a fatura após o fechamento) e
-        <strong> só devolve limite</strong>, sem nova despesa no orçamento.
+        despesas do orçamento e investimentos), <strong>registra uma saída</strong> nesse
+        mês e <strong>restaura o limite</strong> do cartão.
       </p>
       <div className="flex flex-col gap-1 text-xs text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-2">
         <span>

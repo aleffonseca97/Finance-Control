@@ -1,8 +1,20 @@
 'use client'
 
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts'
+import {
+  ChartEmpty,
+  chartLegendStyle,
+  chartSurfaceClass,
+  chartTooltipContentStyle,
+  chartTooltipItemStyle,
+  chartTooltipLabelStyle,
+  formatChartCurrency,
+} from '@/components/charts/chart-shared'
 
-const COLORS = ['#8b5cf6', '#f97316']
+const SLICE_COLOR: Record<string, string> = {
+  'Despesas fixas': 'hsl(var(--chart-fixed))',
+  'Despesas variáveis': 'hsl(var(--chart-variable))',
+}
 
 export function FixedVariableChart({ fixed, variable }: { fixed: number; variable: number }) {
   const data = [
@@ -11,41 +23,46 @@ export function FixedVariableChart({ fixed, variable }: { fixed: number; variabl
   ].filter((d) => d.value > 0)
 
   if (data.length === 0) {
-    return (
-      <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-        Adicione despesas para ver o gráfico
-      </div>
-    )
+    return <ChartEmpty>Adicione despesas para ver o gráfico</ChartEmpty>
   }
 
   return (
-    <div className="h-[250px] w-full">
+    <div
+      className={chartSurfaceClass}
+      role="img"
+      aria-label="Gráfico de rosca: despesas fixas e variáveis"
+    >
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
             data={data}
             cx="50%"
             cy="50%"
-            innerRadius={60}
-            outerRadius={90}
-            paddingAngle={2}
+            innerRadius="58%"
+            outerRadius="82%"
+            paddingAngle={3}
             dataKey="value"
+            stroke="hsl(var(--background))"
+            strokeWidth={2}
           >
-            {data.map((_, index) => (
-              <Cell key={index} fill={COLORS[index % COLORS.length]} />
+            {data.map((d) => (
+              <Cell key={d.name} fill={SLICE_COLOR[d.name] ?? 'hsl(var(--chart-1))'} />
             ))}
           </Pie>
           <Tooltip
-            contentStyle={{
-              backgroundColor: 'hsl(var(--card))',
-              border: '1px solid hsl(var(--border))',
-              borderRadius: '8px',
-            }}
-            formatter={(value: number) =>
-              `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-            }
+            contentStyle={chartTooltipContentStyle}
+            labelStyle={chartTooltipLabelStyle}
+            itemStyle={chartTooltipItemStyle}
+            formatter={(value: number) => formatChartCurrency(value)}
           />
-          <Legend />
+          <Legend
+            layout="horizontal"
+            verticalAlign="bottom"
+            align="center"
+            iconType="circle"
+            iconSize={8}
+            wrapperStyle={{ ...chartLegendStyle, fontSize: 12, color: 'hsl(var(--muted-foreground))' }}
+          />
         </PieChart>
       </ResponsiveContainer>
     </div>

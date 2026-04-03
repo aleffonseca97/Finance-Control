@@ -35,7 +35,7 @@ export function TransactionListCard({
   deleteConfirmMessage,
 }: Props) {
   return (
-    <Card className="overflow-hidden">
+    <Card className="dashboard-bento-card-muted overflow-hidden shadow-md">
       <CardHeader className="flex flex-col gap-2 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <CardTitle className="text-base sm:text-lg">{title}</CardTitle>
         <p className={`text-xl font-bold tabular-nums sm:text-2xl ${colorClass}`}>

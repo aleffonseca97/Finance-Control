@@ -91,12 +91,11 @@ export function CreditCardList({
       ) : null}
 
       <p className="text-xs sm:text-sm text-muted-foreground rounded-md border bg-muted/20 px-3 py-2">
-        Compras no cartão <strong>não entram no orçamento</strong> até o fechamento:
-        no dia seguinte ao fechamento é lançada a fatura como{' '}
-        <strong>despesa variável</strong>
-        (valor em aberto no ciclo). O botão <strong>Pagar</strong> usa só o saldo em
-        caixa e <strong>restaura o limite</strong>. Após o vencimento, com saldo em
-        aberto, você verá o alerta de atraso.
+        Compras no cartão <strong>não entram no orçamento de caixa</strong> (só reduzem
+        o limite). Use <strong>Pagar</strong> para registrar a saída no caixa e{' '}
+        <strong>restaurar o limite</strong>. Dias de fechamento e vencimento ficam no
+        cadastro como referência; com saldo em aberto após o vencimento, pode aparecer
+        alerta de atraso.
       </p>
 
       {(showForm || editingId) && (

@@ -3,6 +3,8 @@ import { FixedVariableChart } from '@/components/charts/fixed-variable-chart'
 import { ExpensesByCategoryChart } from '@/components/charts/expenses-by-category-chart'
 import { MonthFilter } from '@/components/forms/month-filter'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DashboardPageHeader } from '@/components/dashboard/dashboard-page-header'
+import { chartCardClassName } from '@/components/charts/chart-shared'
 
 export default async function AnalisePage({
   searchParams,
@@ -31,31 +33,29 @@ export default async function AnalisePage({
     : 0
 
   return (
-    <div className="space-y-6 p-6 pt-8 md:p-8 md:pt-10">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold">Análise Financeira</h1>
-          <p className="text-muted-foreground">Despesas fixas vs variáveis, comparativos e indicadores</p>
-        </div>
-        <MonthFilter />
-      </div>
+    <div className="space-y-8">
+      <DashboardPageHeader
+        title="Análise Financeira"
+        description="Despesas fixas vs variáveis, comparativos e indicadores"
+        actions={<MonthFilter />}
+      />
 
       <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
+        <Card className={`${chartCardClassName} shadow-md`}>
           <CardHeader>
             <CardTitle>Despesas fixas vs variáveis</CardTitle>
           </CardHeader>
           <CardContent>
             <FixedVariableChart fixed={fixedVsVariable.fixed} variable={fixedVsVariable.variable} />
             <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
-              <div className="rounded-lg border p-3">
+              <div className="dashboard-bento-card-muted p-3">
                 <p className="text-muted-foreground">Fixas</p>
                 <p className="text-lg font-semibold text-violet-500">
                   R$ {fixedVsVariable.fixed.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                 </p>
                 <p className="text-xs text-muted-foreground">{fixedPercent.toFixed(1)}% do total</p>
               </div>
-              <div className="rounded-lg border p-3">
+              <div className="dashboard-bento-card-muted p-3">
                 <p className="text-muted-foreground">Variáveis</p>
                 <p className="text-lg font-semibold text-orange-500">
                   R$ {fixedVsVariable.variable.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
@@ -66,13 +66,13 @@ export default async function AnalisePage({
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="dashboard-bento-card-muted shadow-md">
           <CardHeader>
             <CardTitle>Comparativo com mês anterior</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="rounded-lg border p-4">
+              <div className="dashboard-bento-card p-4 shadow-sm">
                 <p className="text-sm text-muted-foreground mb-1">Entradas (mês atual)</p>
                 <div className="flex items-baseline justify-between">
                   <p className="text-xl font-bold text-emerald-500">
@@ -85,7 +85,7 @@ export default async function AnalisePage({
                   )}
                 </div>
               </div>
-              <div className="rounded-lg border p-4">
+              <div className="dashboard-bento-card p-4 shadow-sm">
                 <p className="text-sm text-muted-foreground mb-1">Saídas (mês atual)</p>
                 <div className="flex items-baseline justify-between">
                   <p className="text-xl font-bold text-red-500">
@@ -103,7 +103,7 @@ export default async function AnalisePage({
         </Card>
       </div>
 
-      <Card>
+      <Card className={`${chartCardClassName} shadow-md`}>
         <CardHeader>
           <CardTitle>Top 5 despesas por categoria</CardTitle>
         </CardHeader>

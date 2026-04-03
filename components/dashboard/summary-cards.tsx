@@ -17,16 +17,24 @@ type Props = {
 export function SummaryCards({ items }: Props) {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-      {items.map((item) => {
+      {items.map((item, index) => {
         const Icon = item.icon
+        const isHero = index === 0
         return (
-          <Card key={item.title}>
+          <Card
+            key={item.title}
+            className={
+              isHero
+                ? 'dashboard-bento-card-hero border-primary/30 shadow-md'
+                : 'dashboard-bento-card-muted'
+            }
+          >
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium">{item.title}</CardTitle>
-              <Icon className={`h-5 w-5 ${item.color}`} />
+              <Icon className={`h-5 w-5 shrink-0 ${item.color}`} aria-hidden />
             </CardHeader>
             <CardContent>
-              <p className={`text-2xl font-bold ${item.color}`}>
+              <p className={`text-2xl font-bold tabular-nums ${item.color}`}>
                 R$ {formatBRL(item.value)}
               </p>
               {item.footnote && (

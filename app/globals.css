@@ -24,6 +24,20 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 221.2 83.2% 53.3%;
     --radius: 0.5rem;
+    /* Gráficos — tons distintos para não depender só da cor (uso com legenda/tooltip) */
+    --chart-income: 142.1 76.2% 36.3%;
+    --chart-expense: 0 72.2% 50.6%;
+    --chart-investment: 221.2 83.2% 53.3%;
+    --chart-card: 32.1 94.6% 43.7%;
+    --chart-fixed: 263.4 70% 50.4%;
+    --chart-variable: 24.6 95% 53.1%;
+    --chart-1: 221.2 83.2% 53.3%;
+    --chart-2: 142.1 70.6% 45.3%;
+    --chart-3: 346.8 77.2% 49.8%;
+    --chart-4: 35.5 91.7% 32.9%;
+    --chart-5: 262.1 83.3% 57.8%;
+    --dashboard-bento-radius: 0.875rem;
+    --dashboard-surface-mix: 0.5;
   }
 
   .dark {
@@ -46,15 +60,61 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 224.3 76.3% 48%;
+    --chart-income: 142.1 70.6% 52%;
+    --chart-expense: 0 72.2% 58%;
+    --chart-investment: 217.2 91.2% 68%;
+    --chart-card: 32.1 94.6% 55%;
+    --chart-fixed: 263.4 70% 62%;
+    --chart-variable: 24.6 95% 58%;
+    --chart-1: 217.2 91.2% 68%;
+    --chart-2: 142.1 70.6% 55%;
+    --chart-3: 346.8 77.2% 58%;
+    --chart-4: 35.5 91.7% 52%;
+    --chart-5: 262.1 83.3% 65%;
+    --dashboard-bento-radius: 0.875rem;
+    --dashboard-surface-mix: 0.35;
+  }
+}
+
+@layer components {
+  .dashboard-surface {
+    background-color: hsl(var(--background));
+    background-image: radial-gradient(
+      ellipse 120% 80% at 50% -20%,
+      hsl(var(--primary) / var(--dashboard-surface-mix)),
+      transparent 55%
+    );
+  }
+
+  .dashboard-bento-card {
+    @apply rounded-[var(--dashboard-bento-radius)] border bg-card text-card-foreground shadow-sm;
+  }
+
+  .dashboard-bento-card-muted {
+    @apply rounded-[var(--dashboard-bento-radius)] border border-border/80 bg-muted/30 text-card-foreground shadow-sm;
+  }
+
+  .dashboard-bento-card-hero {
+    @apply rounded-[var(--dashboard-bento-radius)] border border-primary/25 bg-gradient-to-br from-primary/10 via-card to-card text-card-foreground shadow-md;
+  }
+
+  .dashboard-section-label {
+    @apply text-xs font-semibold uppercase tracking-wider text-muted-foreground;
   }
 }
 
 @layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    overflow-x: clip;
+  }
   * {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply min-w-0 bg-background text-base text-foreground;
+    touch-action: manipulation;
   }
 }
 

@@ -1,6 +1,24 @@
 'use client'
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts'
+import {
+  ChartEmpty,
+  chartAxisTick,
+  chartSurfaceClass,
+  chartTooltipContentStyle,
+  chartTooltipItemStyle,
+  chartTooltipLabelStyle,
+  formatChartCurrency,
+} from '@/components/charts/chart-shared'
 
 interface DataPoint {
   name: string
@@ -10,31 +28,50 @@ interface DataPoint {
 
 export function ExpensesByCategoryChart({ data }: { data: DataPoint[] }) {
   if (data.length === 0) {
-    return (
-      <div className="h-[250px] flex items-center justify-center text-muted-foreground">
-        Nenhuma despesa neste período
-      </div>
-    )
+    return <ChartEmpty>Nenhuma despesa neste período</ChartEmpty>
   }
 
   return (
-    <div className="h-[250px] w-full">
+    <div
+      className={chartSurfaceClass}
+      role="img"
+      aria-label="Gráfico de barras: despesas por categoria"
+    >
       <ResponsiveContainer width="100%" height="100%">
-        <BarChart data={data} layout="vertical" margin={{ left: 20, right: 20 }}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-          <XAxis type="number" tick={{ fill: 'hsl(var(--muted-foreground))' }} tickFormatter={(v) => `R$${v / 1000}k`} />
-          <YAxis type="category" dataKey="name" width={100} tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 12 }} />
-          <Tooltip
-            contentStyle={{
-              backgroundColor: 'hsl(var(--card))',
-              border: '1px solid hsl(var(--border))',
-              borderRadius: '8px',
-            }}
-            formatter={(value: number) =>
-              `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
-            }
+        <BarChart
+          data={data}
+          layout="vertical"
+          margin={{ left: 4, right: 12, top: 8, bottom: 8 }}
+          barCategoryGap="18%"
+        >
+          <CartesianGrid strokeDasharray="3 3" vertical={false} className="stroke-muted" strokeOpacity={0.45} />
+          <XAxis
+            type="number"
+            tick={chartAxisTick}
+            tickLine={false}
+            axisLine={{ stroke: 'hsl(var(--border))' }}
+            tickFormatter={(v) => (v >= 1000 ? `R$${v / 1000}k` : `R$${v}`)}
           />
-          <Bar dataKey="value" fill="#6366f1" radius={[0, 4, 4, 0]} />
+          <YAxis
+            type="category"
+            dataKey="name"
+            width={108}
+            tick={chartAxisTick}
+            tickLine={false}
+            axisLine={false}
+          />
+          <Tooltip
+            contentStyle={chartTooltipContentStyle}
+            labelStyle={chartTooltipLabelStyle}
+            itemStyle={chartTooltipItemStyle}
+            formatter={(value: number) => formatChartCurrency(value)}
+            cursor={{ fill: 'hsl(var(--muted) / 0.35)' }}
+          />
+          <Bar dataKey="value" radius={[0, 6, 6, 0]} maxBarSize={28}>
+            {data.map((entry) => (
+              <Cell key={entry.name} fill={entry.color} />
+            ))}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </div>

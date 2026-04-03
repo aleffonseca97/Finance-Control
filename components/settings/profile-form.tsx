@@ -10,6 +10,7 @@ import { updateProfile, updatePassword } from '@/app/actions/profile'
 interface ProfileFormProps {
   name: string | null
   email: string
+  marketingOptIn: boolean
 }
 
 function ProfileSubmitButton() {
@@ -30,7 +31,11 @@ function PasswordSubmitButton() {
   )
 }
 
-export function ProfileForm({ name, email }: ProfileFormProps) {
+export function ProfileForm({
+  name,
+  email,
+  marketingOptIn,
+}: ProfileFormProps) {
   const [profileError, setProfileError] = useState('')
   const [profileSuccess, setProfileSuccess] = useState(false)
   const [passwordError, setPasswordError] = useState('')
@@ -103,6 +108,21 @@ export function ProfileForm({ name, email }: ProfileFormProps) {
               required
             />
           </div>
+        </div>
+        <div className="flex items-start gap-2">
+          <input
+            id="marketingOptIn"
+            name="marketingOptIn"
+            type="checkbox"
+            defaultChecked={marketingOptIn}
+            className="mt-1 size-4 rounded border-input"
+          />
+          <Label
+            htmlFor="marketingOptIn"
+            className="text-sm font-normal text-muted-foreground leading-snug cursor-pointer"
+          >
+            Receber e-mails sobre novidades e melhorias do produto
+          </Label>
         </div>
         <ProfileSubmitButton />
       </form>

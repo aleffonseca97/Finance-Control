@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getReserveCategories, getWalletCategories } from '@/app/actions/categories'
 import { CategoryList } from '@/components/settings/category-list'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DashboardPageHeader } from '@/components/dashboard/dashboard-page-header'
 
 export default async function InvestimentosConfigPage() {
   const session = await auth()
@@ -14,16 +15,14 @@ export default async function InvestimentosConfigPage() {
   ])
 
   return (
-    <div className="space-y-8 p-6 pt-8 md:p-8 md:pt-10">
-      <div>
-        <h1 className="text-2xl font-bold">Categorias de Investimentos</h1>
-        <p className="text-muted-foreground">
-          Gerencie reservas (objetivos) e carteiras (aplicações) para seus investimentos
-        </p>
-      </div>
+    <div className="space-y-8">
+      <DashboardPageHeader
+        title="Categorias de Investimentos"
+        description="Gerencie reservas (objetivos) e carteiras (aplicações) para seus investimentos"
+      />
 
       <div className="space-y-6">
-        <Card>
+        <Card className="dashboard-bento-card-muted shadow-md">
           <CardHeader>
             <CardTitle className="text-lg">Reservas</CardTitle>
             <p className="text-sm text-muted-foreground">
@@ -41,7 +40,7 @@ export default async function InvestimentosConfigPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="dashboard-bento-card shadow-md">
           <CardHeader>
             <CardTitle className="text-lg">Carteiras</CardTitle>
             <p className="text-sm text-muted-foreground">

@@ -119,7 +119,7 @@ export function FinancialAnalysisTable({
   const config = VIEW_CONFIG[view]
 
   return (
-    <Card>
+    <Card className="dashboard-bento-card shadow-md">
       <CardHeader>
         <CardTitle>Tabela Anual</CardTitle>
       </CardHeader>

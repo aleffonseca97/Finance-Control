@@ -13,9 +13,7 @@ import {
 import {
   allocatePaymentsFifo,
   billingCycleForClosingEnd,
-  closedInvoiceBookingDate,
   dateOnlyInRange,
-  isClosingDatePassed,
   isDueDatePassed,
   listClosingEndsOnOrBefore,
   normalizePeriodEndKey,
@@ -118,62 +116,6 @@ async function fetchChargesAndPayments(userId: string) {
   ])
 }
 
-export async function ensureCreditCardClosedInvoices(userId: string) {
-  await ensureUserCategories(userId)
-  const today = new Date()
-  const cards = await prisma.creditCard.findMany({ where: { userId } })
-  if (cards.length === 0) return
-
-  const variableCat = await prisma.category.findFirst({
-    where: { userId, type: 'expense', isFixed: false },
-    orderBy: { name: 'asc' },
-  })
-  if (!variableCat) return
-
-  const [charges, payments] = await fetchChargesAndPayments(userId)
-
-  for (const card of cards) {
-    const { cyclesData, allocMap } = buildCyclesForCard(card, charges, payments, today)
-
-    for (const c of cyclesData) {
-      if (c.invoice <= 1e-6) continue
-      if (!isClosingDatePassed(c.periodEnd, today)) continue
-
-      const key = startOfDay(c.periodEnd).getTime()
-      const toBook = roundMoney(c.invoice - (allocMap.get(key) ?? 0))
-      if (toBook <= 1e-6) continue
-
-      const periodEndKey = normalizePeriodEndKey(c.periodEnd)
-
-      const exists = await prisma.transaction.findFirst({
-        where: {
-          userId,
-          creditCarryoverCardId: card.id,
-          creditCarryoverPeriodEnd: periodEndKey,
-        },
-      })
-      if (exists) continue
-
-      await prisma.transaction.create({
-        data: {
-          userId,
-          categoryId: variableCat.id,
-          amount: toBook,
-          description: `Fatura fechada — ${card.name} (fech. ${periodEndKey.toLocaleDateString('pt-BR')})`,
-          date: closedInvoiceBookingDate(c.periodEnd),
-          type: 'expense',
-          creditCarryoverCardId: card.id,
-          creditCarryoverPeriodEnd: periodEndKey,
-        },
-      })
-    }
-  }
-
-  revalidatePath('/dashboard/cartao-credito')
-  revalidatePath('/dashboard/saidas')
-  revalidatePath('/dashboard')
-}
-
 export async function getCreditCardOverdueNotices(
   userId: string,
 ): Promise<CreditCardOverdueNotice[]> {
@@ -212,7 +154,6 @@ export async function getCreditCardPagePayload() {
   if (!session?.user?.id) return null
 
   await ensureUserCategories(session.user.id)
-  await ensureCreditCardClosedInvoices(session.user.id)
 
   const now = new Date()
   const [cards, availableCash, overdueRaw] = await Promise.all([

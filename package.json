@@ -1,6 +1,6 @@
 {
-  "name": "personal-finance-control",
-  "version": "0.5.0",
+  "name": "logos finance",
+  "version": "0.7.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -10,7 +10,8 @@
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:migrate-investment-data": "npx tsx prisma/migrate-investment-data.ts",
-    "db:studio": "prisma studio"
+    "db:studio": "prisma studio",
+    "email:broadcast": "npx tsx scripts/send-marketing-announcement.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -20,9 +21,11 @@
     "lucide-react": "^0.460.0",
     "next": "^14.2.0",
     "next-auth": "^4.24.0",
+    "next-themes": "^0.4.6",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "recharts": "^2.12.0",
+    "resend": "^6.10.0",
     "tailwind-merge": "^2.5.0",
     "zod": "^3.23.0"
   },

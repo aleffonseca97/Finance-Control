@@ -12,6 +12,7 @@ export default function RegistroPage() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [marketingOptIn, setMarketingOptIn] = useState(false)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
@@ -25,6 +26,9 @@ export default function RegistroPage() {
     formData.set('name', name)
     formData.set('email', email)
     formData.set('password', password)
+    if (marketingOptIn) {
+      formData.set('marketingOptIn', 'on')
+    }
 
     const result = await register(formData)
 
@@ -101,6 +105,24 @@ export default function RegistroPage() {
           minLength={6}
           disabled={loading}
         />
+      </div>
+      <div className="flex items-start gap-2">
+        <input
+          id="marketingOptIn"
+          name="marketingOptIn"
+          type="checkbox"
+          checked={marketingOptIn}
+          onChange={(e) => setMarketingOptIn(e.target.checked)}
+          disabled={loading}
+          className="mt-1 size-4 rounded border-input"
+        />
+        <Label
+          htmlFor="marketingOptIn"
+          className="text-sm font-normal text-muted-foreground leading-snug cursor-pointer"
+        >
+          Quero receber e-mails sobre novidades e melhorias do Logos Finance
+          (opcional).
+        </Label>
       </div>
     </AuthCard>
   )

@@ -28,10 +28,11 @@ export function DeleteConfirmButton({
     <Button
       variant="ghost"
       size="icon"
-      className="text-muted-foreground hover:text-destructive cursor-pointer"
+      className="text-muted-foreground hover:text-destructive"
       onClick={handleDelete}
       disabled={pending}
       aria-label={ariaLabel}
+      aria-busy={pending}
     >
       <Trash2 className="h-4 w-4" />
     </Button>

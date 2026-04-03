@@ -10,7 +10,8 @@ RUN apt-get update -y && apt-get install -y openssl libssl1.1 && rm -rf /var/lib
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-RUN mkdir -p /app/public
+# Garante assets estáticos (imagens, favicon, etc.) no build e na imagem final
+COPY public ./public
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN npx prisma generate
 RUN npm run build
@@ -24,8 +25,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN groupadd --system --gid 1001 nodejs
 RUN useradd --system --uid 1001 --gid nodejs nextjs
 
-# Copy standalone output
-COPY --from=builder /app/public ./public
+# Copy standalone output (public: arquivos servidos em / — imagens, etc.)
+COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
 

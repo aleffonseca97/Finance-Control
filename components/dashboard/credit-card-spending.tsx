@@ -18,17 +18,17 @@ type Props = {
 
 export function CreditCardSpending({ total, transactions }: Props) {
   return (
-    <Card className="lg:min-w-[320px]">
+    <Card className="dashboard-bento-card-muted lg:min-w-[320px] shadow-md">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
         <CardTitle className="text-base">Gastos com cartão</CardTitle>
-        <CreditCard className="h-5 w-5 text-amber-500 shrink-0" />
+        <CreditCard className="h-5 w-5 text-amber-500 shrink-0" aria-hidden />
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-2xl font-bold text-amber-600">
           R$ {formatBRL(total)}
         </p>
         <p className="text-xs text-muted-foreground">
-          Compras no cartão no mês (entram no orçamento após o fechamento da fatura)
+          Compras no cartão no mês (fora do orçamento de caixa até você pagar a fatura)
         </p>
         {transactions.length > 0 ? (
           <div className="space-y-2 pt-2 border-t">

@@ -4,6 +4,7 @@ import { getCreditCardPagePayload } from '@/app/actions/credit-cards'
 import { ensureUserCategories } from '@/app/actions/categories'
 import { CreditCardList } from '@/components/credit-card/credit-card-list'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DashboardPageHeader } from '@/components/dashboard/dashboard-page-header'
 
 export default async function CartaoCreditoPage() {
   const session = await auth()
@@ -17,20 +18,18 @@ export default async function CartaoCreditoPage() {
   const { cards, availableCash, overdueNotices } = payload
 
   return (
-    <div className="space-y-6 p-4 pt-6 sm:p-6 sm:pt-8 md:p-8 md:pt-10">
-      <div className="space-y-1">
-        <h1 className="text-xl font-bold sm:text-2xl">Cartão de Crédito</h1>
-        <p className="text-sm text-muted-foreground sm:text-base">
-          Fatura no orçamento após o fechamento; pagamento com caixa restaura o limite
-        </p>
-      </div>
+    <div className="space-y-8">
+      <DashboardPageHeader
+        title="Cartão de Crédito"
+        description="Compras não entram no orçamento de caixa; o pagamento da fatura registra saída e restaura o limite"
+      />
 
       <div className="space-y-6">
-        <Card className="overflow-hidden">
+        <Card className="dashboard-bento-card overflow-hidden shadow-md">
           <CardHeader className="p-4 sm:p-6">
             <CardTitle className="text-base sm:text-lg">Cartões e pagamentos</CardTitle>
             <p className="text-xs text-muted-foreground sm:text-sm">
-              Fechamento gera a despesa variável; vencimento em atraso dispara o alerta
+              Fechamento e vencimento são referência no cadastro; atraso com saldo em aberto pode gerar alerta
             </p>
           </CardHeader>
           <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">

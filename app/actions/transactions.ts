@@ -5,7 +5,6 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { transactionSchema } from '@/lib/validations';
 import { revalidatePath } from 'next/cache';
-import { ensureCreditCardClosedInvoices } from '@/app/actions/credit-cards';
 import { budgetExpenseWhere } from '@/lib/budget-expense';
 import { roundMoney } from '@/lib/credit-card-billing';
 
@@ -270,7 +269,6 @@ export async function getTransactions(
 
   if (type === 'expense') {
     await ensureFixedExpensesForMonth(session.user.id, m, y);
-    await ensureCreditCardClosedInvoices(session.user.id);
   }
 
   const [transactions, agg] = await Promise.all([

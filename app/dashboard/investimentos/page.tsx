@@ -14,6 +14,8 @@ import { InvestimentosGrid } from './investimentos-grid'
 import { InvestmentListCard } from './investment-list-card'
 import { parseMonthYearParams, getMonthTitle, groupByDay, formatBRL } from '@/lib/date-utils'
 import { CalendarFallback } from '@/components/shared/calendar-fallback'
+import { DashboardPageHeader } from '@/components/dashboard/dashboard-page-header'
+import { chartCardClassName } from '@/components/charts/chart-shared'
 
 export default async function InvestimentosPage({
   searchParams,
@@ -49,15 +51,11 @@ export default async function InvestimentosPage({
   const monthTitle = getMonthTitle(year, month)
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-6 py-2 sm:py-0">
-      <header className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight sm:text-3xl">
-          Investimentos
-        </h1>
-        <p className="text-sm text-muted-foreground sm:text-base">
-          Acompanhe seus aportes
-        </p>
-      </header>
+    <div className="mx-auto w-full max-w-6xl space-y-8">
+      <DashboardPageHeader
+        title="Investimentos"
+        description="Acompanhe seus aportes"
+      />
 
       <div className="min-w-0">
         <InvestimentosGrid
@@ -95,7 +93,7 @@ export default async function InvestimentosPage({
         onDelete={deleteInvestment}
       />
 
-      <Card className="overflow-hidden">
+      <Card className={`${chartCardClassName} overflow-hidden shadow-md`}>
         <CardHeader className="flex flex-col gap-2 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <CardTitle className="text-base sm:text-lg">Total geral investido</CardTitle>
           <p className="text-xl font-bold text-blue-500 tabular-nums sm:text-2xl">
@@ -141,7 +139,7 @@ export default async function InvestimentosPage({
                 ))}
               </ul>
 
-              <div className="min-w-0 rounded-lg border p-3 sm:p-4">
+              <div className="dashboard-bento-card-muted min-w-0 p-3 sm:p-4">
                 <InvestmentsPieChart
                   data={investmentsSummary.items.map((item) => ({
                     name: item.label ?? item.category.name,

@@ -9,6 +9,7 @@ import { prisma } from '@/lib/db'
 const updateProfileSchema = z.object({
   name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
   email: z.string().email('Email inválido'),
+  marketingOptIn: z.literal('on').optional(),
 })
 
 const updatePasswordSchema = z.object({
@@ -20,19 +21,23 @@ export async function updateProfile(formData: FormData) {
   const session = await auth()
   if (!session?.user?.id) return { error: 'Não autorizado' }
 
+  const marketingRaw = formData.get('marketingOptIn')
   const parsed = updateProfileSchema.safeParse({
     name: formData.get('name'),
     email: formData.get('email'),
+    marketingOptIn: marketingRaw === 'on' ? ('on' as const) : undefined,
   })
 
   if (!parsed.success) {
     return { error: parsed.error.errors[0].message }
   }
 
-  const { name, email } = parsed.data
+  const { name, email, marketingOptIn } = parsed.data
 
-  const existingUser = await prisma.user.findUnique({
-    where: { email },
+  const emailNormalized = email.trim().toLowerCase()
+
+  const existingUser = await prisma.user.findFirst({
+    where: { email: { equals: emailNormalized, mode: 'insensitive' } },
   })
 
   if (existingUser && existingUser.id !== session.user.id) {
@@ -41,7 +46,11 @@ export async function updateProfile(formData: FormData) {
 
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { name, email },
+    data: {
+      name,
+      email: emailNormalized,
+      marketingOptIn: marketingOptIn === 'on',
+    },
   })
 
   revalidatePath('/dashboard/configuracoes')
@@ -76,7 +85,11 @@ export async function updatePassword(formData: FormData) {
 
   await prisma.user.update({
     where: { id: session.user.id },
-    data: { passwordHash },
+    data: {
+      passwordHash,
+      passwordResetTokenHash: null,
+      passwordResetExpires: null,
+    },
   })
 
   revalidatePath('/dashboard/configuracoes')

@@ -11,10 +11,7 @@ import {
 } from 'lucide-react'
 import { getLastTransactions, getMonthlyEvolution } from '@/app/actions/analytics'
 import { ensureFixedExpensesForMonth } from '@/app/actions/transactions'
-import {
-  ensureCreditCardClosedInvoices,
-  getCreditCardOverdueNotices,
-} from '@/app/actions/credit-cards'
+import { getCreditCardOverdueNotices } from '@/app/actions/credit-cards'
 import { serializeOverdueNotices } from '@/lib/credit-card-overdue'
 import { budgetExpenseWhere } from '@/lib/budget-expense'
 import { formatBRL } from '@/lib/date-utils'
@@ -23,13 +20,14 @@ import { IncomeExpensePieChart } from '@/components/charts/pie-chart'
 import { RecentTransactions } from '@/components/dashboard/recent-transactions'
 import { SummaryCards } from '@/components/dashboard/summary-cards'
 import { CreditCardSpending } from '@/components/dashboard/credit-card-spending'
+import { DashboardPageHeader } from '@/components/dashboard/dashboard-page-header'
+import { chartCardClassName } from '@/components/charts/chart-shared'
 import { OverdueBanner } from '@/components/shared/overdue-banner'
 import type { TransactionWithCategory } from '@/lib/transaction-types'
 
 async function getDashboardData(userId: string) {
   const now = new Date()
   await ensureFixedExpensesForMonth(userId, now.getMonth(), now.getFullYear())
-  await ensureCreditCardClosedInvoices(userId)
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
   const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
 
@@ -134,56 +132,63 @@ export default async function DashboardPage() {
   ]
 
   return (
-    <div className="space-y-6 p-6 pt-8 md:p-8 md:pt-10">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold">Bem-vindo, {userName}</h1>
-        <p className="text-sm text-muted-foreground">
-          Aqui está a sua visão geral do mês atual.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <DashboardPageHeader
+        title={`Bem-vindo, ${userName}`}
+        description="Aqui está a sua visão geral do mês atual."
+      />
 
       <OverdueBanner notices={data.overdueNotices} />
-      <SummaryCards items={summaryCards} />
+      <section className="space-y-3">
+        <p className="dashboard-section-label">Resumo do mês</p>
+        <SummaryCards items={summaryCards} />
+      </section>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Entradas vs Saídas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <IncomeExpensePieChart
-              income={data.totalIncome}
-              expense={data.totalExpense}
-              creditCardExpense={0}
-            />
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle>Últimas transações</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <RecentTransactions
-              transactions={lastTransactions as TransactionWithCategory[]}
-            />
-          </CardContent>
-        </Card>
-      </div>
+      <section className="space-y-3">
+        <p className="dashboard-section-label">Atividade</p>
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Card className={chartCardClassName}>
+            <CardHeader>
+              <CardTitle className="text-lg">Entradas vs Saídas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <IncomeExpensePieChart
+                income={data.totalIncome}
+                expense={data.totalExpense}
+                creditCardExpense={0}
+              />
+            </CardContent>
+          </Card>
+          <Card className="dashboard-bento-card-muted">
+            <CardHeader>
+              <CardTitle className="text-lg">Últimas transações</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <RecentTransactions
+                transactions={lastTransactions as TransactionWithCategory[]}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      </section>
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_auto]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Evolução mensal (últimos 6 meses)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <MonthlyEvolutionChart data={evolution} />
-          </CardContent>
-        </Card>
-        <CreditCardSpending
-          total={data.creditCardTotal}
-          transactions={data.creditCardTransactions}
-        />
-      </div>
+      <section className="space-y-3">
+        <p className="dashboard-section-label">Tendências</p>
+        <div className="grid gap-4 lg:grid-cols-[1fr_minmax(280px,320px)]">
+          <Card className={chartCardClassName}>
+            <CardHeader>
+              <CardTitle className="text-lg">Evolução mensal (últimos 6 meses)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <MonthlyEvolutionChart data={evolution} />
+            </CardContent>
+          </Card>
+          <CreditCardSpending
+            total={data.creditCardTotal}
+            transactions={data.creditCardTransactions}
+          />
+        </div>
+      </section>
     </div>
   )
 }

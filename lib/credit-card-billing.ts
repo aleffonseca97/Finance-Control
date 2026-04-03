@@ -63,16 +63,6 @@ export function dateOnlyInRange(t: Date, start: Date, end: Date): boolean {
   return t0 >= startOfDay(start).getTime() && t0 <= startOfDay(end).getTime()
 }
 
-/** Dia seguinte ao fechamento (data do lançamento da fatura como despesa variável). */
-export function closedInvoiceBookingDate(periodEnd: Date): Date {
-  const s = startOfDay(periodEnd)
-  return new Date(s.getFullYear(), s.getMonth(), s.getDate() + 1, 12, 0, 0, 0)
-}
-
-export function isClosingDatePassed(periodEnd: Date, today: Date): boolean {
-  return startOfDay(today).getTime() > startOfDay(periodEnd).getTime()
-}
-
 /** Após o dia do vencimento (notificação de atraso). */
 export function isDueDatePassed(dueDate: Date, today: Date): boolean {
   return startOfDay(today).getTime() > startOfDay(dueDate).getTime()

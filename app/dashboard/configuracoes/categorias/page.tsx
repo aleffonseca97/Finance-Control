@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation'
 import { getCategoriesByType } from '@/app/actions/categories'
 import { CategoryList } from '@/components/settings/category-list'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DashboardPageHeader } from '@/components/dashboard/dashboard-page-header'
 
 export default async function CategoriasPage() {
   const session = await auth()
@@ -17,17 +18,15 @@ export default async function CategoriasPage() {
   const fixedExpenses = expenseCategories.filter((c) => c.isFixed)
 
   return (
-    <div className="space-y-8 p-6 pt-8 md:p-8 md:pt-10">
-      <div>
-        <h1 className="text-2xl font-bold">Categorias</h1>
-        <p className="text-muted-foreground">
-          Gerencie as categorias de entradas e saídas
-        </p>
-      </div>
+    <div className="space-y-8">
+      <DashboardPageHeader
+        title="Categorias"
+        description="Gerencie as categorias de entradas e saídas"
+      />
 
       <div className="space-y-6">
         <div className="grid gap-6 lg:grid-cols-1">
-          <Card>
+          <Card className="dashboard-bento-card shadow-md">
             <CardHeader>
               <CardTitle className="text-lg">Despesas variáveis</CardTitle>
               <p className="text-sm text-muted-foreground">
@@ -44,7 +43,7 @@ export default async function CategoriasPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="dashboard-bento-card-muted shadow-md">
             <CardHeader>
               <CardTitle className="text-lg">Despesas fixas</CardTitle>
               <p className="text-sm text-muted-foreground">
@@ -61,7 +60,7 @@ export default async function CategoriasPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="dashboard-bento-card shadow-md">
             <CardHeader>
               <CardTitle className="text-lg">Opções de entrada</CardTitle>
               <p className="text-sm text-muted-foreground">

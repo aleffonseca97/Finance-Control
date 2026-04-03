@@ -39,7 +39,5 @@ COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 USER nextjs
 EXPOSE 4000
-ENV PORT=4000
-ENV DATABASE_URL="postgresql://6V8VkZh5oOxgJLeJ:SEeKApKwaO9q7XKqbxMXiXtcB1BJrE2F@72.62.108.253:32768/financemaimo?schema=public"
 
 CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node server.js"]

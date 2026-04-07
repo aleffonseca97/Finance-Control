@@ -54,7 +54,11 @@ export async function getMonthlyEvolution(months = 6) {
         _sum: { amount: true },
       }),
       prisma.investment.aggregate({
-        where: { userId: session.user.id, date: { gte: start, lte: end } },
+        where: {
+          userId: session.user.id,
+          date: { gte: start, lte: end },
+          affectsCash: true,
+        },
         _sum: { amount: true },
       }),
     ])

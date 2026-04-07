@@ -53,7 +53,7 @@ export function InvestmentForm({ reserveCategories, walletCategories, action, da
       {error && (
         <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">{error}</div>
       )}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <div className="space-y-2">
           <Label htmlFor="reserveCategoryId">Reserva</Label>
           <Select id="reserveCategoryId" name="reserveCategoryId" required>
@@ -87,6 +87,13 @@ export function InvestmentForm({ reserveCategories, walletCategories, action, da
             placeholder="0,00"
             required
           />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="useBalance">Usar saldo</Label>
+          <Select id="useBalance" name="useBalance" defaultValue="true">
+            <option value="true">Sim, debitar do caixa</option>
+            <option value="false">Não, apenas monitorar</option>
+          </Select>
         </div>
         {dateValue == null ? (
           <div className="space-y-2">

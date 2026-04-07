@@ -78,6 +78,9 @@ export function InvestimentosGrid({
         <Card className="dashboard-bento-card shadow-md">
           <CardHeader className="px-4 pt-4 sm:px-6 sm:pt-5">
             <CardTitle className="text-base sm:text-lg">Adicionar aporte</CardTitle>
+            <p className="text-sm font-normal text-muted-foreground">
+              Escolha se o aporte deve usar o saldo mensal ou apenas ser monitorado.
+            </p>
           </CardHeader>
           <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
             <InvestmentForm

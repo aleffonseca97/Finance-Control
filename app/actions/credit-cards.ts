@@ -59,7 +59,7 @@ export async function getAvailableCashForMonth(
       _sum: { amount: true },
     }),
     prisma.investment.aggregate({
-      where: { userId, date: { gte: start, lte: end } },
+      where: { userId, date: { gte: start, lte: end }, affectsCash: true },
       _sum: { amount: true },
     }),
   ])

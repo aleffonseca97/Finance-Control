@@ -1,8 +1,8 @@
 # Stage 1: Dependencies
 FROM node:20-bullseye-slim AS deps
 WORKDIR /app
-COPY package.json package-lock.json* ./ 
-RUN npm ci
+COPY package.json package-lock.json ./
+RUN npm ci --include=dev
 
 # Stage 2: Builder
 FROM node:20-bullseye-slim AS builder
@@ -10,10 +10,8 @@ RUN apt-get update -y && apt-get install -y openssl libssl1.1 && rm -rf /var/lib
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
-# Garante assets estáticos (imagens, favicon, etc.) no build e na imagem final
-COPY public ./public
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN npx prisma generate
+RUN npm run db:generate
 RUN npm run build
 
 # Stage 3: Production

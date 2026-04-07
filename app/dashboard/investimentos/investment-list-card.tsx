@@ -8,6 +8,7 @@ import { formatBRL } from '@/lib/date-utils'
 type InvestmentItem = {
   id: string
   amount: number
+  affectsCash?: boolean
   date: Date | string
   notes: string | null
   category: { name: string; color: string | null; icon: string } | null
@@ -54,6 +55,7 @@ export function InvestmentListCard({
                     }
                   : inv.category
               const isWithdrawal = inv.amount < 0
+              const isMonitoringDeposit = !isWithdrawal && inv.affectsCash === false
 
               return (
                 <li
@@ -79,6 +81,7 @@ export function InvestmentListCard({
                       </p>
                       <p className="break-words text-sm text-muted-foreground">
                         {new Date(inv.date).toLocaleDateString('pt-BR')}
+                        {isMonitoringDeposit && ' • monitoramento (sem usar saldo)'}
                         {inv.notes && ` • ${inv.notes}`}
                       </p>
                     </div>

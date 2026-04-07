@@ -2,13 +2,6 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  TrendingUp,
-  TrendingDown,
-  PiggyBank,
-  Wallet,
-  CreditCard,
-} from 'lucide-react'
 import { getLastTransactions, getMonthlyEvolution } from '@/app/actions/analytics'
 import { ensureFixedExpensesForMonth } from '@/app/actions/transactions'
 import { getCreditCardOverdueNotices } from '@/app/actions/credit-cards'
@@ -35,6 +28,7 @@ async function getDashboardData(userId: string) {
     incomes,
     expenses,
     investments,
+    investmentsAffectingCash,
     creditCardExpenses,
     creditCardTransactions,
     creditCards,
@@ -50,6 +44,14 @@ async function getDashboardData(userId: string) {
     }),
     prisma.investment.aggregate({
       where: { userId, date: { gte: startOfMonth, lte: endOfMonth } },
+      _sum: { amount: true },
+    }),
+    prisma.investment.aggregate({
+      where: {
+        userId,
+        date: { gte: startOfMonth, lte: endOfMonth },
+        affectsCash: true,
+      },
       _sum: { amount: true },
     }),
     prisma.transaction.aggregate({
@@ -79,6 +81,7 @@ async function getDashboardData(userId: string) {
   const totalIncome = incomes._sum.amount ?? 0
   const totalExpense = expenses._sum.amount ?? 0
   const totalInvestment = investments._sum.amount ?? 0
+  const cashInvestment = investmentsAffectingCash._sum.amount ?? 0
   const creditCardTotal = creditCardExpenses._sum.amount ?? 0
   const creditCardLimit = creditCards.reduce((acc, cc) => acc + cc.limit, 0)
   const creditCardTotalLine = creditCards.reduce(
@@ -94,7 +97,7 @@ async function getDashboardData(userId: string) {
     creditCardLimit,
     creditCardTotalLine,
     creditCardTransactions,
-    balance: totalIncome - totalExpense - totalInvestment,
+    balance: totalIncome - totalExpense - cashInvestment,
     overdueNotices: serializeOverdueNotices(overdueRaw),
   }
 }
@@ -116,19 +119,39 @@ export default async function DashboardPage() {
     {
       title: 'Saldo do Mês',
       value: data.balance,
-      icon: Wallet,
+      iconName: 'wallet' as const,
       color: data.balance >= 0 ? 'text-emerald-500' : 'text-red-500',
+      action: 'statement' as const,
     },
     {
       title: 'Limite disponível (cartões)',
       value: data.creditCardLimit,
       footnote: `Total contratado: R$ ${formatBRL(data.creditCardTotalLine)}`,
-      icon: CreditCard,
+      iconName: 'credit-card' as const,
       color: 'text-amber-500',
+      action: 'credit-card' as const,
     },
-    { title: 'Entradas', value: data.totalIncome, icon: TrendingUp, color: 'text-emerald-500' },
-    { title: 'Saídas', value: data.totalExpense, icon: TrendingDown, color: 'text-red-500' },
-    { title: 'Investimentos', value: data.totalInvestment, icon: PiggyBank, color: 'text-blue-500' },
+    {
+      title: 'Entradas',
+      value: data.totalIncome,
+      iconName: 'trending-up' as const,
+      color: 'text-emerald-500',
+      action: 'incomes' as const,
+    },
+    {
+      title: 'Saídas',
+      value: data.totalExpense,
+      iconName: 'trending-down' as const,
+      color: 'text-red-500',
+      action: 'expenses' as const,
+    },
+    {
+      title: 'Investimentos',
+      value: data.totalInvestment,
+      iconName: 'piggy-bank' as const,
+      color: 'text-blue-500',
+      action: 'investments' as const,
+    },
   ]
 
   return (
@@ -141,7 +164,10 @@ export default async function DashboardPage() {
       <OverdueBanner notices={data.overdueNotices} />
       <section className="space-y-3">
         <p className="dashboard-section-label">Resumo do mês</p>
-        <SummaryCards items={summaryCards} />
+        <SummaryCards
+          items={summaryCards}
+          statementTransactions={lastTransactions as TransactionWithCategory[]}
+        />
       </section>
 
       <section className="space-y-3">

@@ -15,6 +15,7 @@ import {
   Settings,
   CreditCard,
   Table2,
+  Flag,
   ChevronDown,
   ChevronRight,
   User,
@@ -37,7 +38,15 @@ const navItems = [
     label: 'Cartão de Crédito',
     icon: CreditCard,
   },
-  { href: '/dashboard/investimentos', label: 'Investimentos', icon: PiggyBank },
+  {
+    href: '/dashboard/investimentos',
+    label: 'Investimentos',
+    icon: PiggyBank,
+    children: [
+      { href: '/dashboard/investimentos', label: 'Investimentos', icon: PiggyBank },
+      { href: '/dashboard/metas', label: 'Metas', icon: Flag },
+    ],
+  },
   {
     href: '/dashboard/analise',
     label: 'Análise',
@@ -72,6 +81,9 @@ export function Sidebar() {
   );
   const [analiseOpen, setAnaliseOpen] = useState(
     pathname.startsWith('/dashboard/analise') || pathname.startsWith('/dashboard/tabela-anual')
+  );
+  const [investimentosOpen, setInvestimentosOpen] = useState(
+    pathname.startsWith('/dashboard/investimentos') || pathname.startsWith('/dashboard/metas')
   );
 
   const effectiveCollapsed = collapsed && isLg;
@@ -124,6 +136,12 @@ export function Sidebar() {
   useEffect(() => {
     if (pathname.startsWith('/dashboard/analise') || pathname.startsWith('/dashboard/tabela-anual')) {
       setAnaliseOpen(true);
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    if (pathname.startsWith('/dashboard/investimentos') || pathname.startsWith('/dashboard/metas')) {
+      setInvestimentosOpen(true);
     }
   }, [pathname]);
 
@@ -251,16 +269,27 @@ export function Sidebar() {
             const hasChildren = 'children' in item && item.children;
             const isAnaliseSection = item.href === '/dashboard/analise';
             const isConfigSection = item.href === '/dashboard/configuracoes';
+            const isInvestimentosSection = item.href === '/dashboard/investimentos';
+            const isInvestimentosActive = pathname.startsWith('/dashboard/investimentos') || pathname.startsWith('/dashboard/metas');
             const isAnaliseActive = pathname.startsWith('/dashboard/analise') || pathname.startsWith('/dashboard/tabela-anual');
             const isConfigActive = pathname.startsWith('/dashboard/configuracoes');
-            const isParentActive = (isAnaliseSection && isAnaliseActive) || (isConfigSection && isConfigActive);
+            const isParentActive =
+              (isInvestimentosSection && isInvestimentosActive) ||
+              (isAnaliseSection && isAnaliseActive) ||
+              (isConfigSection && isConfigActive);
             const isActive = !hasChildren && pathname === item.href;
 
             if (hasChildren && item.children) {
               const expanded = isAnaliseSection
                 ? analiseOpen || isAnaliseActive
-                : configOpen || isConfigActive;
-              const toggleOpen = isAnaliseSection ? () => setAnaliseOpen(!analiseOpen) : () => setConfigOpen(!configOpen);
+                : isInvestimentosSection
+                  ? investimentosOpen || isInvestimentosActive
+                  : configOpen || isConfigActive;
+              const toggleOpen = isAnaliseSection
+                ? () => setAnaliseOpen(!analiseOpen)
+                : isInvestimentosSection
+                  ? () => setInvestimentosOpen(!investimentosOpen)
+                  : () => setConfigOpen(!configOpen);
 
               if (effectiveCollapsed) {
                 return (

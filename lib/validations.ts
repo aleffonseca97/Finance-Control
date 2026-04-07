@@ -14,6 +14,14 @@ export const investmentSchema = z.object({
   amount: z.coerce.number().positive('Valor deve ser positivo'),
   date: z.string().min(1, 'Data é obrigatória'),
   notes: z.string().optional(),
+  useBalance: z.preprocess(
+    (value) => {
+      if (typeof value === 'boolean') return value
+      if (typeof value === 'string') return value === 'true'
+      return true
+    },
+    z.boolean()
+  ),
 })
 
 export const withdrawalSchema = z.object({
@@ -22,4 +30,25 @@ export const withdrawalSchema = z.object({
   amount: z.coerce.number().positive('Valor deve ser positivo'),
   date: z.string().min(1, 'Data é obrigatória'),
   notes: z.string().optional(),
+})
+
+export const goalSchema = z.object({
+  name: z.string().trim().min(1, 'Nome da meta é obrigatório'),
+  reserveCategoryId: z.preprocess(
+    (value) => {
+      if (typeof value !== 'string') return null
+      const trimmed = value.trim()
+      return trimmed.length > 0 ? trimmed : null
+    },
+    z.string().nullable()
+  ),
+  targetAmount: z.coerce.number().positive('Valor alvo deve ser maior que zero'),
+  deadline: z.preprocess(
+    (value) => {
+      if (typeof value !== 'string') return null
+      const trimmed = value.trim()
+      return trimmed.length > 0 ? trimmed : null
+    },
+    z.string().nullable()
+  ),
 })

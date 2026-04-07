@@ -16,6 +16,7 @@ export async function createInvestment(formData: FormData) {
     amount: formData.get('amount'),
     date: formData.get('date'),
     notes: formData.get('notes'),
+    useBalance: formData.get('useBalance'),
   })
 
   if (!parsed.success) {
@@ -52,11 +53,13 @@ export async function createInvestment(formData: FormData) {
       amount: parsed.data.amount,
       date: new Date(parsed.data.date),
       notes: parsed.data.notes || null,
+      affectsCash: parsed.data.useBalance,
     },
   })
 
   revalidatePath('/dashboard')
   revalidatePath('/dashboard/investimentos')
+  revalidatePath('/dashboard/metas')
   revalidatePath('/dashboard/analise')
   return { success: true }
 }
@@ -94,11 +97,13 @@ export async function createWithdrawal(formData: FormData) {
       amount: -parsed.data.amount,
       date: new Date(parsed.data.date),
       notes: parsed.data.notes || null,
+      affectsCash: true,
     },
   })
 
   revalidatePath('/dashboard')
   revalidatePath('/dashboard/investimentos')
+  revalidatePath('/dashboard/metas')
   revalidatePath('/dashboard/analise')
   return { success: true }
 }
@@ -187,6 +192,7 @@ export async function deleteInvestment(id: string) {
 
   revalidatePath('/dashboard')
   revalidatePath('/dashboard/investimentos')
+  revalidatePath('/dashboard/metas')
   revalidatePath('/dashboard/analise')
   return { success: true }
 }

@@ -20,6 +20,7 @@ model User {
   categories      Category[]
   transactions    Transaction[]
   investments     Investment[]
+  goals           Goal[]
   creditCards     CreditCard[]
 }
 
@@ -38,6 +39,7 @@ model Category {
   investments        Investment[]      @relation("InvestmentCategory")
   reserveInvestments Investment[]      @relation("ReserveCategory")
   walletInvestments  Investment[]      @relation("WalletCategory")
+  goalReserves       Goal[]            @relation("GoalReserveCategory")
 
   @@index([userId])
   @@index([userId, type])
@@ -75,6 +77,7 @@ model Investment {
   reserveCategoryId String?
   walletCategoryId  String?
   amount            Float     // positive = aporte, negative = saque
+  affectsCash       Boolean   @default(true)
   date              DateTime
   notes             String?
   user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -104,4 +107,21 @@ model CreditCard {
   paymentTransactions Transaction[] @relation("CardPayment")
 
   @@index([userId])
+}
+
+model Goal {
+  id           String   @id @default(cuid())
+  userId       String
+  reserveCategoryId String?
+  name         String
+  targetAmount Float
+  currentAmount Float   @default(0)
+  deadline     DateTime?
+  createdAt    DateTime @default(now())
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reserveCategory Category? @relation("GoalReserveCategory", fields: [reserveCategoryId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([deadline])
+  @@index([reserveCategoryId])
 }

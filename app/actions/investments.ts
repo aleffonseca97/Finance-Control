@@ -27,17 +27,17 @@ export async function createInvestment(formData: FormData) {
     prisma.category.findFirst({
       where: {
         id: parsed.data.reserveCategoryId,
-        userId: session.user.id,
         type: 'investment',
         investmentSubtype: 'reserva',
+        OR: [{ userId: null, isCustom: false }, { userId: session.user.id, isCustom: true }],
       },
     }),
     prisma.category.findFirst({
       where: {
         id: parsed.data.walletCategoryId,
-        userId: session.user.id,
         type: 'investment',
         investmentSubtype: 'carteira',
+        OR: [{ userId: null, isCustom: false }, { userId: session.user.id, isCustom: true }],
       },
     }),
   ])
@@ -254,7 +254,10 @@ export async function getInvestmentsSummary(): Promise<{
   })
 
   const categories = await prisma.category.findMany({
-    where: { userId: session.user.id, type: 'investment' },
+    where: {
+      type: 'investment',
+      OR: [{ userId: null, isCustom: false }, { userId: session.user.id, isCustom: true }],
+    },
   })
   const categoriesById = new Map(categories.map((c) => [c.id, c]))
 

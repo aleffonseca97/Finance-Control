@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { ensureUserCategories } from '@/app/actions/categories'
+import { ensureGlobalCategories } from '@/app/actions/categories'
 import { budgetExpenseWhere } from '@/lib/budget-expense'
 import {
   serializeOverdueNotices,
@@ -153,17 +153,52 @@ export async function getCreditCardPagePayload() {
   const session = await auth()
   if (!session?.user?.id) return null
 
-  await ensureUserCategories(session.user.id)
+  await ensureGlobalCategories()
 
   const now = new Date()
-  const [cards, availableCash, overdueRaw] = await Promise.all([
+  const [cards, availableCash, overdueRaw, creditCardCategorySpendingRaw] = await Promise.all([
     prisma.creditCard.findMany({
       where: { userId: session.user.id },
       orderBy: { name: 'asc' },
     }),
     getAvailableCashForMonth(session.user.id, now.getMonth(), now.getFullYear()),
     getCreditCardOverdueNotices(session.user.id),
+    prisma.transaction.findMany({
+      where: {
+        userId: session.user.id,
+        type: 'expense',
+        creditCardId: { not: null },
+      },
+      select: {
+        amount: true,
+        category: {
+          select: {
+            group: true,
+            name: true,
+            color: true,
+          },
+        },
+      },
+    }),
   ])
+
+  const groupedMap = new Map<string, { value: number; color: string | null }>()
+  for (const transaction of creditCardCategorySpendingRaw) {
+    const groupName = transaction.category.group ?? transaction.category.name
+    const current = groupedMap.get(groupName)
+    groupedMap.set(groupName, {
+      value: (current?.value ?? 0) + transaction.amount,
+      color: current?.color ?? transaction.category.color ?? null,
+    })
+  }
+
+  const creditCardCategorySpending = Array.from(groupedMap.entries())
+    .map(([name, item]) => ({
+      name,
+      value: roundMoney(item.value),
+      color: item.color,
+    }))
+    .sort((a, b) => b.value - a.value)
 
   return {
     cards,
@@ -171,6 +206,7 @@ export async function getCreditCardPagePayload() {
     month: now.getMonth(),
     year: now.getFullYear(),
     overdueNotices: serializeOverdueNotices(overdueRaw),
+    creditCardCategorySpending,
   }
 }
 
@@ -309,16 +345,20 @@ export async function payCreditCardFromBalance(formData: FormData) {
   // 1. Tenta encontrar a categoria "Cartão de crédito"
   let category = await prisma.category.findFirst({
     where: {
-      userId: session.user.id,
       type: 'expense',
       isFixed: false,
-      name: 'Cartão de crédito',
+      name: 'Fatura cartao de credito',
+      OR: [{ userId: null, isCustom: false }, { userId: session.user.id, isCustom: true }],
     },
   })
   // 2. Fallback: primeira categoria variável (comportamento atual)
   if (!category) {
     category = await prisma.category.findFirst({
-      where: { userId: session.user.id, type: 'expense', isFixed: false },
+      where: {
+        type: 'expense',
+        isFixed: false,
+        OR: [{ userId: null, isCustom: false }, { userId: session.user.id, isCustom: true }],
+      },
       orderBy: { name: 'asc' },
     })
   }

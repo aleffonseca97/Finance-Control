@@ -30,7 +30,11 @@ export async function createTransaction(
   }
 
   const category = await prisma.category.findFirst({
-    where: { id: parsed.data.categoryId, userId: session.user.id, type },
+    where: {
+      id: parsed.data.categoryId,
+      type,
+      OR: [{ userId: null, isCustom: false }, { userId: session.user.id, isCustom: true }],
+    },
   });
 
   if (!category) return { error: 'Categoria inválida' };
@@ -115,8 +119,8 @@ export async function updateTransaction(
     const category = await prisma.category.findFirst({
       where: {
         id: data.categoryId,
-        userId: session.user.id,
         type: tx.type,
+        OR: [{ userId: null, isCustom: false }, { userId: session.user.id, isCustom: true }],
       },
     });
     if (!category) return { error: 'Categoria inválida' };

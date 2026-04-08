@@ -50,7 +50,18 @@ export function TransactionForm({
   className,
 }: TransactionFormProps) {
   const [error, setError] = useState('')
+  const initialGroup =
+    categories
+      .map((c) => c.group?.trim())
+      .find((group): group is string => Boolean(group)) ?? 'Geral'
+  const [selectedGroup, setSelectedGroup] = useState(initialGroup)
   const today = new Date().toISOString().slice(0, 10)
+  const groups = Array.from(
+    new Set(categories.map((c) => c.group?.trim() || 'Geral')),
+  ).sort((a, b) => a.localeCompare(b, 'pt-BR'))
+  const filteredCategories = categories.filter(
+    (cat) => (cat.group?.trim() || 'Geral') === selectedGroup,
+  )
 
   function handleCategoryChange(e: React.ChangeEvent<HTMLSelectElement>) {
     if (type !== 'expense') return
@@ -72,6 +83,7 @@ export function TransactionForm({
       const form = document.getElementById('transaction-form') as HTMLFormElement | null
       if (form) {
         form.reset()
+        setSelectedGroup(initialGroup)
         const dateInput = form.querySelector<HTMLInputElement>('[name="date"]')
         if (dateInput) dateInput.value = dateValue ?? today
       }
@@ -90,6 +102,21 @@ export function TransactionForm({
       )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-2">
+          <Label htmlFor="categoryGroup">Categoria principal</Label>
+          <Select
+            id="categoryGroup"
+            name="categoryGroup"
+            value={selectedGroup}
+            onChange={(e) => setSelectedGroup(e.target.value)}
+          >
+            {groups.map((group) => (
+              <option key={group} value={group}>
+                {group}
+              </option>
+            ))}
+          </Select>
+        </div>
+        <div className="space-y-2">
           <Label htmlFor="categoryId">Categoria</Label>
           <Select
             id="categoryId"
@@ -98,7 +125,7 @@ export function TransactionForm({
             onChange={handleCategoryChange}
           >
             <option value="">Selecione...</option>
-            {categories.map((cat) => (
+            {filteredCategories.map((cat) => (
               <option key={cat.id} value={cat.id}>
                 {cat.name}
               </option>

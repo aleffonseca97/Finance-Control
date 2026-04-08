@@ -58,9 +58,9 @@ export async function createGoal(formData: FormData) {
     const reserveCategory = await prisma.category.findFirst({
       where: {
         id: parsed.data.reserveCategoryId,
-        userId: session.user.id,
         type: 'investment',
         investmentSubtype: 'reserva',
+        OR: [{ userId: null, isCustom: false }, { userId: session.user.id, isCustom: true }],
       },
       select: { id: true },
     })
@@ -160,6 +160,7 @@ export async function createReserveFromGoal(formData: FormData) {
   const existing = await prisma.category.findFirst({
     where: {
       userId: session.user.id,
+      isCustom: true,
       type: 'investment',
       investmentSubtype: 'reserva',
       name: parsed.data.name,
@@ -174,7 +175,9 @@ export async function createReserveFromGoal(formData: FormData) {
   const createdReserve = await prisma.category.create({
     data: {
       userId: session.user.id,
+      isCustom: true,
       name: parsed.data.name,
+      group: 'Investimentos',
       icon: 'PiggyBank',
       color: '#6366f1',
       type: 'investment',

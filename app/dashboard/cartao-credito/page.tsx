@@ -1,8 +1,9 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/lib/auth'
 import { getCreditCardPagePayload } from '@/app/actions/credit-cards'
-import { ensureUserCategories } from '@/app/actions/categories'
+import { ensureGlobalCategories } from '@/app/actions/categories'
 import { CreditCardList } from '@/components/credit-card/credit-card-list'
+import { CreditCardMainCategoriesPieChart } from '@/components/charts/credit-card-main-categories-pie-chart'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardPageHeader } from '@/components/dashboard/dashboard-page-header'
 
@@ -10,12 +11,12 @@ export default async function CartaoCreditoPage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
 
-  await ensureUserCategories(session.user.id)
+  await ensureGlobalCategories()
 
   const payload = await getCreditCardPagePayload()
   if (!payload) redirect('/login')
 
-  const { cards, availableCash, overdueNotices } = payload
+  const { cards, availableCash, overdueNotices, creditCardCategorySpending } = payload
 
   return (
     <div className="space-y-8">
@@ -38,6 +39,18 @@ export default async function CartaoCreditoPage() {
               availableCash={availableCash}
               overdueNotices={overdueNotices}
             />
+          </CardContent>
+        </Card>
+
+        <Card className="dashboard-bento-card overflow-hidden shadow-md">
+          <CardHeader className="p-4 sm:p-6">
+            <CardTitle className="text-base sm:text-lg">Gastos no cartão por categoria principal</CardTitle>
+            <p className="text-xs text-muted-foreground sm:text-sm">
+              Distribuição das compras no cartão agrupadas pelas categorias principais cadastradas
+            </p>
+          </CardHeader>
+          <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
+            <CreditCardMainCategoriesPieChart data={creditCardCategorySpending} />
           </CardContent>
         </Card>
       </div>

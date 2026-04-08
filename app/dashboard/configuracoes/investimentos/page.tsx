@@ -1,6 +1,6 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
-import { getReserveCategories, getWalletCategories } from '@/app/actions/categories'
+import { getCategoriesByType, getUserCategoriesByType } from '@/app/actions/categories'
 import { CategoryList } from '@/components/settings/category-list'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardPageHeader } from '@/components/dashboard/dashboard-page-header'
@@ -9,10 +9,32 @@ export default async function InvestimentosConfigPage() {
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
 
-  const [reserveCategories, walletCategories] = await Promise.all([
-    getReserveCategories(),
-    getWalletCategories(),
+  const [investmentCategories, allInvestmentCategories] = await Promise.all([
+    getUserCategoriesByType('investment'),
+    getCategoriesByType('investment'),
   ])
+  const reserveCategories = investmentCategories.filter(
+    (cat) => cat.investmentSubtype === 'reserva'
+  )
+  const walletCategories = investmentCategories.filter(
+    (cat) => cat.investmentSubtype === 'carteira'
+  )
+  const reserveGroups = Array.from(
+    new Set(
+      allInvestmentCategories
+        .filter((category) => category.investmentSubtype === 'reserva')
+        .map((category) => category.group?.trim())
+        .filter((group): group is string => !!group)
+    )
+  ).sort((a, b) => a.localeCompare(b, 'pt-BR'))
+  const walletGroups = Array.from(
+    new Set(
+      allInvestmentCategories
+        .filter((category) => category.investmentSubtype === 'carteira')
+        .map((category) => category.group?.trim())
+        .filter((group): group is string => !!group)
+    )
+  ).sort((a, b) => a.localeCompare(b, 'pt-BR'))
 
   return (
     <div className="space-y-8">
@@ -32,6 +54,7 @@ export default async function InvestimentosConfigPage() {
           <CardContent>
             <CategoryList
               categories={reserveCategories}
+              availableGroups={reserveGroups}
               type="investment"
               isFixed={false}
               title=""
@@ -50,6 +73,7 @@ export default async function InvestimentosConfigPage() {
           <CardContent>
             <CategoryList
               categories={walletCategories}
+              availableGroups={walletGroups}
               type="investment"
               isFixed={false}
               title=""

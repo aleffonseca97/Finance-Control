@@ -10,13 +10,14 @@ import { Plus, Pencil, Trash2 } from 'lucide-react'
 
 interface CategoryListProps {
   categories: Category[]
+  availableGroups?: string[]
   type: 'income' | 'expense' | 'investment'
   isFixed: boolean
   title: string
   investmentSubtype?: 'reserva' | 'carteira'
 }
 
-export function CategoryList({ categories, type, isFixed, title, investmentSubtype }: CategoryListProps) {
+export function CategoryList({ categories, availableGroups = [], type, isFixed, title, investmentSubtype }: CategoryListProps) {
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
@@ -55,6 +56,7 @@ export function CategoryList({ categories, type, isFixed, title, investmentSubty
         <CategoryForm
           type={type}
           isFixed={isFixed}
+          availableGroups={availableGroups}
           initialCategory={editingCategory ?? undefined}
           createAction={createCategory}
           updateAction={updateCategory}

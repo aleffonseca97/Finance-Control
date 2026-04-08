@@ -26,15 +26,17 @@ model User {
 
 model Category {
   id                 String   @id @default(cuid())
-  userId             String
+  userId             String?
   name               String
+  group              String?  // categoria principal (ex: Moradia, Alimentacao)
   icon               String   @default("CircleDollarSign")
   type               String   // income | expense | investment
   investmentSubtype  String?  // reserva | carteira (only for type investment)
+  isCustom           Boolean  @default(false) // true = criada pelo usuario
   isFixed            Boolean  @default(false) // only for expense
   defaultValue      Float?   // valor prefixado para despesas fixas
   color              String?  @default("#6366f1")
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user               User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   transactions       Transaction[]
   investments        Investment[]      @relation("InvestmentCategory")
   reserveInvestments Investment[]      @relation("ReserveCategory")
@@ -43,6 +45,8 @@ model Category {
 
   @@index([userId])
   @@index([userId, type])
+  @@index([type, group])
+  @@index([type, investmentSubtype])
 }
 
 model Transaction {

@@ -13,6 +13,7 @@ import type { Category } from '@prisma/client'
 interface CategoryFormProps {
   type: 'income' | 'expense' | 'investment'
   isFixed?: boolean
+  availableGroups?: string[]
   initialCategory?: Category | null
   createAction: (formData: FormData) => Promise<{ error?: string; success?: boolean }>
   updateAction: (id: string, formData: FormData) => Promise<{ error?: string; success?: boolean }>
@@ -32,6 +33,7 @@ function SubmitButton({ isEdit }: { isEdit: boolean }) {
 export function CategoryForm({
   type,
   isFixed = false,
+  availableGroups = [],
   initialCategory,
   createAction,
   updateAction,
@@ -40,6 +42,15 @@ export function CategoryForm({
 }: CategoryFormProps) {
   const [error, setError] = useState('')
   const isEdit = !!initialCategory
+  const fallbackGroup = type === 'investment' ? 'Investimentos' : 'Personalizada'
+  const selectedGroup = initialCategory?.group?.trim() || fallbackGroup
+  const groupOptions = Array.from(
+    new Set(
+      [...availableGroups, selectedGroup, fallbackGroup]
+        .map((group) => group.trim())
+        .filter((group) => group.length > 0)
+    )
+  ).sort((a, b) => a.localeCompare(b, 'pt-BR'))
 
   async function handleSubmit(formData: FormData) {
     setError('')
@@ -78,6 +89,21 @@ export function CategoryForm({
             placeholder="Ex: Mercado"
             required
           />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="group">Categoria principal</Label>
+          <Select
+            id="group"
+            name="group"
+            defaultValue={selectedGroup}
+            required
+          >
+            {groupOptions.map((group) => (
+              <option key={group} value={group}>
+                {group}
+              </option>
+            ))}
+          </Select>
         </div>
         <div className="space-y-2">
           <Label htmlFor="icon">Ícone</Label>

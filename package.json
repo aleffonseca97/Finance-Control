@@ -1,6 +1,6 @@
 {
   "name": "logos finance",
-  "version": "0.7.0",
+  "version": "1.2-beta.1",
   "private": true,
   "scripts": {
     "dev": "next dev",

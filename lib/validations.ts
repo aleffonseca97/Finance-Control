@@ -32,6 +32,13 @@ export const withdrawalSchema = z.object({
   notes: z.string().optional(),
 })
 
+export const recurringPaymentCreateSchema = z.object({
+  categoryId: z.string().min(1, 'Selecione uma categoria'),
+  amount: z.coerce.number().positive('Valor deve ser positivo'),
+  month: z.coerce.number().int().min(0).max(11),
+  year: z.coerce.number().int().min(2000).max(2100),
+})
+
 export const goalSchema = z.object({
   name: z.string().trim().min(1, 'Nome da meta é obrigatório'),
   reserveCategoryId: z.preprocess(

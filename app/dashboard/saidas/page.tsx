@@ -7,9 +7,9 @@ import { Card, CardContent } from '@/components/ui/card'
 import { MonthCalendar } from '@/components/shared/month-calendar'
 import { CalendarFallback } from '@/components/shared/calendar-fallback'
 import { TransactionEntryForm } from '@/components/shared/transaction-entry-form'
-import { TransactionListCard } from '@/components/shared/transaction-list-card'
 import { parseMonthYearParams, getMonthTitle, groupByDay } from '@/lib/date-utils'
 import { DashboardPageHeader } from '@/components/dashboard/dashboard-page-header'
+import { ExpensePeriodTableCard } from './expense-period-table-card'
 
 export default async function SaidasPage({
   searchParams,
@@ -82,12 +82,12 @@ export default async function SaidasPage({
         </Card>
       </div>
 
-      <TransactionListCard
+      <ExpensePeriodTableCard
         title="Total do período"
         total={total}
         items={transactions}
+        categories={categories}
         emptyMessage="Nenhuma saída neste período"
-        colorClass="text-red-500"
         onDelete={deleteTransaction}
         deleteConfirmMessage="Excluir esta transação?"
       />

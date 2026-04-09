@@ -24,6 +24,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   LogOut,
+  Repeat,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useState, useEffect, useCallback } from 'react';
@@ -33,6 +34,11 @@ const navItems = [
   { href: '/dashboard', label: 'Visão Geral', icon: LayoutDashboard },
   { href: '/dashboard/entradas', label: 'Entradas', icon: TrendingUp },
   { href: '/dashboard/saidas', label: 'Saídas', icon: TrendingDown },
+  {
+    href: '/dashboard/pagamentos-recorrentes',
+    label: 'Pagamentos recorrentes',
+    icon: Repeat,
+  },
   {
     href: '/dashboard/cartao-credito',
     label: 'Cartão de Crédito',

@@ -14,23 +14,20 @@ const categorySchema = z.object({
   investmentSubtype: z.enum(['reserva', 'carteira']).optional(),
 })
 
-export async function ensureGlobalCategories() {
-  const count = await prisma.category.count({
-    where: { userId: null, isCustom: false },
-  })
-  if (count > 0) return
+type GlobalCategorySeed = {
+  userId: null
+  name: string
+  group?: string
+  icon: string
+  type: string
+  isCustom: boolean
+  isFixed: boolean
+  color: string
+  investmentSubtype?: string
+}
 
-  const categories: {
-    userId: string | null
-    name: string
-    group?: string
-    icon: string
-    type: string
-    isCustom: boolean
-    isFixed: boolean
-    color: string
-    investmentSubtype?: string
-  }[] = []
+function buildGlobalCategorySeeds(): GlobalCategorySeed[] {
+  const categories: GlobalCategorySeed[] = []
 
   for (const cat of DEFAULT_CATEGORIES.income) {
     categories.push({
@@ -85,7 +82,43 @@ export async function ensureGlobalCategories() {
     })
   }
 
-  await prisma.category.createMany({ data: categories })
+  return categories
+}
+
+function globalCategorySeedKey(row: {
+  type: string
+  name: string
+  investmentSubtype?: string | null
+}): string {
+  if (row.type === 'investment') {
+    return `investment:${row.investmentSubtype ?? ''}:${row.name}`
+  }
+  return `${row.type}:${row.name}`
+}
+
+export async function ensureGlobalCategories() {
+  const seeds = buildGlobalCategorySeeds()
+  const existing = await prisma.category.findMany({
+    where: { userId: null, isCustom: false },
+    select: { name: true, type: true, investmentSubtype: true },
+  })
+
+  if (existing.length === 0) {
+    if (seeds.length > 0) {
+      await prisma.category.createMany({ data: seeds })
+    }
+    return
+  }
+
+  const existingKeys = new Set(existing.map((c) => globalCategorySeedKey(c)))
+
+  for (const row of seeds) {
+    const key = globalCategorySeedKey(row)
+    if (!existingKeys.has(key)) {
+      await prisma.category.create({ data: row })
+      existingKeys.add(key)
+    }
+  }
 }
 
 export async function getCategoriesByType(type: 'income' | 'expense' | 'investment') {

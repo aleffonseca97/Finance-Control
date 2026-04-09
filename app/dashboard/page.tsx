@@ -27,7 +27,6 @@ async function getDashboardData(userId: string) {
   const [
     incomes,
     expenses,
-    investments,
     investmentsAffectingCash,
     creditCardExpenses,
     creditCardTransactions,
@@ -40,10 +39,6 @@ async function getDashboardData(userId: string) {
     }),
     prisma.transaction.aggregate({
       where: { userId, date: { gte: startOfMonth, lte: endOfMonth }, ...budgetExpenseWhere },
-      _sum: { amount: true },
-    }),
-    prisma.investment.aggregate({
-      where: { userId, date: { gte: startOfMonth, lte: endOfMonth } },
       _sum: { amount: true },
     }),
     prisma.investment.aggregate({
@@ -80,7 +75,6 @@ async function getDashboardData(userId: string) {
 
   const totalIncome = incomes._sum.amount ?? 0
   const totalExpense = expenses._sum.amount ?? 0
-  const totalInvestment = investments._sum.amount ?? 0
   const cashInvestment = investmentsAffectingCash._sum.amount ?? 0
   const creditCardTotal = creditCardExpenses._sum.amount ?? 0
   const creditCardLimit = creditCards.reduce((acc, cc) => acc + cc.limit, 0)
@@ -92,7 +86,7 @@ async function getDashboardData(userId: string) {
   return {
     totalIncome,
     totalExpense,
-    totalInvestment,
+    totalInvestment: cashInvestment,
     creditCardTotal,
     creditCardLimit,
     creditCardTotalLine,

@@ -81,7 +81,7 @@ export function InvestmentListCard({
                       </p>
                       <p className="break-words text-sm text-muted-foreground">
                         {new Date(inv.date).toLocaleDateString('pt-BR')}
-                        {isMonitoringDeposit && ' • monitoramento (sem usar saldo)'}
+                        {isMonitoringDeposit && ' • sem usar saldo'}
                         {inv.notes && ` • ${inv.notes}`}
                       </p>
                     </div>

@@ -28,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <body className={`${inter.className} flex min-h-dvh flex-col antialiased`}>
-        <main className="flex-1">
+        <main className="min-w-0 flex-1">
           <Providers>{children}</Providers>
         </main>
         <Footer />

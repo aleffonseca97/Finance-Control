@@ -33,6 +33,7 @@ import {
   Building2,
   Droplet,
   Flame,
+  Music,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -70,6 +71,7 @@ const iconMap: Record<string, LucideIcon> = {
   Building2,
   Droplet,
   Flame,
+  Music,
 }
 
 /** Chaves Lucide (valor salvo) e rótulos em português (exibição). */
@@ -107,6 +109,7 @@ export const CATEGORY_ICON_OPTIONS = [
   { key: 'Building2', label: 'Empresa' },
   { key: 'Droplet', label: 'Água' },
   { key: 'Flame', label: 'Gás' },
+  { key: 'Music', label: 'Música' },
 ] as const
 
 export const CATEGORY_ICONS = CATEGORY_ICON_OPTIONS.map((o) => o.key)

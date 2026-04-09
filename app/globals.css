@@ -38,6 +38,14 @@
     --chart-5: 262.1 83.3% 57.8%;
     --dashboard-bento-radius: 0.875rem;
     --dashboard-surface-mix: 0.5;
+    /* Largura do sidebar fixo: 0 no mobile; desktop usa 16rem até o JS aplicar 4rem se recolhido */
+    --dashboard-sidebar-width: 0px;
+  }
+
+  @media (min-width: 1024px) {
+    :root {
+      --dashboard-sidebar-width: 16rem;
+    }
   }
 
   .dark {
@@ -100,6 +108,18 @@
 
   .dashboard-section-label {
     @apply text-xs font-semibold uppercase tracking-wider text-muted-foreground;
+  }
+
+  /* Rodapé global fica alinhado ao conteúdo quando o sidebar fixo está visível (lg+) */
+  html:has([data-dashboard-root]) footer[data-site-footer] {
+    @apply motion-reduce:transition-none;
+    transition: padding-left 200ms ease-out;
+  }
+
+  @media (min-width: 1024px) {
+    html:has([data-dashboard-root]) footer[data-site-footer] {
+      padding-left: var(--dashboard-sidebar-width);
+    }
   }
 }
 

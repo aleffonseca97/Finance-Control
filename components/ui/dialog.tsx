@@ -52,7 +52,11 @@ export function Dialog({
         aria-label={ariaLabel}
         onClick={(e) => e.stopPropagation()}
         className={cn(
-          'fixed left-[50%] top-[50%] z-[60] w-[calc(100%-2rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] rounded-lg border bg-background p-6 shadow-lg outline-none transition-transform duration-200 ease-out motion-reduce:transition-none',
+          'fixed left-[50%] top-[50%] z-[60] w-[calc(100%-max(2rem,env(safe-area-inset-left,0px)+env(safe-area-inset-right,0px)))] max-h-[min(90dvh,40rem)] max-w-lg translate-x-[-50%] translate-y-[-50%] overflow-y-auto overscroll-y-contain rounded-lg border bg-background shadow-lg outline-none transition-transform duration-200 ease-out motion-reduce:transition-none',
+          '[padding-block:max(1.25rem,env(safe-area-inset-top,0px))_max(1.25rem,env(safe-area-inset-bottom,0px))]',
+          '[padding-inline:max(1rem,env(safe-area-inset-left,0px))_max(1rem,env(safe-area-inset-right,0px))]',
+          'sm:[padding-block:max(1.5rem,env(safe-area-inset-top,0px))_max(1.5rem,env(safe-area-inset-bottom,0px))]',
+          'sm:[padding-inline:max(1.5rem,env(safe-area-inset-left,0px))_max(1.5rem,env(safe-area-inset-right,0px))]',
           className,
         )}
       >

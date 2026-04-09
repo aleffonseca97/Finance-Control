@@ -22,6 +22,7 @@ model User {
   investments     Investment[]
   goals           Goal[]
   creditCards     CreditCard[]
+  recurringPayments RecurringPayment[]
 }
 
 model Category {
@@ -42,6 +43,7 @@ model Category {
   reserveInvestments Investment[]      @relation("ReserveCategory")
   walletInvestments  Investment[]      @relation("WalletCategory")
   goalReserves       Goal[]            @relation("GoalReserveCategory")
+  recurringPayments  RecurringPayment[]
 
   @@index([userId])
   @@index([userId, type])
@@ -65,6 +67,7 @@ model Transaction {
   category                 Category   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   creditCard               CreditCard? @relation("CardCharge", fields: [creditCardId], references: [id], onDelete: SetNull)
   paysCreditCard           CreditCard? @relation("CardPayment", fields: [paysCreditCardId], references: [id], onDelete: SetNull)
+  recurringOccurrence      RecurringPaymentOccurrence?
 
   @@index([userId])
   @@index([userId, date])
@@ -128,4 +131,32 @@ model Goal {
   @@index([userId])
   @@index([deadline])
   @@index([reserveCategoryId])
+}
+
+model RecurringPayment {
+  id           String                       @id @default(cuid())
+  userId       String
+  categoryId   String
+  amount       Float
+  sortOrder    Int                          @default(0)
+  createdAt    DateTime                     @default(now())
+  user         User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category     Category                     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  occurrences  RecurringPaymentOccurrence[]
+
+  @@index([userId])
+  @@index([categoryId])
+}
+
+model RecurringPaymentOccurrence {
+  id                 String           @id @default(cuid())
+  recurringPaymentId String
+  year               Int
+  month              Int
+  transactionId      String?          @unique
+  recurringPayment   RecurringPayment @relation(fields: [recurringPaymentId], references: [id], onDelete: Cascade)
+  transaction        Transaction?     @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@unique([recurringPaymentId, year, month])
+  @@index([year, month])
 }

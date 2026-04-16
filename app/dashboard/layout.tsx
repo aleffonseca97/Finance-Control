@@ -1,8 +1,13 @@
 import { redirect } from 'next/navigation'
+import { headers } from 'next/headers'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { Sidebar } from '@/components/dashboard/sidebar'
 import { OnboardingRedirect } from '@/components/dashboard/onboarding-redirect'
+import { hasActiveSubscription } from '@/lib/subscription'
+
+/** Routes inside /dashboard that bypass the subscription paywall. */
+const PAYWALL_EXEMPT = ['/dashboard/assinatura']
 
 export default async function DashboardLayout({
   children,
@@ -12,11 +17,24 @@ export default async function DashboardLayout({
   const session = await auth()
   if (!session?.user?.id) redirect('/login')
 
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { hasSeenWelcome: true },
-  })
+  const headersList = await headers()
+  const pathname = headersList.get('x-pathname') ?? ''
+
+  const isExempt = PAYWALL_EXEMPT.some((p) => pathname.startsWith(p))
+
+  const [user, isSubscribed] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { hasSeenWelcome: true },
+    }),
+    isExempt ? Promise.resolve(true) : hasActiveSubscription(session.user.id),
+  ])
+
   const hasSeenWelcome = user?.hasSeenWelcome ?? false
+
+  if (!isSubscribed && !isExempt) {
+    redirect('/dashboard/assinatura')
+  }
 
   return (
     <div className="min-h-dvh bg-background" data-dashboard-root>

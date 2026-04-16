@@ -1,11 +1,13 @@
 import { RedefinirSenhaForm } from './redefinir-senha-form'
 
-export default function RedefinirSenhaPage({
+export default async function RedefinirSenhaPage({
   searchParams,
 }: {
-  searchParams: Record<string, string | string[] | undefined>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
-  const raw = searchParams.token
+  const params = await searchParams
+  const raw = params.token
   const token = typeof raw === 'string' ? raw : ''
+
   return <RedefinirSenhaForm token={token} />
 }

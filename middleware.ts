@@ -20,7 +20,11 @@ function sessionCookieName(): string {
 
 const middleware: NextMiddlewareWithAuth = async (req) => {
   const token = req.nextauth.token as JWT | null
-  if (!token) return NextResponse.next()
+  if (!token) {
+    const res = NextResponse.next()
+    res.headers.set('x-pathname', req.nextUrl.pathname)
+    return res
+  }
 
   const secret = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET
   if (!secret) return NextResponse.next()
@@ -64,7 +68,14 @@ const middleware: NextMiddlewareWithAuth = async (req) => {
       maxAge: SESSION_MAX_AGE_SEC,
     })
 
-    const res = NextResponse.next()
+    const res = NextResponse.next({
+      request: {
+        headers: new Headers({
+          ...Object.fromEntries(req.headers),
+          'x-pathname': req.nextUrl.pathname,
+        }),
+      },
+    })
     const secure = secureCookie()
     res.cookies.set(sessionCookieName(), newJwt, {
       httpOnly: true,
@@ -75,7 +86,15 @@ const middleware: NextMiddlewareWithAuth = async (req) => {
     })
     return res
   } catch {
-    return NextResponse.next()
+    const res = NextResponse.next({
+      request: {
+        headers: new Headers({
+          ...Object.fromEntries(req.headers),
+          'x-pathname': req.nextUrl.pathname,
+        }),
+      },
+    })
+    return res
   }
 }
 

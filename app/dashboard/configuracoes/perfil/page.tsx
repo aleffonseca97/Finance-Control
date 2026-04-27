@@ -2,6 +2,7 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { ProfileForm } from '@/components/settings/profile-form'
+import { SubscriptionSection } from '../../../../components/settings/subscription-section'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { DashboardPageHeader } from '@/components/dashboard/dashboard-page-header'
 
@@ -11,7 +12,20 @@ export default async function PerfilPage() {
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { name: true, email: true, marketingOptIn: true },
+    select: {
+      name: true,
+      email: true,
+      marketingOptIn: true,
+      stripeCustomerId: true,
+      subscription: {
+        select: {
+          status: true,
+          currentPeriodEnd: true,
+          trialEnd: true,
+          cancelAtPeriodEnd: true,
+        },
+      },
+    },
   })
 
   if (!user) redirect('/login')
@@ -39,6 +53,11 @@ export default async function PerfilPage() {
         name={user.name}
         email={user.email}
         marketingOptIn={user.marketingOptIn}
+      />
+
+      <SubscriptionSection
+        stripeCustomerId={user.stripeCustomerId}
+        subscription={user.subscription}
       />
     </div>
   )

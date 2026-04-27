@@ -21,13 +21,27 @@ function sessionCookieName(): string {
 const middleware: NextMiddlewareWithAuth = async (req) => {
   const token = req.nextauth.token as JWT | null
   if (!token) {
-    const res = NextResponse.next()
-    res.headers.set('x-pathname', req.nextUrl.pathname)
-    return res
+    return NextResponse.next({
+      request: {
+        headers: new Headers({
+          ...Object.fromEntries(req.headers),
+          'x-pathname': req.nextUrl.pathname,
+        }),
+      },
+    })
   }
 
   const secret = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET
-  if (!secret) return NextResponse.next()
+  if (!secret) {
+    return NextResponse.next({
+      request: {
+        headers: new Headers({
+          ...Object.fromEntries(req.headers),
+          'x-pathname': req.nextUrl.pathname,
+        }),
+      },
+    })
+  }
 
   const now = Date.now()
   const lastActivity =

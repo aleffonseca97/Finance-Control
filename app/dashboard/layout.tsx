@@ -7,7 +7,7 @@ import { OnboardingRedirect } from '@/components/dashboard/onboarding-redirect'
 import { hasActiveSubscription } from '@/lib/subscription'
 
 /** Routes inside /dashboard that bypass the subscription paywall. */
-const PAYWALL_EXEMPT = ['/dashboard/assinatura']
+const PAYWALL_EXEMPT = ['/dashboard/assinatura', '/dashboard/boas-vindas']
 
 export default async function DashboardLayout({
   children,

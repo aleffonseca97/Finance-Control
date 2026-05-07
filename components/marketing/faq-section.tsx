@@ -6,14 +6,14 @@ import { cn } from '@/lib/utils'
 
 const faqs = [
   {
-    question: 'O que acontece depois dos 3 meses grátis?',
+    question: 'O que acontece depois dos 2 meses grátis?',
     answer:
       'Após o período de teste, sua assinatura é cobrada automaticamente no cartão cadastrado no valor de R$10/mês. Você receberá um e-mail de lembrete com antecedência antes do fim do trial.',
   },
   {
     question: 'Preciso informar o cartão de crédito para começar?',
     answer:
-      'Sim, o cartão é solicitado no cadastro para ativar o trial. Mas não há nenhuma cobrança nos primeiros 3 meses. A primeira cobrança ocorre somente após o fim do período gratuito.',
+      'Sim, o cartão é solicitado no cadastro para ativar o trial. Mas não há nenhuma cobrança nos primeiros 2 meses. A primeira cobrança ocorre somente após o fim do período gratuito.',
   },
   {
     question: 'Posso cancelar a qualquer momento?',

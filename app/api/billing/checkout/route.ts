@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { SUBSCRIPTION_TRIAL_PERIOD_DAYS } from '@/lib/billing'
 import { stripe, absoluteUrl } from '@/lib/stripe'
 
 /**
  * POST /api/billing/checkout
  * Creates (or reuses) a Stripe Customer for the logged-in user,
- * then opens a Checkout Session for a monthly subscription with a 90-day trial.
+ * then opens a Checkout Session for a monthly subscription with a free trial
+ * (SUBSCRIPTION_TRIAL_PERIOD_DAYS — first charge only after the trial ends).
  */
 export async function POST() {
   const session = await auth()
@@ -55,14 +57,13 @@ export async function POST() {
     })
   }
 
-  // Create the checkout session with a 90-day (3-month) trial
   const checkoutSession = await stripe.checkout.sessions.create({
     customer: customerId,
     mode: 'subscription',
     payment_method_types: ['card'],
     line_items: [{ price: priceId, quantity: 1 }],
     subscription_data: {
-      trial_period_days: 90,
+      trial_period_days: SUBSCRIPTION_TRIAL_PERIOD_DAYS,
       metadata: { userId: user.id },
     },
     success_url: absoluteUrl('/dashboard?checkout=success'),

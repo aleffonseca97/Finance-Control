@@ -21,7 +21,7 @@ export default function HeroSection() {
             <div className="inline-flex items-center gap-2 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-full px-4 py-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-sm text-emerald-700 dark:text-emerald-400 font-medium">
-                3 meses grátis — comece hoje
+                2 meses grátis — comece hoje
               </span>
             </div>
 

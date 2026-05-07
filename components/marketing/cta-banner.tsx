@@ -19,7 +19,7 @@ export default function CtaBanner() {
               suas finanças?
             </h2>
             <p className="text-primary-foreground/75 mb-8 max-w-md mx-auto text-base leading-relaxed">
-              Comece com 3 meses grátis. Sem complicação, sem surpresa.
+              Comece com 2 meses grátis. Sem complicação, sem surpresa.
             </p>
             <Button size="lg" variant="secondary" asChild className="text-base font-semibold group">
               <Link href="/registro">

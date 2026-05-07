@@ -17,8 +17,9 @@ export function OnboardingRedirect({
 
   useEffect(() => {
     const isBoasVindas = pathname === '/dashboard/boas-vindas'
+    const isAssinatura = pathname === '/dashboard/assinatura'
 
-    if (!hasSeenWelcome && !isBoasVindas) {
+    if (!hasSeenWelcome && !isBoasVindas && !isAssinatura) {
       router.replace('/dashboard/boas-vindas')
       return
     }

@@ -39,7 +39,7 @@ export default function PricingSection() {
               <div className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-full px-3 py-1 mb-6">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                 <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                  3 meses grátis inclusos
+                  2 meses grátis inclusos
                 </span>
               </div>
 
@@ -53,13 +53,13 @@ export default function PricingSection() {
                 </div>
               </div>
               <p className="text-sm text-zinc-500 dark:text-zinc-400 mb-6 leading-relaxed">
-                Após os 3 primeiros meses. Nenhuma cobrança durante o período de teste.
+                Após os 2 primeiros meses. Nenhuma cobrança durante o período de teste.
               </p>
 
               {/* CTA */}
               <Button className="w-full mb-4 text-base group" size="lg" asChild>
                 <Link href="/registro">
-                  Começar 3 meses grátis
+                  Começar 2 meses grátis
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
                 </Link>
               </Button>

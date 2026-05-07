@@ -2,7 +2,7 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
 import { ProfileForm } from '@/components/settings/profile-form'
-import { SubscriptionSection } from '../../../../components/settings/subscription-section'
+import { SubscriptionSection } from '@/components/settings/subscription-section'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { DashboardPageHeader } from '@/components/dashboard/dashboard-page-header'
 

@@ -1,9 +1,17 @@
 import { withAuth } from 'next-auth/middleware'
 import type { NextMiddlewareWithAuth } from 'next-auth/middleware'
 import type { JWT } from 'next-auth/jwt'
+import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { encode } from 'next-auth/jwt'
 import { IDLE_MAX_MS, SESSION_MAX_AGE_SEC } from './lib/session-ttl'
+
+/** Clone request headers and set pathname for Server Components (see Next.js middleware docs). */
+function nextWithPathname(req: NextRequest) {
+  const requestHeaders = new Headers(req.headers)
+  requestHeaders.set('x-pathname', req.nextUrl.pathname)
+  return NextResponse.next({ request: { headers: requestHeaders } })
+}
 
 function secureCookie(): boolean {
   return (
@@ -21,26 +29,12 @@ function sessionCookieName(): string {
 const middleware: NextMiddlewareWithAuth = async (req) => {
   const token = req.nextauth.token as JWT | null
   if (!token) {
-    return NextResponse.next({
-      request: {
-        headers: new Headers({
-          ...Object.fromEntries(req.headers),
-          'x-pathname': req.nextUrl.pathname,
-        }),
-      },
-    })
+    return nextWithPathname(req)
   }
 
   const secret = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET
   if (!secret) {
-    return NextResponse.next({
-      request: {
-        headers: new Headers({
-          ...Object.fromEntries(req.headers),
-          'x-pathname': req.nextUrl.pathname,
-        }),
-      },
-    })
+    return nextWithPathname(req)
   }
 
   const now = Date.now()
@@ -82,14 +76,7 @@ const middleware: NextMiddlewareWithAuth = async (req) => {
       maxAge: SESSION_MAX_AGE_SEC,
     })
 
-    const res = NextResponse.next({
-      request: {
-        headers: new Headers({
-          ...Object.fromEntries(req.headers),
-          'x-pathname': req.nextUrl.pathname,
-        }),
-      },
-    })
+    const res = nextWithPathname(req)
     const secure = secureCookie()
     res.cookies.set(sessionCookieName(), newJwt, {
       httpOnly: true,
@@ -100,15 +87,7 @@ const middleware: NextMiddlewareWithAuth = async (req) => {
     })
     return res
   } catch {
-    const res = NextResponse.next({
-      request: {
-        headers: new Headers({
-          ...Object.fromEntries(req.headers),
-          'x-pathname': req.nextUrl.pathname,
-        }),
-      },
-    })
-    return res
+    return nextWithPathname(req)
   }
 }
 

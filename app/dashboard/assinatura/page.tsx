@@ -47,7 +47,7 @@ export default function AssinaturaPage() {
             <div className="inline-flex items-center gap-1.5 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 rounded-full px-3 py-1 mb-5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
               <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">
-                3 meses grátis
+                2 meses grátis
               </span>
             </div>
 
@@ -66,7 +66,7 @@ export default function AssinaturaPage() {
               <span className="text-muted-foreground pb-1 text-sm">/mês</span>
             </div>
             <p className="text-xs text-muted-foreground mb-6">
-              Após os 3 primeiros meses gratuitos.
+              Após os 2 primeiros meses gratuitos.
             </p>
 
             {/* Error */}
@@ -90,7 +90,7 @@ export default function AssinaturaPage() {
                 </>
               ) : (
                 <>
-                  Começar 3 meses grátis
+                  Começar 2 meses grátis
                   <ArrowRight className="ml-2 h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5" />
                 </>
               )}

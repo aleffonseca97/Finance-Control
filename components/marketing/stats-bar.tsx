@@ -1,5 +1,5 @@
 const stats = [
-  { value: '3 meses', label: 'grátis para testar' },
+  { value: '2 meses', label: 'grátis para testar' },
   { value: 'R$10', label: 'por mês, após o trial' },
   { value: '0', label: 'taxa de fidelidade' },
   { value: '100%', label: 'privacidade dos seus dados' },

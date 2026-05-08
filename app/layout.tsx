@@ -1,10 +1,14 @@
 import type { Metadata, Viewport } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Outfit } from 'next/font/google'
 import './globals.css'
 import { Providers } from '@/components/providers'
-import { Footer } from '@/components/footer'
 
 const inter = Inter({ subsets: ['latin'], display: 'swap' })
+const outfit = Outfit({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-outfit',
+})
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -27,11 +31,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <body className={`${inter.className} flex min-h-dvh flex-col antialiased`}>
+      <body className={`${inter.className} ${outfit.variable} flex min-h-dvh flex-col antialiased`}>
         <main className="min-w-0 flex-1">
           <Providers>{children}</Providers>
         </main>
-        <Footer />
       </body>
     </html>
   )

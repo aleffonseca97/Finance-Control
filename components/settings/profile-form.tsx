@@ -71,7 +71,7 @@ export function ProfileForm({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="grid gap-6 xl:grid-cols-2 xl:items-start">
       <form
         action={handleProfileSubmit}
         className="space-y-4 p-4 rounded-lg border bg-card"

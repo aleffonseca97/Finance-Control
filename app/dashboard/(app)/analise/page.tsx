@@ -31,6 +31,10 @@ export default async function AnalisePage({
   const expenseChange = comparison.previous.expense > 0
     ? ((comparison.current.expense - comparison.previous.expense) / comparison.previous.expense) * 100
     : 0
+  const incomeDiff = comparison.current.income - comparison.previous.income
+  const expenseDiff = comparison.current.expense - comparison.previous.expense
+  const hasIncomeBaseline = comparison.previous.income > 0
+  const hasExpenseBaseline = comparison.previous.expense > 0
 
   return (
     <div className="space-y-8">
@@ -78,12 +82,16 @@ export default async function AnalisePage({
                   <p className="text-xl font-bold text-emerald-500">
                     R$ {comparison.current.income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
-                  {comparison.previous.income > 0 && (
-                    <span className={`text-sm ${incomeChange >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                      {incomeChange >= 0 ? '+' : ''}{incomeChange.toFixed(1)}%
-                    </span>
-                  )}
+                  <span className={`text-sm ${hasIncomeBaseline ? (incomeChange >= 0 ? 'text-emerald-500' : 'text-red-500') : 'text-muted-foreground'}`}>
+                    {hasIncomeBaseline ? `${incomeChange >= 0 ? '+' : ''}${incomeChange.toFixed(1)}%` : 'Sem base anterior'}
+                  </span>
                 </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Mês anterior: R$ {comparison.previous.income.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+                <p className={`text-xs ${incomeDiff >= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                  {incomeDiff >= 0 ? '+' : ''}R$ {incomeDiff.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
               </div>
               <div className="dashboard-bento-card p-4 shadow-sm">
                 <p className="text-sm text-muted-foreground mb-1">Saídas (mês atual)</p>
@@ -91,12 +99,16 @@ export default async function AnalisePage({
                   <p className="text-xl font-bold text-red-500">
                     R$ {comparison.current.expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
-                  {comparison.previous.expense > 0 && (
-                    <span className={`text-sm ${expenseChange <= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
-                      {expenseChange >= 0 ? '+' : ''}{expenseChange.toFixed(1)}%
-                    </span>
-                  )}
+                  <span className={`text-sm ${hasExpenseBaseline ? (expenseChange <= 0 ? 'text-emerald-500' : 'text-red-500') : 'text-muted-foreground'}`}>
+                    {hasExpenseBaseline ? `${expenseChange >= 0 ? '+' : ''}${expenseChange.toFixed(1)}%` : 'Sem base anterior'}
+                  </span>
                 </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Mês anterior: R$ {comparison.previous.expense.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+                <p className={`text-xs ${expenseDiff <= 0 ? 'text-emerald-500' : 'text-red-500'}`}>
+                  {expenseDiff >= 0 ? '+' : ''}R$ {expenseDiff.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
               </div>
             </div>
           </CardContent>

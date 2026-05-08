@@ -7,6 +7,7 @@ import {
   createRecurringPayment,
   deleteRecurringPayment,
   markRecurringPaymentPaid,
+  updateRecurringPayment,
   type RecurringHealthInsight,
   type RecurringPaymentRow,
 } from '@/app/actions/recurring-payments'
@@ -56,9 +57,15 @@ export function RecurringPaymentsContent({
   const router = useRouter()
   const [modalOpen, setModalOpen] = useState(false)
   const [formError, setFormError] = useState('')
+  const [editError, setEditError] = useState('')
   const [actionError, setActionError] = useState('')
+  const [filterQuery, setFilterQuery] = useState('')
+  const [filterStatus, setFilterStatus] = useState<'all' | 'paid' | 'pending'>('all')
   const [isPending, startTransition] = useTransition()
   const [optimisticPaid, setOptimisticPaid] = useState<Record<string, boolean>>({})
+  const [editingRow, setEditingRow] = useState<RecurringPaymentRow | null>(null)
+  const [createAmountType, setCreateAmountType] = useState<'fixed' | 'percentage'>('fixed')
+  const [editAmountType, setEditAmountType] = useState<'fixed' | 'percentage'>('fixed')
 
   const rowsKey = useMemo(
     () => rows.map((r) => `${r.id}:${r.paid}`).join('|'),
@@ -72,6 +79,20 @@ export function RecurringPaymentsContent({
   function displayPaid(row: RecurringPaymentRow) {
     return optimisticPaid[row.id] ?? row.paid
   }
+
+  const normalizedFilter = filterQuery.trim().toLocaleLowerCase('pt-BR')
+  const filteredRows = useMemo(() => {
+    return rows.filter((row) => {
+      const paid = displayPaid(row)
+      if (filterStatus === 'paid' && !paid) return false
+      if (filterStatus === 'pending' && paid) return false
+      if (!normalizedFilter) return true
+      const haystack = `${row.categoryName} ${row.categoryGroup ?? ''}`.toLocaleLowerCase(
+        'pt-BR',
+      )
+      return haystack.includes(normalizedFilter)
+    })
+  }, [rows, filterStatus, normalizedFilter, optimisticPaid])
 
   const categoryGroups = useMemo(() => {
     return Array.from(
@@ -133,6 +154,17 @@ export function RecurringPaymentsContent({
     router.refresh()
   }
 
+  async function handleEdit(formData: FormData) {
+    setEditError('')
+    const result = await updateRecurringPayment(formData)
+    if (result.error) {
+      setEditError(result.error)
+      return
+    }
+    setEditingRow(null)
+    router.refresh()
+  }
+
   return (
     <div className="space-y-6">
       <div
@@ -158,9 +190,8 @@ export function RecurringPaymentsContent({
       )}
 
       <p className="text-sm leading-relaxed text-muted-foreground">
-        Este controle é independente das despesas fixas que o sistema lança
-        automaticamente em <span className="font-medium text-foreground">Saídas</span>.
-        Evite cadastrar a mesma conta duas vezes para não duplicar valores.
+        Pagamentos recorrentes e despesas fixas usam a mesma base de dados.
+        Alterações feitas aqui também atualizam seus lançamentos fixos.
       </p>
 
       <Card className="dashboard-bento-card min-w-0 shadow-md">
@@ -179,6 +210,7 @@ export function RecurringPaymentsContent({
             className="w-full shrink-0 touch-manipulation sm:w-auto"
             onClick={() => {
               setFormError('')
+              setCreateAmountType('fixed')
               setModalOpen(true)
             }}
           >
@@ -194,6 +226,40 @@ export function RecurringPaymentsContent({
             </p>
           ) : (
             <>
+              <div className="mb-4 flex flex-col gap-3 px-4 sm:flex-row sm:items-end sm:px-0">
+                <div className="w-full space-y-2">
+                  <Label htmlFor="recurring-filter">Filtrar por categoria</Label>
+                  <Input
+                    id="recurring-filter"
+                    value={filterQuery}
+                    onChange={(e) => setFilterQuery(e.target.value)}
+                    placeholder="Ex.: aluguel, internet, energia"
+                    className="min-h-11 text-base sm:min-h-10 sm:text-sm"
+                  />
+                </div>
+                <div className="w-full space-y-2 sm:w-56">
+                  <Label htmlFor="recurring-status-filter">Status</Label>
+                  <Select
+                    id="recurring-status-filter"
+                    value={filterStatus}
+                    onChange={(e) =>
+                      setFilterStatus(e.target.value as 'all' | 'paid' | 'pending')
+                    }
+                    className="min-h-11 w-full text-base sm:min-h-10 sm:text-sm"
+                  >
+                    <option value="all">Todos</option>
+                    <option value="pending">Pendentes</option>
+                    <option value="paid">Pagos</option>
+                  </Select>
+                </div>
+              </div>
+
+              {filteredRows.length === 0 && (
+                <p className="mb-4 px-4 text-sm text-muted-foreground sm:px-0">
+                  Nenhum resultado para os filtros selecionados.
+                </p>
+              )}
+
               <div className="hidden overflow-x-auto md:block">
                 <table className="w-full min-w-[640px] text-left text-sm">
                   <thead>
@@ -206,7 +272,7 @@ export function RecurringPaymentsContent({
                     </tr>
                   </thead>
                   <tbody>
-                    {rows.map((row) => (
+                    {filteredRows.map((row) => (
                       <tr
                         key={row.id}
                         className="border-b border-border/60 last:border-0"
@@ -219,6 +285,11 @@ export function RecurringPaymentsContent({
                         </td>
                         <td className="px-4 py-3 text-right font-semibold tabular-nums text-red-600 dark:text-red-400">
                           R$ {formatBRL(row.amount)}
+                          {row.amountType === 'percentage' && (
+                            <span className="ml-2 text-xs text-muted-foreground">
+                              ({row.percentage?.toFixed(2)}%)
+                            </span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-center">
                           <label className="inline-flex cursor-pointer items-center justify-center gap-2">
@@ -239,11 +310,25 @@ export function RecurringPaymentsContent({
                           </label>
                         </td>
                         <td className="px-2 py-3 text-right">
-                          <DeleteConfirmButton
-                            confirmMessage="Excluir esta conta recorrente? As ocorrências dos meses também serão removidas."
-                            onDelete={() => handleDelete(row.id)}
-                            ariaLabel={`Excluir ${row.categoryName}`}
-                          />
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              className="h-8 px-2 text-xs"
+                              onClick={() => {
+                                setEditError('')
+                                setEditAmountType(row.amountType)
+                                setEditingRow(row)
+                              }}
+                            >
+                              Editar
+                            </Button>
+                            <DeleteConfirmButton
+                              confirmMessage="Excluir esta conta recorrente? As ocorrências dos meses também serão removidas."
+                              onDelete={() => handleDelete(row.id)}
+                              ariaLabel={`Excluir ${row.categoryName}`}
+                            />
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -252,7 +337,7 @@ export function RecurringPaymentsContent({
               </div>
 
               <ul className="divide-y divide-border/60 md:hidden">
-                {rows.map((row) => (
+                {filteredRows.map((row) => (
                   <li key={row.id} className="px-4 py-4 sm:px-6">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
@@ -263,6 +348,11 @@ export function RecurringPaymentsContent({
                         <p className="mt-2 text-lg font-semibold tabular-nums text-red-600 dark:text-red-400">
                           R$ {formatBRL(row.amount)}
                         </p>
+                        {row.amountType === 'percentage' && (
+                          <p className="text-xs text-muted-foreground">
+                            {row.percentage?.toFixed(2)}% das entradas do mês
+                          </p>
+                        )}
                       </div>
                       <div className="flex shrink-0 flex-col items-end gap-2">
                         <label className="flex items-center gap-2 text-sm">
@@ -282,6 +372,18 @@ export function RecurringPaymentsContent({
                             aria-label={`Marcar ${row.categoryName} como pago`}
                           />
                         </label>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="h-8 px-2 text-xs"
+                          onClick={() => {
+                            setEditError('')
+                            setEditAmountType(row.amountType)
+                            setEditingRow(row)
+                          }}
+                        >
+                          Editar
+                        </Button>
                         <DeleteConfirmButton
                           confirmMessage="Excluir esta conta recorrente?"
                           onDelete={() => handleDelete(row.id)}
@@ -347,18 +449,51 @@ export function RecurringPaymentsContent({
               </Select>
             </div>
             <div className="space-y-2">
+              <Label htmlFor="recurring-amount-type">Tipo de cálculo</Label>
+              <Select
+                id="recurring-amount-type"
+                name="amountType"
+                value={createAmountType}
+                onChange={(e) => setCreateAmountType(e.target.value as 'fixed' | 'percentage')}
+              >
+                <option value="fixed">Valor fixo</option>
+                <option value="percentage">Percentual das entradas do mês</option>
+              </Select>
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="recurring-amount">Valor (mensal)</Label>
-              <Input
-                id="recurring-amount"
-                name="amount"
-                type="number"
-                inputMode="decimal"
-                step="0.01"
-                min="0.01"
-                required
-                placeholder="0,00"
-                className="min-h-11 text-base sm:min-h-10 sm:text-sm"
-              />
+              {createAmountType === 'fixed' ? (
+                <>
+                  <Input
+                    id="recurring-amount"
+                    name="amount"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0.01"
+                    required
+                    placeholder="0,00"
+                    className="min-h-11 text-base sm:min-h-10 sm:text-sm"
+                  />
+                  <input type="hidden" name="percentage" value="" />
+                </>
+              ) : (
+                <>
+                  <Input
+                    id="recurring-amount"
+                    name="percentage"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0.01"
+                    max="100"
+                    required
+                    placeholder="Ex.: 10"
+                    className="min-h-11 text-base sm:min-h-10 sm:text-sm"
+                  />
+                  <input type="hidden" name="amount" value="0" />
+                </>
+              )}
             </div>
             {formError && (
               <p className="text-sm text-destructive" role="alert">
@@ -376,6 +511,123 @@ export function RecurringPaymentsContent({
               </Button>
               <Button type="submit" className="w-full touch-manipulation sm:w-auto">
                 Salvar
+              </Button>
+            </div>
+          </form>
+        )}
+      </Dialog>
+
+      <Dialog
+        open={editingRow != null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingRow(null)
+            setEditError('')
+          }
+        }}
+        className="max-w-md"
+      >
+        <DialogHeader onClose={() => setEditingRow(null)}>
+          Editar conta recorrente
+        </DialogHeader>
+        {editingRow && (
+          <form action={handleEdit} className="space-y-4 pt-1">
+            <input type="hidden" name="recurringPaymentId" value={editingRow.id} />
+            <input type="hidden" name="month" value={month} />
+            <input type="hidden" name="year" value={year} />
+            <div className="space-y-2">
+              <Label htmlFor="edit-recurring-category">Categoria</Label>
+              <Select
+                id="edit-recurring-category"
+                name="categoryId"
+                required
+                className="min-h-11 w-full text-base sm:min-h-10 sm:text-sm"
+                defaultValue={editingRow.categoryId}
+              >
+                <option value="" disabled>
+                  Selecione…
+                </option>
+                {categoryGroups.map((group) => {
+                  const groupCats = categoriesByGroup.get(group) ?? []
+                  return (
+                    <optgroup key={group} label={group}>
+                      {groupCats.map((cat) => (
+                        <option key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )
+                })}
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-recurring-amount-type">Tipo de cálculo</Label>
+              <Select
+                id="edit-recurring-amount-type"
+                name="amountType"
+                value={editAmountType}
+                onChange={(e) => setEditAmountType(e.target.value as 'fixed' | 'percentage')}
+              >
+                <option value="fixed">Valor fixo</option>
+                <option value="percentage">Percentual das entradas do mês</option>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-recurring-amount">Valor (mensal)</Label>
+              {editAmountType === 'fixed' ? (
+                <>
+                  <Input
+                    id="edit-recurring-amount"
+                    name="amount"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0.01"
+                    required
+                    defaultValue={editingRow.amountType === 'fixed' ? editingRow.amount : 0}
+                    className="min-h-11 text-base sm:min-h-10 sm:text-sm"
+                  />
+                  <input type="hidden" name="percentage" value="" />
+                </>
+              ) : (
+                <>
+                  <Input
+                    id="edit-recurring-amount"
+                    name="percentage"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0.01"
+                    max="100"
+                    required
+                    defaultValue={editingRow.percentage ?? 0}
+                    className="min-h-11 text-base sm:min-h-10 sm:text-sm"
+                  />
+                  <input type="hidden" name="amount" value="0" />
+                </>
+              )}
+            </div>
+            {editError && (
+              <p className="text-sm text-destructive" role="alert">
+                {editError}
+              </p>
+            )}
+            <p className="text-xs text-muted-foreground">
+              Se houver lançamento no mês atual, os valores serão atualizados nele
+              também.
+            </p>
+            <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full sm:w-auto"
+                onClick={() => setEditingRow(null)}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" className="w-full touch-manipulation sm:w-auto">
+                Salvar alterações
               </Button>
             </div>
           </form>

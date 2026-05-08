@@ -36,8 +36,12 @@ const navItems = [
   { href: '/dashboard/saidas', label: 'Saídas', icon: TrendingDown },
   {
     href: '/dashboard/pagamentos-recorrentes',
-    label: 'Pagamentos recorrentes',
+    label: 'Recorrência',
     icon: Repeat,
+    children: [
+      { href: '/dashboard/pagamentos-recorrentes', label: 'Pagamentos', icon: TrendingDown },
+      { href: '/dashboard/recorrencia/investimentos', label: 'Investimentos', icon: PiggyBank },
+    ],
   },
   {
     href: '/dashboard/cartao-credito',
@@ -84,6 +88,10 @@ export function Sidebar() {
   const [isLg, setIsLg] = useState(false);
   const [configOpen, setConfigOpen] = useState(
     pathname.startsWith('/dashboard/configuracoes')
+  );
+  const [recurrenceOpen, setRecurrenceOpen] = useState(
+    pathname.startsWith('/dashboard/pagamentos-recorrentes') ||
+      pathname.startsWith('/dashboard/recorrencia/investimentos')
   );
   const [analiseOpen, setAnaliseOpen] = useState(
     pathname.startsWith('/dashboard/analise') || pathname.startsWith('/dashboard/tabela-anual')
@@ -142,6 +150,15 @@ export function Sidebar() {
   useEffect(() => {
     if (pathname.startsWith('/dashboard/analise') || pathname.startsWith('/dashboard/tabela-anual')) {
       setAnaliseOpen(true);
+    }
+  }, [pathname]);
+
+  useEffect(() => {
+    if (
+      pathname.startsWith('/dashboard/pagamentos-recorrentes') ||
+      pathname.startsWith('/dashboard/recorrencia/investimentos')
+    ) {
+      setRecurrenceOpen(true);
     }
   }, [pathname]);
 
@@ -276,10 +293,15 @@ export function Sidebar() {
             const isAnaliseSection = item.href === '/dashboard/analise';
             const isConfigSection = item.href === '/dashboard/configuracoes';
             const isInvestimentosSection = item.href === '/dashboard/investimentos';
+            const isRecurrenceSection = item.href === '/dashboard/pagamentos-recorrentes';
             const isInvestimentosActive = pathname.startsWith('/dashboard/investimentos') || pathname.startsWith('/dashboard/metas');
+            const isRecurrenceActive =
+              pathname.startsWith('/dashboard/pagamentos-recorrentes') ||
+              pathname.startsWith('/dashboard/recorrencia/investimentos');
             const isAnaliseActive = pathname.startsWith('/dashboard/analise') || pathname.startsWith('/dashboard/tabela-anual');
             const isConfigActive = pathname.startsWith('/dashboard/configuracoes');
             const isParentActive =
+              (isRecurrenceSection && isRecurrenceActive) ||
               (isInvestimentosSection && isInvestimentosActive) ||
               (isAnaliseSection && isAnaliseActive) ||
               (isConfigSection && isConfigActive);
@@ -288,11 +310,15 @@ export function Sidebar() {
             if (hasChildren && item.children) {
               const expanded = isAnaliseSection
                 ? analiseOpen || isAnaliseActive
+                : isRecurrenceSection
+                  ? recurrenceOpen || isRecurrenceActive
                 : isInvestimentosSection
                   ? investimentosOpen || isInvestimentosActive
                   : configOpen || isConfigActive;
               const toggleOpen = isAnaliseSection
                 ? () => setAnaliseOpen(!analiseOpen)
+                : isRecurrenceSection
+                  ? () => setRecurrenceOpen(!recurrenceOpen)
                 : isInvestimentosSection
                   ? () => setInvestimentosOpen(!investimentosOpen)
                   : () => setConfigOpen(!configOpen);

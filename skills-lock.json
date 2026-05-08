@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "financial-analysis": {
+      "source": "kyegomez/swarms",
+      "sourceType": "github",
+      "skillPath": "examples/single_agent/agent_skill_examples/financial-analysis/SKILL.md",
+      "computedHash": "95ce28ccfa1a380e77e141b6f7bd56cfc4cfb191e4801b92bd2eecdf8c7db4df"
+    },
     "find-skills": {
       "source": "vercel-labs/skills",
       "sourceType": "github",

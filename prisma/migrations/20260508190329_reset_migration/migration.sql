@@ -1,0 +1,2 @@
+-- RenameIndex
+ALTER INDEX "RecurringInvestmentOccurrence_recurringInvestmentId_year_month_" RENAME TO "RecurringInvestmentOccurrence_recurringInvestmentId_year_mo_key";

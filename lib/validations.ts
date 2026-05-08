@@ -34,9 +34,55 @@ export const withdrawalSchema = z.object({
 
 export const recurringPaymentCreateSchema = z.object({
   categoryId: z.string().min(1, 'Selecione uma categoria'),
-  amount: z.coerce.number().positive('Valor deve ser positivo'),
+  amountType: z.enum(['fixed', 'percentage']).default('fixed'),
+  amount: z.coerce.number().min(0, 'Valor deve ser maior ou igual a zero'),
+  percentage: z.coerce.number().min(0, 'Percentual inválido').max(100, 'Percentual inválido').optional(),
   month: z.coerce.number().int().min(0).max(11),
   year: z.coerce.number().int().min(2000).max(2100),
+}).superRefine((data, ctx) => {
+  if (data.amountType === 'fixed' && data.amount <= 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Valor deve ser positivo',
+      path: ['amount'],
+    })
+  }
+  if (data.amountType === 'percentage') {
+    if (data.percentage == null || data.percentage <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Informe um percentual maior que zero',
+        path: ['percentage'],
+      })
+    }
+  }
+})
+
+export const recurringInvestmentCreateSchema = z.object({
+  reserveCategoryId: z.string().min(1, 'Selecione uma reserva'),
+  walletCategoryId: z.string().min(1, 'Selecione uma carteira'),
+  amountType: z.enum(['fixed', 'percentage']).default('fixed'),
+  amount: z.coerce.number().min(0, 'Valor deve ser maior ou igual a zero'),
+  percentage: z.coerce.number().min(0, 'Percentual inválido').max(100, 'Percentual inválido').optional(),
+  month: z.coerce.number().int().min(0).max(11),
+  year: z.coerce.number().int().min(2000).max(2100),
+}).superRefine((data, ctx) => {
+  if (data.amountType === 'fixed' && data.amount <= 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'Valor deve ser positivo',
+      path: ['amount'],
+    })
+  }
+  if (data.amountType === 'percentage') {
+    if (data.percentage == null || data.percentage <= 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Informe um percentual maior que zero',
+        path: ['percentage'],
+      })
+    }
+  }
 })
 
 export const goalSchema = z.object({

@@ -3,6 +3,7 @@ import HeroSection from './hero-section'
 import StatsBar from './stats-bar'
 import FeaturesSection from './features-section'
 import ScreenshotsSection from './screenshots-section'
+import MobileDarkModeSection from './mobile-darkmode-section'
 import PricingSection from './pricing-section'
 import FaqSection from './faq-section'
 import CtaBanner from './cta-banner'
@@ -16,6 +17,7 @@ export function LandingPage() {
       <StatsBar />
       <FeaturesSection />
       <ScreenshotsSection />
+      <MobileDarkModeSection />
       <PricingSection />
       <FaqSection />
       <CtaBanner />

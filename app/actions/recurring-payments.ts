@@ -55,7 +55,10 @@ export async function ensureOccurrencesForMonth(
 
 export type RecurringPaymentRow = {
   id: string
+  categoryId: string
   amount: number
+  amountType: 'fixed' | 'percentage'
+  percentage: number | null
   categoryName: string
   categoryGroup: string | null
   paid: boolean
@@ -99,6 +102,20 @@ function buildHealthInsight(
   }
 }
 
+async function getMonthlyIncome(userId: string, month: number, year: number) {
+  const start = new Date(year, month, 1)
+  const end = new Date(year, month + 1, 0, 23, 59, 59, 999)
+  const incomeAgg = await prisma.transaction.aggregate({
+    where: {
+      userId,
+      type: 'income',
+      date: { gte: start, lte: end },
+    },
+    _sum: { amount: true },
+  })
+  return incomeAgg._sum.amount ?? 0
+}
+
 export async function getRecurringPaymentsForMonth(
   month: number,
   year: number,
@@ -114,10 +131,7 @@ export async function getRecurringPaymentsForMonth(
   const userId = session.user.id
   await ensureOccurrencesForMonth(userId, month, year)
 
-  const start = new Date(year, month, 1)
-  const end = new Date(year, month + 1, 0)
-
-  const [payments, incomeAgg] = await Promise.all([
+  const [payments, totalIncome] = await Promise.all([
     prisma.recurringPayment.findMany({
       where: { userId },
       include: {
@@ -129,29 +143,28 @@ export async function getRecurringPaymentsForMonth(
       },
       orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
     }),
-    prisma.transaction.aggregate({
-      where: {
-        userId,
-        type: 'income',
-        date: { gte: start, lte: end },
-      },
-      _sum: { amount: true },
-    }),
+    getMonthlyIncome(userId, month, year),
   ])
 
   const rows: RecurringPaymentRow[] = payments.map((p) => {
     const occ = p.occurrences[0]
+    const effectiveAmount =
+      p.amountType === 'percentage'
+        ? (Math.max(0, totalIncome) * (p.percentage ?? 0)) / 100
+        : p.amount
     return {
       id: p.id,
-      amount: p.amount,
+      categoryId: p.categoryId,
+      amount: effectiveAmount,
+      amountType: p.amountType as 'fixed' | 'percentage',
+      percentage: p.percentage,
       categoryName: p.category.name,
       categoryGroup: p.category.group,
       paid: occ?.transactionId != null,
     }
   })
 
-  const totalRecurring = payments.reduce((s, p) => s + p.amount, 0)
-  const totalIncome = incomeAgg._sum.amount ?? 0
+  const totalRecurring = rows.reduce((s, p) => s + p.amount, 0)
   const health = buildHealthInsight(totalRecurring, totalIncome)
 
   return { rows, totalRecurring, totalIncome, health }
@@ -163,7 +176,9 @@ export async function createRecurringPayment(formData: FormData) {
 
   const parsed = recurringPaymentCreateSchema.safeParse({
     categoryId: formData.get('categoryId'),
+    amountType: formData.get('amountType'),
     amount: formData.get('amount'),
+    percentage: formData.get('percentage'),
     month: formData.get('month'),
     year: formData.get('year'),
   })
@@ -178,12 +193,24 @@ export async function createRecurringPayment(formData: FormData) {
   )
   if (!category) return { error: 'Categoria inválida' }
 
-  await prisma.recurringPayment.create({
-    data: {
-      userId: session.user.id,
-      categoryId: parsed.data.categoryId,
-      amount: parsed.data.amount,
-    },
+  await prisma.$transaction(async (db) => {
+    await db.recurringPayment.create({
+      data: {
+        userId: session.user.id,
+        categoryId: parsed.data.categoryId,
+        amount: parsed.data.amount,
+        amountType: parsed.data.amountType,
+        percentage: parsed.data.amountType === 'percentage' ? parsed.data.percentage ?? null : null,
+      },
+    })
+
+    await db.category.update({
+      where: { id: parsed.data.categoryId },
+      data: {
+        isFixed: true,
+        defaultValue: parsed.data.amountType === 'fixed' ? parsed.data.amount : null,
+      },
+    })
   })
 
   await ensureOccurrencesForMonth(
@@ -191,6 +218,119 @@ export async function createRecurringPayment(formData: FormData) {
     parsed.data.month,
     parsed.data.year,
   )
+
+  revalidateRecurringPaths()
+  return { success: true }
+}
+
+export async function updateRecurringPayment(formData: FormData) {
+  const session = await auth()
+  if (!session?.user?.id) return { error: 'Não autorizado' }
+
+  const recurringPaymentIdRaw = formData.get('recurringPaymentId')
+  const recurringPaymentId =
+    typeof recurringPaymentIdRaw === 'string' ? recurringPaymentIdRaw.trim() : ''
+  if (!recurringPaymentId) return { error: 'Pagamento recorrente inválido' }
+
+  const parsed = recurringPaymentCreateSchema.safeParse({
+    categoryId: formData.get('categoryId'),
+    amountType: formData.get('amountType'),
+    amount: formData.get('amount'),
+    percentage: formData.get('percentage'),
+    month: formData.get('month'),
+    year: formData.get('year'),
+  })
+
+  if (!parsed.success) {
+    return { error: parsed.error.errors[0].message }
+  }
+
+  const nextCategory = await ensureExpenseCategoryForUser(
+    parsed.data.categoryId,
+    session.user.id,
+  )
+  if (!nextCategory) return { error: 'Categoria inválida' }
+
+  const existing = await prisma.recurringPayment.findFirst({
+    where: { id: recurringPaymentId, userId: session.user.id },
+    include: {
+      occurrences: {
+        where: { year: parsed.data.year, month: parsed.data.month },
+        take: 1,
+      },
+    },
+  })
+
+  if (!existing) return { error: 'Pagamento recorrente não encontrado' }
+  const now = new Date()
+  const isCurrentMonth =
+    parsed.data.month === now.getMonth() && parsed.data.year === now.getFullYear()
+  const monthlyForCurrentLaunch =
+    isCurrentMonth && existing.occurrences[0]?.transactionId
+      ? await getMonthlyIncome(session.user.id, parsed.data.month, parsed.data.year)
+      : null
+
+  await prisma.$transaction(async (db) => {
+    await db.recurringPayment.update({
+      where: { id: existing.id },
+      data: {
+        categoryId: parsed.data.categoryId,
+        amount: parsed.data.amount,
+        amountType: parsed.data.amountType,
+        percentage: parsed.data.amountType === 'percentage' ? parsed.data.percentage ?? null : null,
+      },
+    })
+
+    await db.category.update({
+      where: { id: parsed.data.categoryId },
+      data: {
+        isFixed: true,
+        defaultValue: parsed.data.amountType === 'fixed' ? parsed.data.amount : null,
+      },
+    })
+
+    if (existing.categoryId !== parsed.data.categoryId) {
+      const previousCategoryTemplates = await db.recurringPayment.findMany({
+        where: { userId: session.user.id, categoryId: existing.categoryId },
+        select: { amount: true, amountType: true },
+        orderBy: { createdAt: 'asc' },
+      })
+
+      if (previousCategoryTemplates.length === 0) {
+        await db.category.update({
+          where: { id: existing.categoryId },
+          data: { isFixed: false, defaultValue: null },
+        })
+      } else {
+        const latestTemplate =
+          previousCategoryTemplates[previousCategoryTemplates.length - 1]!
+        await db.category.update({
+          where: { id: existing.categoryId },
+          data: {
+            isFixed: true,
+            defaultValue:
+              latestTemplate.amountType === 'fixed' ? latestTemplate.amount : null,
+          },
+        })
+      }
+    }
+
+    const occurrence = existing.occurrences[0]
+    if (isCurrentMonth && occurrence?.transactionId) {
+      const nextAmount =
+        parsed.data.amountType === 'percentage'
+          ? ((monthlyForCurrentLaunch ?? 0) * (parsed.data.percentage ?? 0)) / 100
+          : parsed.data.amount
+      await db.transaction.update({
+        where: { id: occurrence.transactionId },
+        data: {
+          categoryId: parsed.data.categoryId,
+          amount: nextAmount,
+          description: RECURRING_TX_DESCRIPTION,
+        },
+      })
+    }
+  })
 
   revalidateRecurringPaths()
   return { success: true }
@@ -230,13 +370,18 @@ export async function markRecurringPaymentPaid(
   }
 
   const txDate = new Date(year, month, 1)
+  const monthlyIncome = await getMonthlyIncome(session.user.id, month, year)
+  const amountToLaunch =
+    payment.amountType === 'percentage'
+      ? (monthlyIncome * (payment.percentage ?? 0)) / 100
+      : payment.amount
 
   await prisma.$transaction(async (db) => {
     const created = await db.transaction.create({
       data: {
         userId: session.user.id,
         categoryId: payment.categoryId,
-        amount: payment.amount,
+        amount: amountToLaunch,
         description: RECURRING_TX_DESCRIPTION,
         date: txDate,
         type: 'expense',
@@ -258,11 +403,37 @@ export async function deleteRecurringPayment(id: string) {
   const session = await auth()
   if (!session?.user?.id) return { error: 'Não autorizado' }
 
-  const deleted = await prisma.recurringPayment.deleteMany({
+  const existing = await prisma.recurringPayment.findFirst({
     where: { id, userId: session.user.id },
+    select: { id: true, categoryId: true },
   })
+  if (!existing) return { error: 'Item não encontrado' }
 
-  if (deleted.count === 0) return { error: 'Item não encontrado' }
+  await prisma.$transaction(async (db) => {
+    await db.recurringPayment.delete({
+      where: { id: existing.id },
+    })
+
+    const remainingForCategory = await db.recurringPayment.findMany({
+      where: { userId: session.user.id, categoryId: existing.categoryId },
+      select: { amount: true },
+      orderBy: { createdAt: 'asc' },
+    })
+
+    if (remainingForCategory.length === 0) {
+      await db.category.update({
+        where: { id: existing.categoryId },
+        data: { isFixed: false, defaultValue: null },
+      })
+    } else {
+      const latestAmount =
+        remainingForCategory[remainingForCategory.length - 1]!.amount
+      await db.category.update({
+        where: { id: existing.categoryId },
+        data: { isFixed: true, defaultValue: latestAmount },
+      })
+    }
+  })
 
   revalidateRecurringPaths()
   return { success: true }

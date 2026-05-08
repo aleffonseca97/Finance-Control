@@ -65,41 +65,36 @@ export async function getFixedVsVariable(month?: number, year?: number) {
   const m = month ?? now.getMonth()
   const y = year ?? now.getFullYear()
   const start = new Date(y, m, 1)
-  const end = new Date(y, m + 1, 0)
-
-  const fixedCategories = await prisma.category.findMany({
-    where: { userId: session.user.id, type: 'expense', isFixed: true },
-    select: { id: true },
-  })
-  const variableCategories = await prisma.category.findMany({
-    where: { userId: session.user.id, type: 'expense', isFixed: false },
-    select: { id: true },
-  })
-
-  const [fixedAgg, variableAgg] = await Promise.all([
-    prisma.transaction.aggregate({
-      where: {
-        userId: session.user.id,
-        categoryId: { in: fixedCategories.map((c) => c.id) },
-        date: { gte: start, lte: end },
-        ...budgetExpenseWhere,
+  const end = new Date(y, m + 1, 0, 23, 59, 59, 999)
+  const expenses = await prisma.transaction.findMany({
+    where: {
+      userId: session.user.id,
+      date: { gte: start, lte: end },
+      ...budgetExpenseWhere,
+    },
+    select: {
+      amount: true,
+      category: {
+        select: {
+          isFixed: true,
+        },
       },
-      _sum: { amount: true },
-    }),
-    prisma.transaction.aggregate({
-      where: {
-        userId: session.user.id,
-        categoryId: { in: variableCategories.map((c) => c.id) },
-        date: { gte: start, lte: end },
-        ...budgetExpenseWhere,
-      },
-      _sum: { amount: true },
-    }),
-  ])
+    },
+  })
+
+  let fixed = 0
+  let variable = 0
+  for (const expense of expenses) {
+    if (expense.category?.isFixed) {
+      fixed += expense.amount
+    } else {
+      variable += expense.amount
+    }
+  }
 
   return {
-    fixed: fixedAgg._sum.amount ?? 0,
-    variable: variableAgg._sum.amount ?? 0,
+    fixed,
+    variable,
   }
 }
 
@@ -115,7 +110,7 @@ export async function getExpensesByCategory(
   const m = month ?? now.getMonth()
   const y = year ?? now.getFullYear()
   const start = new Date(y, m, 1)
-  const end = new Date(y, m + 1, 0)
+  const end = new Date(y, m + 1, 0, 23, 59, 59, 999)
 
   const transactions = await prisma.transaction.groupBy({
     by: ['categoryId'],
@@ -157,9 +152,9 @@ export async function getMonthComparison(month?: number, year?: number) {
   const y = year ?? now.getFullYear()
 
   const currentStart = new Date(y, m, 1)
-  const currentEnd = new Date(y, m + 1, 0)
+  const currentEnd = new Date(y, m + 1, 0, 23, 59, 59, 999)
   const prevStart = new Date(y, m - 1, 1)
-  const prevEnd = new Date(y, m, 0)
+  const prevEnd = new Date(y, m, 0, 23, 59, 59, 999)
 
   const [currentIncome, currentExpense, prevIncome, prevExpense] =
     await Promise.all([

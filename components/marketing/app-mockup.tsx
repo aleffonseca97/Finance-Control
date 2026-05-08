@@ -16,7 +16,90 @@ const transactions = [
 
 const barHeights = [40, 65, 45, 80, 55, 70, 90, 60, 75, 85, 50, 95]
 
-export default function AppMockup() {
+type AppMockupProps = {
+  variant?: 'desktop' | 'mobile'
+}
+
+export default function AppMockup({ variant = 'desktop' }: AppMockupProps) {
+  if (variant === 'mobile') {
+    return (
+      <div className="flex justify-center">
+        <div className="relative w-[230px] h-[460px] rounded-[2.4rem] bg-white dark:bg-zinc-900 shadow-[0_18px_50px_-20px_rgba(0,0,0,0.35)] dark:shadow-[0_18px_50px_-20px_rgba(0,0,0,0.65)] overflow-hidden">
+          {/* Notch / status bar */}
+          <div className="absolute inset-x-12 top-2 h-4 rounded-full bg-zinc-800/90" />
+
+          {/* Inner screen */}
+          <div className="relative mt-6 mx-2 mb-3 rounded-[1.8rem] overflow-hidden bg-zinc-50 dark:bg-zinc-950">
+            {/* Header mobile */}
+            <div className="flex items-center justify-between px-3 pt-3 pb-2">
+              <div className="space-y-0.5">
+                <div className="h-2 w-16 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+                <div className="h-2 w-10 rounded-full bg-zinc-200/80 dark:bg-zinc-800/80" />
+              </div>
+              <div className="h-4 px-2 rounded-full bg-zinc-100 dark:bg-zinc-900 text-[8px] flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
+                <span>Set</span>
+                <span className="w-1 h-1 rounded-full bg-emerald-500" />
+              </div>
+            </div>
+
+            {/* Content mobile – cards + chart + lista */}
+            <div className="px-3 pb-3 space-y-2.5">
+              {/* Summary cards: empilhados */}
+              <div className="space-y-1.5">
+                {summaryCards.map((card) => (
+                  <div
+                    key={card.label}
+                    className="bg-white dark:bg-zinc-900 rounded-xl px-3 py-1.5 border border-zinc-100 dark:border-zinc-800 flex items-center justify-between"
+                  >
+                    <div className="space-y-0.5">
+                      <div className="text-[8px] text-zinc-400 dark:text-zinc-500">{card.label}</div>
+                      <div className={cn('text-[11px] font-semibold', card.color)}>{card.value}</div>
+                    </div>
+                    <div className="w-6 h-6 rounded-full bg-primary/10 dark:bg-primary/20" />
+                  </div>
+                ))}
+              </div>
+
+              {/* Mini chart */}
+              <div className="bg-white dark:bg-zinc-900 rounded-xl p-2 border border-zinc-100 dark:border-zinc-800">
+                <div className="text-[8px] text-zinc-400 dark:text-zinc-500 mb-1">Evolução mensal</div>
+                <div className="flex items-end gap-0.5 h-16">
+                  {barHeights.slice(0, 8).map((h, i) => (
+                    <div key={i} className="flex-1 rounded-sm relative h-full">
+                      <div className="absolute inset-x-0 bottom-0 rounded-sm bg-primary/15 dark:bg-primary/25" />
+                      <div
+                        className="absolute inset-x-0 bottom-0 rounded-sm bg-primary/70 dark:bg-primary/80"
+                        style={{ height: `${h}%` }}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Lista transações */}
+              <div className="bg-white dark:bg-zinc-900 rounded-xl p-2 border border-zinc-100 dark:border-zinc-800">
+                <div className="text-[8px] text-zinc-400 dark:text-zinc-500 mb-1">Transações recentes</div>
+                <div className="space-y-1">
+                  {transactions.map((tx) => (
+                    <div key={tx.desc} className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-zinc-300 dark:bg-zinc-700" />
+                        <span className="text-[9px] text-zinc-600 dark:text-zinc-300 truncate max-w-[90px]">
+                          {tx.desc}
+                        </span>
+                      </div>
+                      <span className={cn('text-[9px] font-semibold', tx.color)}>{tx.amount}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="rounded-xl overflow-hidden border border-zinc-200 dark:border-zinc-700 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.12)] dark:shadow-[0_20px_60px_-15px_rgba(0,0,0,0.4)]">
       {/* Browser chrome */}

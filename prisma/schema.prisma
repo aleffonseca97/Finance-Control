@@ -26,6 +26,7 @@ model User {
   goals           Goal[]
   creditCards     CreditCard[]
   recurringPayments RecurringPayment[]
+  recurringInvestments RecurringInvestment[]
   subscription    Subscription?
 }
 
@@ -65,6 +66,8 @@ model Category {
   walletInvestments  Investment[]      @relation("WalletCategory")
   goalReserves       Goal[]            @relation("GoalReserveCategory")
   recurringPayments  RecurringPayment[]
+  recurringInvestmentReserves RecurringInvestment[] @relation("RecurringInvestmentReserveCategory")
+  recurringInvestmentWallets  RecurringInvestment[] @relation("RecurringInvestmentWalletCategory")
 
   @@index([userId])
   @@index([userId, type])
@@ -112,6 +115,7 @@ model Investment {
   category          Category? @relation("InvestmentCategory", fields: [categoryId], references: [id], onDelete: SetNull)
   reserveCategory   Category? @relation("ReserveCategory", fields: [reserveCategoryId], references: [id], onDelete: SetNull)
   walletCategory    Category? @relation("WalletCategory", fields: [walletCategoryId], references: [id], onDelete: SetNull)
+  recurringOccurrence RecurringInvestmentOccurrence?
 
   @@index([userId])
   @@index([userId, date])
@@ -158,7 +162,9 @@ model RecurringPayment {
   id           String                       @id @default(cuid())
   userId       String
   categoryId   String
-  amount       Float
+  amount       Float                        @default(0)
+  amountType   String                       @default("fixed") // fixed | percentage
+  percentage   Float?
   sortOrder    Int                          @default(0)
   createdAt    DateTime                     @default(now())
   user         User                         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -167,6 +173,39 @@ model RecurringPayment {
 
   @@index([userId])
   @@index([categoryId])
+}
+
+model RecurringInvestment {
+  id                String                         @id @default(cuid())
+  userId            String
+  reserveCategoryId String
+  walletCategoryId  String
+  amount            Float                          @default(0)
+  amountType        String                         @default("fixed") // fixed | percentage
+  percentage        Float?
+  sortOrder         Int                            @default(0)
+  createdAt         DateTime                       @default(now())
+  user              User                           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reserveCategory   Category                       @relation("RecurringInvestmentReserveCategory", fields: [reserveCategoryId], references: [id], onDelete: Cascade)
+  walletCategory    Category                       @relation("RecurringInvestmentWalletCategory", fields: [walletCategoryId], references: [id], onDelete: Cascade)
+  occurrences       RecurringInvestmentOccurrence[]
+
+  @@index([userId])
+  @@index([reserveCategoryId])
+  @@index([walletCategoryId])
+}
+
+model RecurringInvestmentOccurrence {
+  id                    String              @id @default(cuid())
+  recurringInvestmentId String
+  year                  Int
+  month                 Int
+  investmentId          String?             @unique
+  recurringInvestment   RecurringInvestment @relation(fields: [recurringInvestmentId], references: [id], onDelete: Cascade)
+  investment            Investment?         @relation(fields: [investmentId], references: [id], onDelete: SetNull)
+
+  @@unique([recurringInvestmentId, year, month])
+  @@index([year, month])
 }
 
 model RecurringPaymentOccurrence {

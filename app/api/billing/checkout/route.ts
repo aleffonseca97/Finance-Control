@@ -66,7 +66,10 @@ export async function POST() {
       trial_period_days: SUBSCRIPTION_TRIAL_PERIOD_DAYS,
       metadata: { userId: user.id },
     },
-    success_url: absoluteUrl('/dashboard?checkout=success'),
+    // Return to assinatura so we sync before the paywall layout runs (see assinatura/page.tsx).
+    success_url: absoluteUrl(
+      '/dashboard/assinatura?checkout=success&session_id={CHECKOUT_SESSION_ID}',
+    ),
     cancel_url: absoluteUrl('/?checkout=canceled'),
     allow_promotion_codes: true,
     billing_address_collection: 'auto',

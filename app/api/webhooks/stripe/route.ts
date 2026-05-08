@@ -3,6 +3,12 @@ import { NextResponse } from 'next/server'
 import type Stripe from 'stripe'
 import { stripe } from '@/lib/stripe'
 import { prisma } from '@/lib/db'
+import {
+  upsertSubscription,
+  upsertSubscriptionFromId,
+  userIdFromCustomer,
+  type StripeSubscriptionPayload,
+} from '@/lib/stripe-subscription-sync'
 
 /**
  * POST /api/webhooks/stripe
@@ -46,7 +52,13 @@ export async function POST(req: Request) {
         const session = event.data.object as Stripe.Checkout.Session
         if (session.mode !== 'subscription') break
 
-        const subscriptionId = session.subscription as string
+        const subRef = session.subscription
+        const subscriptionId =
+          typeof subRef === 'string'
+            ? subRef
+            : subRef && typeof subRef === 'object' && 'id' in subRef
+              ? (subRef as { id: string }).id
+              : null
         const userId = session.metadata?.userId
 
         if (!userId || !subscriptionId) break
@@ -57,15 +69,23 @@ export async function POST(req: Request) {
 
       case 'customer.subscription.created':
       case 'customer.subscription.updated': {
-        const subscription = event.data.object as Stripe.Subscription
-        const userId = await userIdFromCustomer(subscription.customer as string)
+        const subscription = event.data.object as unknown as StripeSubscriptionPayload
+        const customerId =
+          typeof subscription.customer === 'string'
+            ? subscription.customer
+            : subscription.customer &&
+                typeof subscription.customer === 'object' &&
+                'id' in subscription.customer
+              ? String((subscription.customer as { id: string }).id)
+              : ''
+        const userId = customerId ? await userIdFromCustomer(customerId) : null
         if (!userId) break
         await upsertSubscription(subscription, userId)
         break
       }
 
       case 'customer.subscription.deleted': {
-        const subscription = event.data.object as Stripe.Subscription
+        const subscription = event.data.object as unknown as Pick<StripeSubscriptionPayload, 'id'>
         await prisma.subscription.updateMany({
           where: { stripeSubscriptionId: subscription.id },
           data: { status: 'canceled', cancelAtPeriodEnd: false },
@@ -79,7 +99,7 @@ export async function POST(req: Request) {
         if (!subscriptionId) break
         const sub = await stripe.subscriptions.retrieve(subscriptionId)
         const userId = await userIdFromCustomer(sub.customer as string)
-        if (userId) await upsertSubscription(sub, userId)
+        if (userId) await upsertSubscription(sub as unknown as StripeSubscriptionPayload, userId)
         break
       }
 
@@ -104,47 +124,4 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({ received: true })
-}
-
-// ─── Helpers ───────────────────────────────────────────────────────────────
-
-async function userIdFromCustomer(customerId: string): Promise<string | null> {
-  const user = await prisma.user.findUnique({
-    where: { stripeCustomerId: customerId },
-    select: { id: true },
-  })
-  return user?.id ?? null
-}
-
-async function upsertSubscriptionFromId(subscriptionId: string, userId: string) {
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-  await upsertSubscription(subscription, userId)
-}
-
-async function upsertSubscription(subscription: Stripe.Subscription, userId: string) {
-  const priceId = subscription.items.data[0]?.price.id ?? ''
-  const trialEnd = subscription.trial_end
-    ? new Date(subscription.trial_end * 1000)
-    : null
-  const currentPeriodEnd = new Date(subscription.current_period_end * 1000)
-
-  await prisma.subscription.upsert({
-    where: { stripeSubscriptionId: subscription.id },
-    create: {
-      userId,
-      stripeSubscriptionId: subscription.id,
-      stripePriceId: priceId,
-      status: subscription.status,
-      currentPeriodEnd,
-      trialEnd,
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
-    },
-    update: {
-      stripePriceId: priceId,
-      status: subscription.status,
-      currentPeriodEnd,
-      trialEnd,
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
-    },
-  })
 }

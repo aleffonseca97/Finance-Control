@@ -460,7 +460,7 @@ export function Sidebar() {
               'w-full',
               effectiveCollapsed && 'lg:justify-center lg:px-0 lg:min-h-10',
             )}
-            onClick={() => signOut({ callbackUrl: '/login' })}
+            onClick={() => signOut({ callbackUrl: '/' })}
             aria-label="Sair"
             title={effectiveCollapsed ? 'Sair' : undefined}
           >

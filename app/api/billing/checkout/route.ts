@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { SUBSCRIPTION_TRIAL_PERIOD_DAYS } from '@/lib/billing'
-import { stripe, absoluteUrl } from '@/lib/stripe'
+import { getStripe, absoluteUrl } from '@/lib/stripe'
 
 /**
  * POST /api/billing/checkout
@@ -35,7 +35,7 @@ export async function POST() {
     user.subscription &&
     ['active', 'trialing'].includes(user.subscription.status)
   ) {
-    const portalSession = await stripe.billingPortal.sessions.create({
+    const portalSession = await getStripe().billingPortal.sessions.create({
       customer: user.stripeCustomerId!,
       return_url: absoluteUrl('/dashboard'),
     })
@@ -45,7 +45,7 @@ export async function POST() {
   // Create a Stripe customer if needed
   let customerId = user.stripeCustomerId
   if (!customerId) {
-    const customer = await stripe.customers.create({
+    const customer = await getStripe().customers.create({
       email: user.email,
       name: user.name ?? undefined,
       metadata: { userId: user.id },
@@ -57,7 +57,7 @@ export async function POST() {
     })
   }
 
-  const checkoutSession = await stripe.checkout.sessions.create({
+  const checkoutSession = await getStripe().checkout.sessions.create({
     customer: customerId,
     mode: 'subscription',
     payment_method_types: ['card'],

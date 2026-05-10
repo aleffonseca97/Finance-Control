@@ -1,7 +1,7 @@
 import { headers } from 'next/headers'
 import { NextResponse } from 'next/server'
 import type Stripe from 'stripe'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 import { prisma } from '@/lib/db'
 import {
   upsertSubscription,
@@ -40,7 +40,7 @@ export async function POST(req: Request) {
 
   let event: Stripe.Event
   try {
-    event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
+    event = getStripe().webhooks.constructEvent(body, signature, webhookSecret)
   } catch (err) {
     console.error('Webhook signature verification failed:', err)
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
         const invoice = event.data.object as Stripe.Invoice & { subscription?: string }
         const subscriptionId = invoice.subscription
         if (!subscriptionId) break
-        const sub = await stripe.subscriptions.retrieve(subscriptionId)
+        const sub = await getStripe().subscriptions.retrieve(subscriptionId)
         const userId = await userIdFromCustomer(sub.customer as string)
         if (userId) await upsertSubscription(sub as unknown as StripeSubscriptionPayload, userId)
         break

@@ -5,7 +5,8 @@ services:
       dockerfile: dockerfile
     restart: unless-stopped
     ports:
-      - '3030:3030'
+      # host:container — app escuta em 3000 dentro do container (ver ENV PORT no Dockerfile)
+      - '3030:3000'
     container_name: logos-finance-app
     env_file:
       - .env

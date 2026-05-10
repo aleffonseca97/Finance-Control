@@ -9,7 +9,7 @@ import {
   markRecurringInvestmentApplied,
   type RecurringInvestmentRow,
 } from '@/app/actions/recurring-investments'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogHeader } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
@@ -87,8 +87,14 @@ export function RecurringInvestmentsContent({
       <Card className="dashboard-bento-card min-w-0 shadow-md">
         <CardHeader className="flex flex-row items-center justify-between gap-3">
           <div>
-            <CardTitle className="text-lg">Aportes recorrentes</CardTitle>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+              Aportes automáticos por mês
+            </CardTitle>
+            <CardDescription className="mt-1.5">
+              Defina transferências recorrentes da reserva para a carteira; valores
+              fixos ou percentuais sobre as entradas do mês.
+            </CardDescription>
+            <p className="mt-2 text-sm text-muted-foreground">
               Total previsto no mês:{' '}
               <span className="font-semibold text-foreground">R$ {formatBRL(totalRecurring)}</span>
             </p>

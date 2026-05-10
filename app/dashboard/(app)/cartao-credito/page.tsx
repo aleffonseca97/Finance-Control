@@ -4,7 +4,7 @@ import { getCreditCardPagePayload } from '@/app/actions/credit-cards'
 import { ensureGlobalCategories } from '@/app/actions/categories'
 import { CreditCardList } from '@/components/credit-card/credit-card-list'
 import { CreditCardMainCategoriesPieChart } from '@/components/charts/credit-card-main-categories-pie-chart'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardPageHeader } from '@/components/dashboard/dashboard-page-header'
 
 export default async function CartaoCreditoPage() {
@@ -27,11 +27,14 @@ export default async function CartaoCreditoPage() {
 
       <div className="space-y-6">
         <Card className="dashboard-bento-card overflow-hidden shadow-md">
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="text-base sm:text-lg">Cartões e pagamentos</CardTitle>
-            <p className="text-xs text-muted-foreground sm:text-sm">
-              Fechamento e vencimento são referência no cadastro; atraso com saldo em aberto pode gerar alerta
-            </p>
+          <CardHeader className="space-y-1.5 p-4 sm:p-6">
+            <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+              Meus cartões e faturas
+            </CardTitle>
+            <CardDescription>
+              Limites, datas de fechamento e vencimento; atrasos com saldo em aberto
+              geram alerta no painel.
+            </CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
             <CreditCardList
@@ -43,11 +46,14 @@ export default async function CartaoCreditoPage() {
         </Card>
 
         <Card className="dashboard-bento-card overflow-hidden shadow-md">
-          <CardHeader className="p-4 sm:p-6">
-            <CardTitle className="text-base sm:text-lg">Gastos no cartão por categoria principal</CardTitle>
-            <p className="text-xs text-muted-foreground sm:text-sm">
-              Distribuição das compras no cartão agrupadas pelas categorias principais cadastradas
-            </p>
+          <CardHeader className="space-y-1.5 p-4 sm:p-6">
+            <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+              Compras agrupadas por categoria principal
+            </CardTitle>
+            <CardDescription>
+              Distribuição do que foi gasto no crédito, somando subcategorias sob cada
+              grupo principal.
+            </CardDescription>
           </CardHeader>
           <CardContent className="p-4 pt-0 sm:p-6 sm:pt-0">
             <CreditCardMainCategoriesPieChart data={creditCardCategorySpending} />

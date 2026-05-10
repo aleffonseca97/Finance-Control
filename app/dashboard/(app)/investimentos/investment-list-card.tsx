@@ -1,6 +1,12 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { CategoryIcon } from '@/components/category/category-icon'
 import { DeleteConfirmButton } from '@/components/shared/delete-confirm-button'
 import { formatBRL } from '@/lib/date-utils'
@@ -18,6 +24,7 @@ type InvestmentItem = {
 
 type Props = {
   title: string
+  description?: string
   total: number
   investments: InvestmentItem[]
   emptyMessage: string
@@ -26,6 +33,7 @@ type Props = {
 
 export function InvestmentListCard({
   title,
+  description,
   total,
   investments,
   emptyMessage,
@@ -33,9 +41,18 @@ export function InvestmentListCard({
 }: Props) {
   return (
     <Card className="dashboard-bento-card-muted overflow-hidden shadow-md">
-      <CardHeader className="flex flex-col gap-2 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <CardTitle className="text-base sm:text-lg">{title}</CardTitle>
-        <p className="text-xl font-bold text-blue-500 tabular-nums sm:text-2xl">
+      <CardHeader className="flex flex-col gap-4 px-4 sm:flex-row sm:items-start sm:justify-between sm:px-6">
+        <div className="min-w-0 space-y-1.5">
+          <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+            {title}
+          </CardTitle>
+          {description ? (
+            <CardDescription className="text-sm leading-relaxed">
+              {description}
+            </CardDescription>
+          ) : null}
+        </div>
+        <p className="shrink-0 text-xl font-bold tabular-nums text-blue-500 sm:text-2xl">
           R$ {formatBRL(total)}
         </p>
       </CardHeader>

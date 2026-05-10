@@ -1,7 +1,7 @@
 'use client'
 
 import { Suspense } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { MonthStepper } from '@/components/forms/month-stepper'
 import { InvestmentForm } from '@/components/forms/investment-form'
 import { WithdrawalForm } from '@/components/forms/withdrawal-form'
@@ -49,11 +49,16 @@ export function InvestimentosGrid({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,320px)_1fr] xl:gap-8">
       <Card className="dashboard-bento-card-hero h-fit lg:sticky lg:top-24">
-        <CardContent className="flex flex-col gap-4 px-4 py-4 sm:px-6 sm:py-5">
-          <div>
-            <p className="dashboard-section-label text-primary/80">Mês em edição</p>
-            <p className="text-lg font-semibold">{monthLabel}</p>
-          </div>
+        <CardHeader className="space-y-1 pb-2 pt-5 sm:pt-6">
+          <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+            Calendário de aportes
+          </CardTitle>
+          <CardDescription>
+            {monthLabel}. Dias com movimentação aparecem marcados; selecione o dia
+            dos formulários à direita.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-4 px-4 pb-4 pt-0 sm:px-6 sm:pb-6">
           <div className="w-full min-w-0">
             <MonthStepper />
           </div>
@@ -76,11 +81,14 @@ export function InvestimentosGrid({
 
       <div className="min-w-0 space-y-6">
         <Card className="dashboard-bento-card shadow-md">
-          <CardHeader className="px-4 pt-4 sm:px-6 sm:pt-5">
-            <CardTitle className="text-base sm:text-lg">Adicionar aporte</CardTitle>
-            <p className="text-sm font-normal text-muted-foreground">
-              Escolha se o aporte deve usar o saldo mensal ou apenas ser monitorado.
-            </p>
+          <CardHeader className="space-y-1.5 px-4 pt-5 sm:px-6 sm:pt-6">
+            <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+              Novo aporte
+            </CardTitle>
+            <CardDescription>
+              Escolha se o aporte usa saldo do mês ou é apenas monitorado (sem sair
+              do caixa).
+            </CardDescription>
           </CardHeader>
           <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
             <InvestmentForm
@@ -92,11 +100,14 @@ export function InvestimentosGrid({
           </CardContent>
         </Card>
         <Card className="dashboard-bento-card-muted shadow-md">
-          <CardHeader className="px-4 pt-4 sm:px-6 sm:pt-5">
-            <CardTitle className="text-base sm:text-lg">Realizar saque</CardTitle>
-            <p className="text-sm font-normal text-muted-foreground">
-              O valor sacado será adicionado ao seu saldo mensal
-            </p>
+          <CardHeader className="space-y-1.5 px-4 pt-5 sm:px-6 sm:pt-6">
+            <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+              Resgate para o caixa
+            </CardTitle>
+            <CardDescription>
+              O valor retorna ao saldo mensal conforme a data e a carteira de
+              origem.
+            </CardDescription>
           </CardHeader>
           <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
             <WithdrawalForm

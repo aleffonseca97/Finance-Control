@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CategoryIcon } from '@/components/category/category-icon'
 import { CreditCard } from 'lucide-react'
 import { formatBRL } from '@/lib/date-utils'
@@ -19,16 +19,24 @@ type Props = {
 export function CreditCardSpending({ total, transactions }: Props) {
   return (
     <Card className="dashboard-bento-card-muted lg:min-w-[320px] shadow-md">
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-base">Gastos com cartão</CardTitle>
-        <CreditCard className="h-5 w-5 text-amber-500 shrink-0" aria-hidden />
+      <CardHeader className="flex flex-row items-start justify-between gap-3 pb-2">
+        <div className="min-w-0 space-y-1.5">
+          <CardTitle className="text-base font-semibold tracking-tight sm:text-lg">
+            Compras no cartão neste mês
+          </CardTitle>
+          <CardDescription>
+            Valores no crédito ainda não debitados do caixa até o pagamento da
+            fatura.
+          </CardDescription>
+        </div>
+        <CreditCard className="h-5 w-5 shrink-0 text-amber-500" aria-hidden />
       </CardHeader>
       <CardContent className="space-y-3">
         <p className="text-2xl font-bold text-amber-600">
           R$ {formatBRL(total)}
         </p>
         <p className="text-xs text-muted-foreground">
-          Compras no cartão no mês (fora do orçamento de caixa até você pagar a fatura)
+          Confira abaixo os lançamentos mais recentes no cartão.
         </p>
         {transactions.length > 0 ? (
           <div className="space-y-2 pt-2 border-t">

@@ -2,7 +2,7 @@ import { getFixedVsVariable, getExpensesByCategory, getMonthComparison } from '@
 import { FixedVariableChart } from '@/components/charts/fixed-variable-chart'
 import { ExpensesByCategoryChart } from '@/components/charts/expenses-by-category-chart'
 import { MonthFilter } from '@/components/forms/month-filter'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardPageHeader } from '@/components/dashboard/dashboard-page-header'
 import { chartCardClassName } from '@/components/charts/chart-shared'
 
@@ -47,7 +47,13 @@ export default async function AnalisePage({
       <div className="grid gap-4 lg:grid-cols-2">
         <Card className={`${chartCardClassName} shadow-md`}>
           <CardHeader>
-            <CardTitle>Despesas fixas vs variáveis</CardTitle>
+            <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+              Estrutura de gastos: fixo versus variável
+            </CardTitle>
+            <CardDescription>
+              Veja quanto do orçamento é previsível (contas fixas) e quanto flutua
+              com o dia a dia.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <FixedVariableChart fixed={fixedVsVariable.fixed} variable={fixedVsVariable.variable} />
@@ -72,7 +78,12 @@ export default async function AnalisePage({
 
         <Card className="dashboard-bento-card-muted shadow-md">
           <CardHeader>
-            <CardTitle>Comparativo com mês anterior</CardTitle>
+            <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+              Ritmo em relação ao mês anterior
+            </CardTitle>
+            <CardDescription>
+              Comparativo de entradas e saídas com variação percentual e em reais.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -117,7 +128,12 @@ export default async function AnalisePage({
 
       <Card className={`${chartCardClassName} shadow-md`}>
         <CardHeader>
-          <CardTitle>Top 5 despesas por categoria</CardTitle>
+          <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+            Onde o dinheiro está saindo mais
+          </CardTitle>
+          <CardDescription>
+            As cinco categorias de despesa com maior peso no período filtrado.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <ExpensesByCategoryChart data={byCategory} />

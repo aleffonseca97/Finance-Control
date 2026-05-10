@@ -7,7 +7,7 @@ import {
   deleteInvestment,
   getReserveWalletBalancesForUser,
 } from '@/app/actions/investments'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { CategoryIcon } from '@/components/category/category-icon'
 import { InvestmentsPieChart } from '@/components/charts/investments-pie-chart'
 import { InvestimentosGrid } from './investimentos-grid'
@@ -86,7 +86,8 @@ export default async function InvestimentosPage({
       </div>
 
       <InvestmentListCard
-        title="Total do período"
+        title="Aportes e saques do período"
+        description="Movimentações entre reserva e carteiras no mês filtrado, com total líquido."
         total={total}
         investments={investments}
         emptyMessage="Nenhum aporte ou saque neste período"
@@ -94,9 +95,17 @@ export default async function InvestimentosPage({
       />
 
       <Card className={`${chartCardClassName} overflow-hidden shadow-md`}>
-        <CardHeader className="flex flex-col gap-2 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-          <CardTitle className="text-base sm:text-lg">Total geral investido</CardTitle>
-          <p className="text-xl font-bold text-blue-500 tabular-nums sm:text-2xl">
+        <CardHeader className="flex flex-col gap-3 px-4 sm:flex-row sm:items-start sm:justify-between sm:px-6">
+          <div className="min-w-0 space-y-1.5">
+            <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+              Patrimônio investido acumulado
+            </CardTitle>
+            <CardDescription>
+              Soma de tudo que já foi alocado nas carteiras, com detalhamento por
+              categoria e distribuição no gráfico.
+            </CardDescription>
+          </div>
+          <p className="shrink-0 text-xl font-bold tabular-nums text-blue-500 sm:text-2xl">
             R$ {formatBRL(investmentsSummary.total)}
           </p>
         </CardHeader>

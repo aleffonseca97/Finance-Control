@@ -11,6 +11,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 
 type Props = {
   title: string;
@@ -28,6 +29,8 @@ type Props = {
   children: React.ReactNode;
   /** When set, replaces the default wallet icon in the header. */
   logo?: React.ReactNode;
+  /** Extra classes for the outer Card (e.g. wider max-width on long forms). */
+  className?: string;
 };
 
 export function AuthCard({
@@ -44,10 +47,11 @@ export function AuthCard({
   onSubmit,
   children,
   logo,
+  className,
 }: Props) {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
+      <Card className={cn('w-full max-w-md', className)}>
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-2">
             {logo ? (

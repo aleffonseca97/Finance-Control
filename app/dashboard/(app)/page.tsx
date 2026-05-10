@@ -1,7 +1,13 @@
 import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/db'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { getLastTransactions, getMonthlyEvolution } from '@/app/actions/analytics'
 import { ensureFixedExpensesForMonth } from '@/app/actions/transactions'
 import { getCreditCardOverdueNotices } from '@/app/actions/credit-cards'
@@ -111,14 +117,16 @@ export default async function DashboardPage() {
 
   const summaryCards = [
     {
-      title: 'Saldo do Mês',
+      title: 'Saldo líquido do mês',
+      description: 'Entradas menos saídas e aportes que saem do caixa.',
       value: data.balance,
       iconName: 'wallet' as const,
       color: data.balance >= 0 ? 'text-emerald-500' : 'text-red-500',
       action: 'statement' as const,
     },
     {
-      title: 'Limite disponível (cartões)',
+      title: 'Limites nos cartões',
+      description: 'Soma dos limites configurados em cada cartão cadastrado.',
       value: data.creditCardLimit,
       footnote: `Total contratado: R$ ${formatBRL(data.creditCardTotalLine)}`,
       iconName: 'credit-card' as const,
@@ -126,21 +134,24 @@ export default async function DashboardPage() {
       action: 'credit-card' as const,
     },
     {
-      title: 'Entradas',
+      title: 'Receitas do período',
+      description: 'Tudo que entrou no caixa no mês corrente.',
       value: data.totalIncome,
       iconName: 'trending-up' as const,
       color: 'text-emerald-500',
       action: 'incomes' as const,
     },
     {
-      title: 'Saídas',
+      title: 'Despesas no orçamento',
+      description: 'Saídas que compõem seu fluxo de caixa do mês.',
       value: data.totalExpense,
       iconName: 'trending-down' as const,
       color: 'text-red-500',
       action: 'expenses' as const,
     },
     {
-      title: 'Investimentos',
+      title: 'Aportes com impacto no caixa',
+      description: 'Investimentos lançados no mês que reduzem saldo disponível.',
       value: data.totalInvestment,
       iconName: 'piggy-bank' as const,
       color: 'text-blue-500',
@@ -169,7 +180,13 @@ export default async function DashboardPage() {
         <div className="grid gap-4 lg:grid-cols-2">
           <Card className={chartCardClassName}>
             <CardHeader>
-              <CardTitle className="text-lg">Entradas vs Saídas</CardTitle>
+              <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+                Composição do mês: receitas e despesas
+              </CardTitle>
+              <CardDescription>
+                Proporção entre o que entrou e o que saiu do caixa no mês atual
+                (orçamento de despesas).
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <IncomeExpensePieChart
@@ -181,7 +198,13 @@ export default async function DashboardPage() {
           </Card>
           <Card className="dashboard-bento-card-muted">
             <CardHeader>
-              <CardTitle className="text-lg">Últimas transações</CardTitle>
+              <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+                Linha do tempo recente
+              </CardTitle>
+              <CardDescription>
+                Os lançamentos mais novos, com categoria e valor, para revisão
+                rápida.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <RecentTransactions
@@ -197,7 +220,13 @@ export default async function DashboardPage() {
         <div className="grid gap-4 lg:grid-cols-[1fr_minmax(280px,320px)]">
           <Card className={chartCardClassName}>
             <CardHeader>
-              <CardTitle className="text-lg">Evolução mensal (últimos 6 meses)</CardTitle>
+              <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+                Tendência dos últimos seis meses
+              </CardTitle>
+              <CardDescription>
+                Entradas, saídas e saldo mês a mês para enxergar ritmo e
+                sazonalidade.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <MonthlyEvolutionChart data={evolution} />

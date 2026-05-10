@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db'
-import { stripe } from '@/lib/stripe'
+import { getStripe } from '@/lib/stripe'
 
 /** Stripe subscription fields we persist (explicit shape avoids clashing with Prisma's `Subscription` model). */
 export type StripeSubscriptionPayload = {
@@ -22,7 +22,7 @@ export async function userIdFromCustomer(customerId: string): Promise<string | n
 }
 
 export async function upsertSubscriptionFromId(subscriptionId: string, userId: string) {
-  const subscription = await stripe.subscriptions.retrieve(subscriptionId)
+  const subscription = await getStripe().subscriptions.retrieve(subscriptionId)
   await upsertSubscription(subscription as unknown as StripeSubscriptionPayload, userId)
 }
 
@@ -60,7 +60,7 @@ export async function syncSubscriptionFromCheckoutSession(
   checkoutSessionId: string,
   userId: string,
 ): Promise<{ ok: true } | { ok: false; reason: string }> {
-  const checkoutSession = await stripe.checkout.sessions.retrieve(checkoutSessionId, {
+  const checkoutSession = await getStripe().checkout.sessions.retrieve(checkoutSessionId, {
     expand: ['subscription'],
   })
 

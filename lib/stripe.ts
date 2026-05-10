@@ -1,12 +1,20 @@
 import Stripe from 'stripe'
 
-if (!process.env.STRIPE_SECRET_KEY) {
-  throw new Error('STRIPE_SECRET_KEY is not set')
-}
+let stripeClient: Stripe | null = null
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2026-03-25.dahlia',
-})
+/** Lazy init so `next build` does not require Stripe env vars (Docker/CI). */
+export function getStripe(): Stripe {
+  const key = process.env.STRIPE_SECRET_KEY
+  if (!key) {
+    throw new Error('STRIPE_SECRET_KEY is not set')
+  }
+  if (!stripeClient) {
+    stripeClient = new Stripe(key, {
+      apiVersion: '2026-03-25.dahlia',
+    })
+  }
+  return stripeClient
+}
 
 /** Returns the absolute URL for Stripe success/cancel redirects. */
 export function absoluteUrl(path: string) {

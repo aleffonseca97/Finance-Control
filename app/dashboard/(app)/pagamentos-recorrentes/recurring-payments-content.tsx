@@ -11,7 +11,7 @@ import {
   type RecurringHealthInsight,
   type RecurringPaymentRow,
 } from '@/app/actions/recurring-payments'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogHeader } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
@@ -197,8 +197,14 @@ export function RecurringPaymentsContent({
       <Card className="dashboard-bento-card min-w-0 shadow-md">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
           <div>
-            <CardTitle className="text-lg">Contas do mês</CardTitle>
-            <p className="mt-1 text-sm text-muted-foreground">
+            <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+              Contas e despesas fixas do mês
+            </CardTitle>
+            <CardDescription className="mt-1.5">
+              Marque o que já pagou e acompanhe o total a provisionar em relação às
+              suas entradas.
+            </CardDescription>
+            <p className="mt-2 text-sm text-muted-foreground">
               Total a provisionar:{' '}
               <span className="font-semibold tabular-nums text-foreground">
                 R$ {formatBRL(totalRecurring)}

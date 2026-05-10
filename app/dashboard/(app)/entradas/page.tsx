@@ -3,7 +3,7 @@ import { getCategoriesByType } from '@/app/actions/categories'
 import { getTransactions, deleteTransaction } from '@/app/actions/transactions'
 import { createIncome } from '@/app/actions/transactions'
 import { MonthStepper } from '@/components/forms/month-stepper'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { MonthCalendar } from '@/components/shared/month-calendar'
 import { CalendarFallback } from '@/components/shared/calendar-fallback'
 import { TransactionEntryForm } from '@/components/shared/transaction-entry-form'
@@ -41,13 +41,16 @@ export default async function EntradasPage({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,320px)_1fr] xl:gap-8">
         <Card className="dashboard-bento-card-hero h-fit lg:sticky lg:top-24">
-          <CardContent className="flex flex-col gap-4 py-4 sm:py-5">
-            <div>
-              <p className="dashboard-section-label text-primary/80">Mês em edição</p>
-              <p className="text-lg font-semibold">
-                {monthTitle} de {year}
-              </p>
-            </div>
+          <CardHeader className="space-y-1 pb-2 pt-5 sm:pt-6">
+            <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+              Calendário do mês
+            </CardTitle>
+            <CardDescription>
+              {monthTitle} de {year}. Dias com receita aparecem marcados; escolha
+              um dia para lançar abaixo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 px-4 pb-4 pt-0 sm:px-6 sm:pb-6">
             <div className="w-full min-w-0">
               <MonthStepper />
             </div>
@@ -69,7 +72,15 @@ export default async function EntradasPage({
         </Card>
 
         <Card className="dashboard-bento-card min-w-0 shadow-md">
-          <CardContent className="px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
+          <CardHeader className="space-y-1 pb-2 pt-5 sm:pt-6">
+            <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+              Nova receita
+            </CardTitle>
+            <CardDescription>
+              O valor entra no caixa na data selecionada no calendário à esquerda.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="px-4 pb-4 pt-0 sm:px-6 sm:pb-6">
             <TransactionEntryForm
               type="income"
               categories={categories}
@@ -84,7 +95,8 @@ export default async function EntradasPage({
       </div>
 
       <TransactionListCard
-        title="Total do período"
+        title="Receitas do período selecionado"
+        description="Todas as receitas lançadas no mês exibido no calendário, com total consolidado."
         total={total}
         items={transactions}
         emptyMessage="Nenhuma entrada neste período"

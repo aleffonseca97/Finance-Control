@@ -14,7 +14,7 @@ import {
   X,
   Settings,
   CreditCard,
-  Table2,
+  Receipt,
   Flag,
   ChevronDown,
   ChevronRight,
@@ -63,7 +63,7 @@ const navItems = [
     icon: BarChart3,
     children: [
       { href: '/dashboard/analise', label: 'Resumo', icon: BarChart3 },
-      { href: '/dashboard/tabela-anual', label: 'Tabela Anual', icon: Table2 },
+      { href: '/dashboard/parcelamentos', label: 'Parcelamentos', icon: Receipt },
     ],
   },
   {
@@ -94,7 +94,8 @@ export function Sidebar() {
       pathname.startsWith('/dashboard/recorrencia/investimentos')
   );
   const [analiseOpen, setAnaliseOpen] = useState(
-    pathname.startsWith('/dashboard/analise') || pathname.startsWith('/dashboard/tabela-anual')
+    pathname.startsWith('/dashboard/analise') ||
+      pathname.startsWith('/dashboard/parcelamentos')
   );
   const [investimentosOpen, setInvestimentosOpen] = useState(
     pathname.startsWith('/dashboard/investimentos') || pathname.startsWith('/dashboard/metas')
@@ -148,7 +149,10 @@ export function Sidebar() {
   }, [pathname]);
 
   useEffect(() => {
-    if (pathname.startsWith('/dashboard/analise') || pathname.startsWith('/dashboard/tabela-anual')) {
+    if (
+      pathname.startsWith('/dashboard/analise') ||
+      pathname.startsWith('/dashboard/parcelamentos')
+    ) {
       setAnaliseOpen(true);
     }
   }, [pathname]);
@@ -298,7 +302,9 @@ export function Sidebar() {
             const isRecurrenceActive =
               pathname.startsWith('/dashboard/pagamentos-recorrentes') ||
               pathname.startsWith('/dashboard/recorrencia/investimentos');
-            const isAnaliseActive = pathname.startsWith('/dashboard/analise') || pathname.startsWith('/dashboard/tabela-anual');
+            const isAnaliseActive =
+              pathname.startsWith('/dashboard/analise') ||
+              pathname.startsWith('/dashboard/parcelamentos');
             const isConfigActive = pathname.startsWith('/dashboard/configuracoes');
             const isParentActive =
               (isRecurrenceSection && isRecurrenceActive) ||

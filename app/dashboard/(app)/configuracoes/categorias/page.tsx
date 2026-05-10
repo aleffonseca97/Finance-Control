@@ -2,7 +2,7 @@ import { auth } from '@/lib/auth'
 import { redirect } from 'next/navigation'
 import { getCategoriesByType, getUserCategoriesByType } from '@/app/actions/categories'
 import { CategoryList } from '@/components/settings/category-list'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DashboardPageHeader } from '@/components/dashboard/dashboard-page-header'
 
 export default async function CategoriasPage() {
@@ -43,11 +43,14 @@ export default async function CategoriasPage() {
       <div className="space-y-6">
         <div className="grid gap-6 lg:grid-cols-1">
           <Card className="dashboard-bento-card shadow-md">
-            <CardHeader>
-              <CardTitle className="text-lg">Despesas variáveis</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Categorias para gastos que variam de mês a mês
-              </p>
+            <CardHeader className="space-y-1.5">
+              <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+                Despesas que mudam todo mês
+              </CardTitle>
+              <CardDescription>
+                Supermercado, lazer, transporte e demais gastos sem valor fixo; use
+                grupos principais para organizar relatórios.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <CategoryList
@@ -61,11 +64,14 @@ export default async function CategoriasPage() {
           </Card>
 
           <Card className="dashboard-bento-card-muted shadow-md">
-            <CardHeader>
-              <CardTitle className="text-lg">Despesas fixas</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Categorias para gastos recorrentes e previsíveis
-              </p>
+            <CardHeader className="space-y-1.5">
+              <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+                Contas e compromissos fixos
+              </CardTitle>
+              <CardDescription>
+                Aluguel, assinaturas, escola e outros valores previsíveis; alimentam
+                recorrências e o gráfico fixo versus variável.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <CategoryList
@@ -79,11 +85,14 @@ export default async function CategoriasPage() {
           </Card>
 
           <Card className="dashboard-bento-card shadow-md">
-            <CardHeader>
-              <CardTitle className="text-lg">Opções de entrada</CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Categorias para registrar suas receitas
-              </p>
+            <CardHeader className="space-y-1.5">
+              <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+                Fontes de receita
+              </CardTitle>
+              <CardDescription>
+                Salário, freelas, rendimentos e outras entradas; escolha o grupo para
+                classificar no painel e nas metas.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <CategoryList

@@ -2,7 +2,12 @@
 
 import { useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Dialog, DialogHeader } from '@/components/ui/dialog'
 import { formatBRL, formatDateBR } from '@/lib/date-utils'
 import type { TransactionWithCategory } from '@/lib/transaction-types'
@@ -16,6 +21,8 @@ import {
 
 type SummaryItem = {
   title: string
+  /** Texto curto de contexto sob o título (opcional). */
+  description?: string
   value: number
   iconName: 'wallet' | 'credit-card' | 'trending-up' | 'trending-down' | 'piggy-bank'
   color: string
@@ -99,7 +106,16 @@ export function SummaryCards({ items, statementTransactions }: Props) {
               }
             >
               <CardHeader className="flex flex-row items-start justify-between gap-2 pb-2">
-                <CardTitle className="text-sm font-medium leading-snug">{item.title}</CardTitle>
+                <div className="min-w-0 space-y-1 pr-1">
+                  <CardTitle className="text-sm font-semibold leading-snug tracking-tight">
+                    {item.title}
+                  </CardTitle>
+                  {item.description ? (
+                    <p className="text-xs leading-snug text-muted-foreground">
+                      {item.description}
+                    </p>
+                  ) : null}
+                </div>
                 <Icon className={`h-5 w-5 shrink-0 ${item.color}`} aria-hidden />
               </CardHeader>
               <CardContent>

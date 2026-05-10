@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useFormStatus } from 'react-dom'
 import type { Category } from '@prisma/client'
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
@@ -136,8 +136,14 @@ export function MetasContent({
   return (
     <div className="space-y-6">
       <Card className="dashboard-bento-card shadow-md">
-        <CardHeader className="px-4 pt-4 sm:px-6 sm:pt-5">
-          <CardTitle className="text-base sm:text-lg">Cadastrar nova meta</CardTitle>
+        <CardHeader className="space-y-1.5 px-4 pt-5 sm:px-6 sm:pt-6">
+          <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+            Nova meta financeira
+          </CardTitle>
+          <CardDescription>
+            Nome, reserva opcional, valor alvo e prazo. Use o bloco tracejado para
+            criar uma reserva sem sair desta tela.
+          </CardDescription>
         </CardHeader>
         <CardContent className="px-4 pb-4 sm:px-6 sm:pb-6">
           <form id="goals-form" action={handleSubmit} className="space-y-4 rounded-lg border bg-card p-4">
@@ -219,9 +225,19 @@ export function MetasContent({
 
             return (
               <Card key={goal.id} className="dashboard-bento-card overflow-hidden shadow-md">
-                <CardHeader className="px-4 pt-4 sm:px-6 sm:pt-5">
+                <CardHeader className="space-y-1 px-4 pt-5 sm:px-6 sm:pt-6">
                   <div className="flex items-start justify-between gap-3">
-                    <CardTitle className="text-base sm:text-lg">{goal.name}</CardTitle>
+                    <div className="min-w-0 space-y-1">
+                      <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+                        {goal.name}
+                      </CardTitle>
+                      <CardDescription>
+                        Alvo de R$ {formatBRL(goal.targetAmount)}
+                        {deadline
+                          ? ` até ${deadline.toLocaleDateString('pt-BR')}`
+                          : ' · sem prazo definido'}
+                      </CardDescription>
+                    </div>
                     <Button
                       type="button"
                       variant="outline"

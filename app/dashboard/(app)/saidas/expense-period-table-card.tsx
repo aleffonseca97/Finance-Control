@@ -4,7 +4,13 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import type { Category } from '@prisma/client'
 import { updateTransaction } from '@/app/actions/transactions'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Dialog, DialogHeader } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
@@ -28,6 +34,8 @@ type TransactionItem = {
 
 type Props = {
   title: string
+  /** Linha de apoio abaixo do título (contexto ou orientação ao usuário). */
+  description?: string
   total: number
   items: TransactionItem[]
   categories: Category[]
@@ -41,6 +49,7 @@ type SortDirection = 'asc' | 'desc'
 
 export function ExpensePeriodTableCard({
   title,
+  description,
   total,
   items,
   categories,
@@ -198,9 +207,18 @@ export function ExpensePeriodTableCard({
 
   return (
     <Card className="dashboard-bento-card-muted overflow-hidden shadow-md">
-      <CardHeader className="flex flex-col gap-2 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-        <CardTitle className="text-base sm:text-lg">{title}</CardTitle>
-        <p className="text-xl font-bold text-red-500 tabular-nums sm:text-2xl">
+      <CardHeader className="flex flex-col gap-4 px-4 sm:flex-row sm:items-start sm:justify-between sm:px-6">
+        <div className="min-w-0 space-y-1.5">
+          <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+            {title}
+          </CardTitle>
+          {description ? (
+            <CardDescription className="text-sm leading-relaxed">
+              {description}
+            </CardDescription>
+          ) : null}
+        </div>
+        <p className="shrink-0 text-xl font-bold tabular-nums text-red-500 sm:text-2xl">
           R$ {formatBRL(total)}
         </p>
       </CardHeader>

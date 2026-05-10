@@ -3,7 +3,7 @@ import { getCategoriesByType } from '@/app/actions/categories'
 import { getCreditCards } from '@/app/actions/credit-cards'
 import { getTransactions, deleteTransaction, createExpense } from '@/app/actions/transactions'
 import { MonthStepper } from '@/components/forms/month-stepper'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { MonthCalendar } from '@/components/shared/month-calendar'
 import { CalendarFallback } from '@/components/shared/calendar-fallback'
 import { TransactionEntryForm } from '@/components/shared/transaction-entry-form'
@@ -39,13 +39,16 @@ export default async function SaidasPage({
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,320px)_1fr] xl:gap-8">
         <Card className="dashboard-bento-card-hero h-fit lg:sticky lg:top-24">
-          <CardContent className="flex flex-col gap-4 py-4 sm:py-5">
-            <div>
-              <p className="dashboard-section-label text-primary/80">Mês em edição</p>
-              <p className="text-lg font-semibold">
-                {monthTitle} de {year}
-              </p>
-            </div>
+          <CardHeader className="space-y-1 pb-2 pt-5 sm:pt-6">
+            <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+              Calendário do mês
+            </CardTitle>
+            <CardDescription>
+              {monthTitle} de {year}. Dias com despesa aparecem marcados; escolha
+              um dia para lançar abaixo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-col gap-4 px-4 pb-4 pt-0 sm:px-6 sm:pb-6">
             <div className="w-full min-w-0">
               <MonthStepper />
             </div>
@@ -67,7 +70,16 @@ export default async function SaidasPage({
         </Card>
 
         <Card className="dashboard-bento-card min-w-0 shadow-md">
-          <CardContent className="px-4 pb-4 pt-4 sm:px-6 sm:pb-6 sm:pt-5">
+          <CardHeader className="space-y-1 pb-2 pt-5 sm:pt-6">
+            <CardTitle className="text-lg font-semibold tracking-tight sm:text-xl">
+              Nova despesa
+            </CardTitle>
+            <CardDescription>
+              Registre compras no cartão ou saídas à vista; use categoria e data
+              para manter o orçamento coerente.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="px-4 pb-4 pt-0 sm:px-6 sm:pb-6">
             <TransactionEntryForm
               type="expense"
               categories={categories}
@@ -83,7 +95,8 @@ export default async function SaidasPage({
       </div>
 
       <ExpensePeriodTableCard
-        title="Total do período"
+        title="Despesas do período selecionado"
+        description="Tabela com filtros, ordenação e edição rápida de categoria; total reflete o período do calendário."
         total={total}
         items={transactions}
         categories={categories}

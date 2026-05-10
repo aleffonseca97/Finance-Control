@@ -12,10 +12,8 @@ import { digitsOnly, formatCpfDisplay } from '@/lib/validation/br'
 
 const DIAL_OPTIONS = [
   { code: '55', label: '+55 Brasil' },
-  { code: '351', label: '+351 Portugal' },
-  { code: '1', label: '+1 EUA / Canadá' },
-  { code: '34', label: '+34 Espanha' },
-  { code: '44', label: '+44 Reino Unido' },
+  { code: '1', label: '+1 EUA' },
+  { code: '39', label: '+39 Itália' },
 ] as const
 
 export default function RegistroPage() {
@@ -86,6 +84,7 @@ export default function RegistroPage() {
 
   return (
     <AuthCard
+      className="max-w-lg"
       title="Criar conta"
       description="Cadastre-se para controlar suas finanças"
       error={error}

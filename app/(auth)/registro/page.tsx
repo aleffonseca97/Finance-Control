@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { AuthCard } from '@/components/shared/auth-card'
-import { register } from '@/app/actions/auth'
+import { register, type RegisterFieldErrors } from '@/app/actions/auth'
 import { digitsOnly, formatCpfDisplay } from '@/lib/validation/br'
 
 const DIAL_OPTIONS = [
@@ -15,6 +15,21 @@ const DIAL_OPTIONS = [
   { code: '1', label: '+1 EUA' },
   { code: '39', label: '+39 Itália' },
 ] as const
+
+function FieldError({
+  message,
+  id,
+}: {
+  message?: string
+  id?: string
+}) {
+  if (!message) return null
+  return (
+    <p id={id} role="alert" className="text-sm text-destructive">
+      {message}
+    </p>
+  )
+}
 
 export default function RegistroPage() {
   const [firstName, setFirstName] = useState('')
@@ -26,19 +41,29 @@ export default function RegistroPage() {
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [marketingOptIn, setMarketingOptIn] = useState(false)
-  const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<RegisterFieldErrors>({})
   const [loading, setLoading] = useState(false)
+
+  function clearFieldError(key: keyof RegisterFieldErrors) {
+    setFieldErrors((prev) => {
+      if (prev[key] == null) return prev
+      const next = { ...prev }
+      delete next[key]
+      return next
+    })
+  }
   const router = useRouter()
 
   function handleCpfChange(e: React.ChangeEvent<HTMLInputElement>) {
+    clearFieldError('cpf')
     setCpfDigits(digitsOnly(e.target.value).slice(0, 11))
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    setError('')
+    setFieldErrors({})
     if (password !== passwordConfirm) {
-      setError('As senhas não coincidem')
+      setFieldErrors({ passwordConfirm: 'As senhas não coincidem' })
       return
     }
     setLoading(true)
@@ -58,8 +83,8 @@ export default function RegistroPage() {
 
     const result = await register(formData)
 
-    if (result?.error) {
-      setError(result.error)
+    if (result && 'errors' in result) {
+      setFieldErrors(result.errors)
       setLoading(false)
       return
     }
@@ -87,7 +112,6 @@ export default function RegistroPage() {
       className="max-w-lg"
       title="Criar conta"
       description="Cadastre-se para controlar suas finanças"
-      error={error}
       loading={loading}
       submitLabel="Cadastrar"
       loadingLabel="Cadastrando..."
@@ -104,12 +128,18 @@ export default function RegistroPage() {
             type="text"
             placeholder="Maria"
             value={firstName}
-            onChange={(e) => setFirstName(e.target.value)}
+            onChange={(e) => {
+              clearFieldError('firstName')
+              setFirstName(e.target.value)
+            }}
             autoComplete="given-name"
             required
             minLength={2}
             disabled={loading}
+            aria-invalid={Boolean(fieldErrors.firstName)}
+            aria-describedby={fieldErrors.firstName ? 'firstName-error' : undefined}
           />
+          <FieldError id="firstName-error" message={fieldErrors.firstName} />
         </div>
         <div className="space-y-2">
           <Label htmlFor="lastName">Sobrenome</Label>
@@ -118,12 +148,18 @@ export default function RegistroPage() {
             type="text"
             placeholder="Silva"
             value={lastName}
-            onChange={(e) => setLastName(e.target.value)}
+            onChange={(e) => {
+              clearFieldError('lastName')
+              setLastName(e.target.value)
+            }}
             autoComplete="family-name"
             required
             minLength={2}
             disabled={loading}
+            aria-invalid={Boolean(fieldErrors.lastName)}
+            aria-describedby={fieldErrors.lastName ? 'lastName-error' : undefined}
           />
+          <FieldError id="lastName-error" message={fieldErrors.lastName} />
         </div>
       </div>
       <div className="space-y-2">
@@ -133,11 +169,17 @@ export default function RegistroPage() {
           type="email"
           placeholder="seu@email.com"
           value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          onChange={(e) => {
+            clearFieldError('email')
+            setEmail(e.target.value)
+          }}
           autoComplete="email"
           required
           disabled={loading}
+          aria-invalid={Boolean(fieldErrors.email)}
+          aria-describedby={fieldErrors.email ? 'email-error' : undefined}
         />
+        <FieldError id="email-error" message={fieldErrors.email} />
       </div>
       <div className="space-y-2">
         <Label htmlFor="cpf">CPF</Label>
@@ -151,8 +193,13 @@ export default function RegistroPage() {
           onChange={handleCpfChange}
           required
           disabled={loading}
-          aria-invalid={cpfDigits.length > 0 && cpfDigits.length < 11}
+          aria-invalid={
+            Boolean(fieldErrors.cpf) ||
+            (cpfDigits.length > 0 && cpfDigits.length < 11)
+          }
+          aria-describedby={fieldErrors.cpf ? 'cpf-error' : undefined}
         />
+        <FieldError id="cpf-error" message={fieldErrors.cpf} />
       </div>
       <div className="space-y-2">
         <Label htmlFor="phoneNational">Telefone</Label>
@@ -161,10 +208,15 @@ export default function RegistroPage() {
             id="phoneDial"
             name="phoneDial"
             value={phoneDial}
-            onChange={(e) => setPhoneDial(e.target.value)}
+            onChange={(e) => {
+              clearFieldError('phoneDial')
+              clearFieldError('phoneNational')
+              setPhoneDial(e.target.value)
+            }}
             disabled={loading}
             className="sm:w-[11.5rem] shrink-0"
             aria-label="Código do país"
+            aria-invalid={Boolean(fieldErrors.phoneDial)}
           >
             {DIAL_OPTIONS.map((o) => (
               <option key={o.code} value={o.code}>
@@ -178,13 +230,28 @@ export default function RegistroPage() {
             inputMode="tel"
             placeholder={phoneDial === '55' ? '(11) 99999-9999' : 'Número com DDD'}
             value={phoneNational}
-            onChange={(e) => setPhoneNational(e.target.value)}
+            onChange={(e) => {
+              clearFieldError('phoneNational')
+              setPhoneNational(e.target.value)
+            }}
             autoComplete="tel-national"
             required
             disabled={loading}
             className="min-w-0 flex-1"
+            aria-invalid={Boolean(fieldErrors.phoneNational)}
+            aria-describedby={
+              fieldErrors.phoneNational || fieldErrors.phoneDial
+                ? 'phone-error'
+                : undefined
+            }
           />
         </div>
+        <FieldError
+          id="phone-error"
+          message={
+            fieldErrors.phoneNational ?? fieldErrors.phoneDial
+          }
+        />
         <p className="text-xs text-muted-foreground leading-snug">
           Inclua o DDD. Para o Brasil, use 11 dígitos (celular) ou 10 (fixo).
         </p>
@@ -196,12 +263,19 @@ export default function RegistroPage() {
           type="password"
           placeholder="Mínimo 6 caracteres"
           value={password}
-          onChange={(e) => setPassword(e.target.value)}
+          onChange={(e) => {
+            clearFieldError('password')
+            clearFieldError('passwordConfirm')
+            setPassword(e.target.value)
+          }}
           autoComplete="new-password"
           required
           minLength={6}
           disabled={loading}
+          aria-invalid={Boolean(fieldErrors.password)}
+          aria-describedby={fieldErrors.password ? 'password-error' : undefined}
         />
+        <FieldError id="password-error" message={fieldErrors.password} />
       </div>
       <div className="space-y-2">
         <Label htmlFor="passwordConfirm">Confirmar senha</Label>
@@ -210,11 +284,22 @@ export default function RegistroPage() {
           type="password"
           placeholder="Repita a senha"
           value={passwordConfirm}
-          onChange={(e) => setPasswordConfirm(e.target.value)}
+          onChange={(e) => {
+            clearFieldError('passwordConfirm')
+            setPasswordConfirm(e.target.value)
+          }}
           autoComplete="new-password"
           required
           minLength={6}
           disabled={loading}
+          aria-invalid={Boolean(fieldErrors.passwordConfirm)}
+          aria-describedby={
+            fieldErrors.passwordConfirm ? 'passwordConfirm-error' : undefined
+          }
+        />
+        <FieldError
+          id="passwordConfirm-error"
+          message={fieldErrors.passwordConfirm}
         />
       </div>
       <div className="flex items-start gap-2">

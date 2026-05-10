@@ -16,7 +16,7 @@ export async function POST() {
     return NextResponse.json({ error: 'Não autorizado' }, { status: 401 })
   }
 
-  const priceId = process.env.STRIPE_PRICE_ID
+const priceId = process.env.STRIPE_PRICE_ID
   if (!priceId) {
     return NextResponse.json({ error: 'STRIPE_PRICE_ID não configurado' }, { status: 500 })
   }
@@ -66,9 +66,9 @@ export async function POST() {
       trial_period_days: SUBSCRIPTION_TRIAL_PERIOD_DAYS,
       metadata: { userId: user.id },
     },
-    // Return to assinatura so we sync before the paywall layout runs (see assinatura/page.tsx).
+    // Land on route handler first: sync DB + revalidatePath (unsupported during RSC render).
     success_url: absoluteUrl(
-      '/dashboard/assinatura?checkout=success&session_id={CHECKOUT_SESSION_ID}',
+      '/api/billing/post-checkout?session_id={CHECKOUT_SESSION_ID}',
     ),
     cancel_url: absoluteUrl('/?checkout=canceled'),
     allow_promotion_codes: true,

@@ -6,11 +6,34 @@ export type StripeSubscriptionPayload = {
   id: string
   /** Present on webhook/API objects; used to resolve app user via `stripeCustomerId`. */
   customer?: string | Record<string, unknown>
-  items: { data: Array<{ price: { id: string } }> }
+  items: {
+    data: Array<{ price: { id: string }; current_period_end?: number }>
+  }
   trial_end: number | null
-  current_period_end: number
+  /** Present on older API versions; Dahlia exposes period end on `items.data[].current_period_end`. */
+  current_period_end?: number | null
   status: string
   cancel_at_period_end: boolean
+}
+
+function dateFromUnixSeconds(seconds: number | null | undefined): Date | null {
+  if (seconds == null || typeof seconds !== 'number' || !Number.isFinite(seconds)) {
+    return null
+  }
+  const d = new Date(seconds * 1000)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+/** Resolves billing period end for Prisma (`currentPeriodEnd` is required). */
+function resolveSubscriptionPeriodEnd(subscription: StripeSubscriptionPayload): Date | null {
+  const fromRoot = dateFromUnixSeconds(subscription.current_period_end ?? undefined)
+  const fromItems = subscription.items.data
+    .map((item) => dateFromUnixSeconds(item.current_period_end))
+    .filter((d): d is Date => d != null)
+  const maxFromItems =
+    fromItems.length > 0 ? new Date(Math.max(...fromItems.map((d) => d.getTime()))) : null
+  const fromTrial = dateFromUnixSeconds(subscription.trial_end ?? undefined)
+  return fromRoot ?? maxFromItems ?? fromTrial
 }
 
 export async function userIdFromCustomer(customerId: string): Promise<string | null> {
@@ -28,8 +51,13 @@ export async function upsertSubscriptionFromId(subscriptionId: string, userId: s
 
 export async function upsertSubscription(subscription: StripeSubscriptionPayload, userId: string) {
   const priceId = subscription.items.data[0]?.price.id ?? ''
-  const trialEnd = subscription.trial_end ? new Date(subscription.trial_end * 1000) : null
-  const currentPeriodEnd = new Date(subscription.current_period_end * 1000)
+  const trialEnd = dateFromUnixSeconds(subscription.trial_end ?? undefined)
+  const currentPeriodEnd = resolveSubscriptionPeriodEnd(subscription)
+  if (!currentPeriodEnd) {
+    throw new Error(
+      `Stripe subscription ${subscription.id} has no current_period_end (root or items) or trial_end; cannot persist`,
+    )
+  }
 
   await prisma.subscription.upsert({
     where: { stripeSubscriptionId: subscription.id },

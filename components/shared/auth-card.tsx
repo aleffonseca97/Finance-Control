@@ -16,7 +16,8 @@ import { cn } from '@/lib/utils';
 type Props = {
   title: string;
   description: string;
-  error: string;
+  /** Alerta único acima dos campos. Omitido ou vazio = não renderiza. */
+  error?: string;
   /** Mensagem de sucesso ou informação (ex.: e-mail de recuperação enviado). */
   notice?: string;
   loading: boolean;
@@ -36,7 +37,7 @@ type Props = {
 export function AuthCard({
   title,
   description,
-  error,
+  error = '',
   notice,
   loading,
   submitLabel,

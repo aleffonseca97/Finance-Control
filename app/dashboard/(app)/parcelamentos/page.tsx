@@ -13,7 +13,7 @@ export default async function ParcelamentosPage() {
         title="Parcelamentos"
         description="Planejamento de financiamentos, empréstimos e parcelas no orçamento anual."
       />
-      <Card className="dashboard-bento-card-muted border-dashed shadow-md">
+      <Card className="dashboard-bento-card-muted sticky top-24 z-20 border-dashed shadow-md">
         <CardHeader>
           <CardTitle className="text-lg font-semibold">Em construção</CardTitle>
           <CardDescription>

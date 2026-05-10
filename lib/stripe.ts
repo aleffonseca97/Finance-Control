@@ -20,6 +20,8 @@ export function getStripe(): Stripe {
 export function absoluteUrl(path: string) {
   const base =
     process.env.NEXT_PUBLIC_APP_URL ??
+    process.env.NEXTAUTH_URL ??
     (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : 'http://localhost:3000')
-  return `${base}${path}`
+  const normalizedBase = base.endsWith('/') ? base.slice(0, -1) : base
+  return `${normalizedBase}${path}`
 }

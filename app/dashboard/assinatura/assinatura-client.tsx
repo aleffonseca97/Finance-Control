@@ -22,7 +22,9 @@ export function AssinaturaClient() {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
   const searchParams = useSearchParams()
-  const syncFailed = searchParams.get('checkout') === 'sync_failed'
+  const checkoutFlag = searchParams.get('checkout')
+  const checkoutError =
+    checkoutFlag === 'sync_failed' || checkoutFlag === 'invalid'
 
   async function handleCheckout() {
     setLoading(true)
@@ -45,7 +47,7 @@ export function AssinaturaClient() {
           <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-bl-full -translate-y-10 translate-x-10 pointer-events-none" />
 
           <div className="relative">
-            {syncFailed && (
+            {checkoutError && (
               <p className="text-sm text-destructive mb-4 bg-destructive/10 rounded-md px-3 py-2">
                 Não foi possível confirmar a assinatura automaticamente. Configure o webhook do Stripe
                 ou tente abrir o portal do cliente nas configurações.

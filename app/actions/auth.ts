@@ -61,7 +61,42 @@ const registerSchema = z
     }
   })
 
-export async function register(formData: FormData) {
+export type RegisterFieldErrors = Partial<
+  Record<
+    | 'firstName'
+    | 'lastName'
+    | 'email'
+    | 'cpf'
+    | 'phoneDial'
+    | 'phoneNational'
+    | 'password'
+    | 'passwordConfirm',
+    string
+  >
+>
+
+export type RegisterResult = { success: true } | { errors: RegisterFieldErrors }
+
+function zodToFieldErrors(fieldErrors: Record<string, string[] | undefined>) {
+  const errors: RegisterFieldErrors = {}
+  const keys: (keyof RegisterFieldErrors)[] = [
+    'firstName',
+    'lastName',
+    'email',
+    'cpf',
+    'phoneDial',
+    'phoneNational',
+    'password',
+    'passwordConfirm',
+  ]
+  for (const key of keys) {
+    const msgs = fieldErrors[key]
+    if (msgs?.[0]) errors[key] = msgs[0]
+  }
+  return errors
+}
+
+export async function register(formData: FormData): Promise<RegisterResult> {
   const parsed = registerSchema.safeParse({
     firstName: formData.get('firstName'),
     lastName: formData.get('lastName'),
@@ -75,7 +110,8 @@ export async function register(formData: FormData) {
   })
 
   if (!parsed.success) {
-    return { error: parsed.error.errors[0].message }
+    const { fieldErrors } = parsed.error.flatten()
+    return { errors: zodToFieldErrors(fieldErrors) }
   }
 
   const {
@@ -98,14 +134,14 @@ export async function register(formData: FormData) {
   })
 
   if (existing) {
-    return { error: 'Este email já está cadastrado' }
+    return { errors: { email: 'Este email já está cadastrado' } }
   }
 
   const cpfTaken = await prisma.user.findFirst({
     where: { cpf: cpfNormalized },
   })
   if (cpfTaken) {
-    return { error: 'Este CPF já está cadastrado' }
+    return { errors: { cpf: 'Este CPF já está cadastrado' } }
   }
 
   const passwordHash = await hash(password, 12)

@@ -1,18 +1,36 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { DEFAULT_CATEGORIES } from '@/lib/categories'
+import { revalidateLocalePaths } from '@/lib/i18n/revalidate'
+import {
+  getErrorTranslations,
+  getServerErrorTranslations,
+  getValidationTranslations,
+} from '@/lib/i18n/validation'
 
-const categorySchema = z.object({
-  name: z.string().min(1, 'Nome é obrigatório'),
-  group: z.string().optional(),
-  icon: z.string().min(1, 'Ícone é obrigatório'),
-  color: z.string().min(1, 'Cor é obrigatória'),
-  investmentSubtype: z.enum(['reserva', 'carteira']).optional(),
-})
+function buildCategorySchema(
+  t: Awaited<ReturnType<typeof getValidationTranslations>>,
+) {
+  return z.object({
+    name: z.string().min(1, t('nameRequired')),
+    group: z.string().optional(),
+    icon: z.string().min(1, t('iconRequired')),
+    color: z.string().min(1, t('colorRequired')),
+    investmentSubtype: z.enum(['reserva', 'carteira']).optional(),
+  })
+}
+
+const CATEGORY_PATHS = [
+  '/dashboard/configuracoes',
+  '/dashboard/configuracoes/categorias',
+  '/dashboard/configuracoes/investimentos',
+  '/dashboard/entradas',
+  '/dashboard/saidas',
+  '/dashboard/investimentos',
+]
 
 type GlobalCategorySeed = {
   userId: null
@@ -176,13 +194,18 @@ export async function getUserCategoriesByType(type: 'income' | 'expense' | 'inve
 
 export async function createCategory(formData: FormData) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tServer = await getServerErrorTranslations()
+  const tValidation = await getValidationTranslations()
+  const categorySchema = buildCategorySchema(tValidation)
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const type = formData.get('type') as 'income' | 'expense' | 'investment'
   const isFixed = formData.get('isFixed') === 'true'
 
   if (!['income', 'expense', 'investment'].includes(type)) {
-    return { error: 'Tipo de categoria inválido' }
+    return { error: tServer('invalidCategoryType') }
   }
 
   const parsed = categorySchema.safeParse({
@@ -204,7 +227,7 @@ export async function createCategory(formData: FormData) {
   const defaultValue = defaultNum != null && !isNaN(defaultNum) && defaultNum >= 0 ? defaultNum : null
 
   if (type === 'investment' && !parsed.data.investmentSubtype) {
-    return { error: 'Selecione o tipo: Reserva ou Carteira' }
+    return { error: tServer('selectReserveOrWallet') }
   }
 
   const data = {
@@ -224,24 +247,24 @@ export async function createCategory(formData: FormData) {
 
   await prisma.category.create({ data })
 
-  revalidatePath('/dashboard/configuracoes')
-  revalidatePath('/dashboard/configuracoes/categorias')
-  revalidatePath('/dashboard/configuracoes/investimentos')
-  revalidatePath('/dashboard/entradas')
-  revalidatePath('/dashboard/saidas')
-  revalidatePath('/dashboard/investimentos')
+  await revalidateLocalePaths(CATEGORY_PATHS)
   return { success: true }
 }
 
 export async function updateCategory(id: string, formData: FormData) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tServer = await getServerErrorTranslations()
+  const tValidation = await getValidationTranslations()
+  const categorySchema = buildCategorySchema(tValidation)
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const type = formData.get('type') as 'income' | 'expense' | 'investment'
   const isFixed = formData.get('isFixed') === 'true'
 
   if (!['income', 'expense', 'investment'].includes(type)) {
-    return { error: 'Tipo de categoria inválido' }
+    return { error: tServer('invalidCategoryType') }
   }
 
   const parsed = categorySchema.safeParse({
@@ -266,10 +289,10 @@ export async function updateCategory(id: string, formData: FormData) {
     where: { id, userId: session.user.id, isCustom: true },
   })
 
-  if (!existing) return { error: 'Categoria não encontrada' }
+  if (!existing) return { error: tServer('categoryNotFound') }
 
   if (type === 'investment' && !parsed.data.investmentSubtype) {
-    return { error: 'Selecione o tipo: Reserva ou Carteira' }
+    return { error: tServer('selectReserveOrWallet') }
   }
 
   const data = {
@@ -286,36 +309,27 @@ export async function updateCategory(id: string, formData: FormData) {
 
   await prisma.category.update({ where: { id }, data })
 
-  revalidatePath('/dashboard/configuracoes')
-  revalidatePath('/dashboard/configuracoes/categorias')
-  revalidatePath('/dashboard/configuracoes/investimentos')
-  revalidatePath('/dashboard/entradas')
-  revalidatePath('/dashboard/saidas')
-  revalidatePath('/dashboard/investimentos')
-  revalidatePath('/dashboard/analise')
+  await revalidateLocalePaths([...CATEGORY_PATHS, '/dashboard/analise'])
   return { success: true }
 }
 
 export async function deleteCategory(id: string) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tServer = await getServerErrorTranslations()
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const existing = await prisma.category.findFirst({
     where: { id, userId: session.user.id, isCustom: true },
   })
 
-  if (!existing) return { error: 'Categoria não encontrada' }
+  if (!existing) return { error: tServer('categoryNotFound') }
 
   await prisma.category.delete({
     where: { id },
   })
 
-  revalidatePath('/dashboard/configuracoes')
-  revalidatePath('/dashboard/configuracoes/categorias')
-  revalidatePath('/dashboard/configuracoes/investimentos')
-  revalidatePath('/dashboard/entradas')
-  revalidatePath('/dashboard/saidas')
-  revalidatePath('/dashboard/investimentos')
-  revalidatePath('/dashboard/analise')
+  await revalidateLocalePaths([...CATEGORY_PATHS, '/dashboard/analise'])
   return { success: true }
 }

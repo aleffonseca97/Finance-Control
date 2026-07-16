@@ -1,11 +1,17 @@
-const stats = [
-  { value: '2 meses', label: 'grátis para testar' },
-  { value: 'R$10', label: 'por mês, após o trial' },
-  { value: '0', label: 'taxa de fidelidade' },
-  { value: '100%', label: 'privacidade dos seus dados' },
-]
+'use client'
+
+import { useTranslations } from 'next-intl'
 
 export default function StatsBar() {
+  const t = useTranslations('marketing.stats')
+
+  const stats = [
+    { value: t('trial.value'), label: t('trial.label') },
+    { value: t('price.value'), label: t('price.label') },
+    { value: t('loyalty.value'), label: t('loyalty.label') },
+    { value: t('privacy.value'), label: t('privacy.label') },
+  ]
+
   return (
     <section className="border-y border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

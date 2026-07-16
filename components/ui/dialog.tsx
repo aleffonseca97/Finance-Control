@@ -2,6 +2,7 @@
 
 import * as React from 'react';
 import { X } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -73,6 +74,7 @@ interface DialogHeaderProps {
 
 export function DialogHeader({ children, onClose }: DialogHeaderProps) {
   const titleId = React.useContext(DialogTitleContext);
+  const t = useTranslations('forms.buttons');
 
   return (
     <div className="flex items-start justify-between gap-3 pb-4">
@@ -80,7 +82,7 @@ export function DialogHeader({ children, onClose }: DialogHeaderProps) {
         {children}
       </h2>
       {onClose && (
-        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fechar" className="shrink-0">
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label={t('close')} className="shrink-0">
           <X className="h-4 w-4" aria-hidden />
         </Button>
       )}

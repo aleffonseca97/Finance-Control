@@ -1,14 +1,30 @@
-import Link from 'next/link'
+'use client'
+
+import { Link } from '@/lib/i18n/navigation'
+import { useTranslations } from 'next-intl'
 import { APP_NAME, APP_VERSION } from '@/lib/version'
 
 const currentYear = new Date().getFullYear()
 
 export default function MarketingFooter() {
+  const t = useTranslations('marketing.footer')
+  const tNav = useTranslations('nav.landing')
+
+  const productLinks = [
+    { label: tNav('features'), href: '#funcionalidades' },
+    { label: tNav('pricing'), href: '#precos' },
+    { label: tNav('faq'), href: '#faq' },
+  ]
+
+  const accountLinks = [
+    { label: t('createAccount'), href: '/registro' },
+    { label: t('signIn'), href: '/login' },
+  ]
+
   return (
     <footer className="border-t border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr] gap-10">
-          {/* Brand */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-lg bg-primary flex items-center justify-center">
@@ -19,24 +35,19 @@ export default function MarketingFooter() {
               </span>
             </div>
             <p className="text-sm text-zinc-500 dark:text-zinc-400 max-w-[28ch] leading-relaxed">
-              Dashboard financeiro pessoal para quem quer clareza sobre o próprio dinheiro.
+              {t('tagline')}
             </p>
             <span className="font-mono text-xs text-zinc-400 bg-zinc-100 dark:bg-zinc-800 px-2 py-1 rounded inline-block">
               v{APP_VERSION}
             </span>
           </div>
 
-          {/* Product links */}
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-4">
-              Produto
+              {t('product')}
             </h3>
             <ul className="space-y-2.5">
-              {[
-                { label: 'Funcionalidades', href: '#funcionalidades' },
-                { label: 'Preços', href: '#precos' },
-                { label: 'FAQ', href: '#faq' },
-              ].map((link) => (
+              {productLinks.map((link) => (
                 <li key={link.href}>
                   <a
                     href={link.href}
@@ -49,16 +60,12 @@ export default function MarketingFooter() {
             </ul>
           </div>
 
-          {/* Account links */}
           <div>
             <h3 className="text-xs font-semibold uppercase tracking-widest text-zinc-400 mb-4">
-              Conta
+              {t('account')}
             </h3>
             <ul className="space-y-2.5">
-              {[
-                { label: 'Criar conta', href: '/registro' },
-                { label: 'Entrar', href: '/login' },
-              ].map((link) => (
+              {accountLinks.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
@@ -72,10 +79,9 @@ export default function MarketingFooter() {
           </div>
         </div>
 
-        {/* Bottom bar */}
         <div className="mt-10 pt-6 border-t border-zinc-100 dark:border-zinc-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-zinc-400">
           <span>
-            © {currentYear} {APP_NAME}. Todos os direitos reservados.
+            {t('copyright', { year: currentYear, appName: 'Logos Finance' })}
           </span>
         </div>
       </div>

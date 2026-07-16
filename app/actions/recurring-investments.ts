@@ -1,16 +1,25 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { recurringInvestmentCreateSchema } from '@/lib/validations'
+import { createRecurringInvestmentCreateSchema } from '@/lib/validations'
+import { revalidateLocalePaths } from '@/lib/i18n/revalidate'
+import {
+  getErrorTranslations,
+  getServerErrorTranslations,
+  getValidationTranslations,
+} from '@/lib/i18n/validation'
 
-function revalidateRecurringInvestmentPaths() {
-  revalidatePath('/dashboard/pagamentos-recorrentes')
-  revalidatePath('/dashboard/recorrencia/investimentos')
-  revalidatePath('/dashboard/investimentos')
-  revalidatePath('/dashboard/analise')
-  revalidatePath('/dashboard')
+const RECURRING_INVESTMENT_PATHS = [
+  '/dashboard/pagamentos-recorrentes',
+  '/dashboard/recorrencia/investimentos',
+  '/dashboard/investimentos',
+  '/dashboard/analise',
+  '/dashboard',
+]
+
+async function revalidateRecurringInvestmentPaths() {
+  await revalidateLocalePaths(RECURRING_INVESTMENT_PATHS)
 }
 
 async function getMonthlyIncome(userId: string, month: number, year: number) {
@@ -105,7 +114,11 @@ export async function getRecurringInvestmentsForMonth(month: number, year: numbe
 
 export async function createRecurringInvestment(formData: FormData) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tValidation = await getValidationTranslations()
+  const recurringInvestmentCreateSchema = createRecurringInvestmentCreateSchema(tValidation)
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const parsed = recurringInvestmentCreateSchema.safeParse({
     reserveCategoryId: formData.get('reserveCategoryId'),
@@ -134,7 +147,7 @@ export async function createRecurringInvestment(formData: FormData) {
     parsed.data.month,
     parsed.data.year,
   )
-  revalidateRecurringInvestmentPaths()
+  await revalidateRecurringInvestmentPaths()
   return { success: true }
 }
 
@@ -144,7 +157,10 @@ export async function markRecurringInvestmentApplied(
   year: number,
 ) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tServer = await getServerErrorTranslations()
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const template = await prisma.recurringInvestment.findFirst({
     where: { id: recurringInvestmentId, userId: session.user.id },
@@ -155,7 +171,7 @@ export async function markRecurringInvestmentApplied(
       },
     },
   })
-  if (!template) return { error: 'Investimento recorrente não encontrado' }
+  if (!template) return { error: tServer('recurringInvestmentNotFound') }
 
   let occurrence = template.occurrences[0]
   if (!occurrence) {
@@ -164,7 +180,7 @@ export async function markRecurringInvestmentApplied(
       where: { recurringInvestmentId, month, year },
     })
   }
-  if (!occurrence) return { error: 'Não foi possível registrar o mês.' }
+  if (!occurrence) return { error: tServer('couldNotRegisterMonthShort') }
   if (occurrence.investmentId) return { success: true }
 
   const monthlyIncome = await getMonthlyIncome(session.user.id, month, year)
@@ -172,7 +188,9 @@ export async function markRecurringInvestmentApplied(
     template.amountType === 'percentage'
       ? (monthlyIncome * (template.percentage ?? 0)) / 100
       : template.amount
-  if (amount <= 0) return { error: 'O valor calculado para este mês é zero.' }
+  if (amount <= 0) return { error: tServer('calculatedAmountZero') }
+
+  const recurringNotes = tServer('recurringPayment')
 
   await prisma.$transaction(async (db) => {
     const created = await db.investment.create({
@@ -183,7 +201,7 @@ export async function markRecurringInvestmentApplied(
         amount,
         affectsCash: true,
         date: new Date(year, month, 1),
-        notes: 'Investimento recorrente',
+        notes: recurringNotes,
       },
     })
 
@@ -199,7 +217,9 @@ export async function markRecurringInvestmentApplied(
 
 export async function deleteRecurringInvestment(id: string) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   await prisma.recurringInvestment.deleteMany({
     where: { id, userId: session.user.id },

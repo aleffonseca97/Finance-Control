@@ -20,6 +20,10 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { roundMoney } from '@/lib/credit-card-billing';
+import { useLocale, useTranslations } from 'next-intl';
+import { formatCurrency } from '@/lib/i18n/format';
+import { useCurrency } from '@/components/currency-provider';
+import type { AppLocale } from '@/i18n/routing';
 
 interface CreditCardListProps {
   cards: CreditCard[];
@@ -32,6 +36,10 @@ export function CreditCardList({
   availableCash,
   overdueNotices,
 }: CreditCardListProps) {
+  const t = useTranslations('dashboard.creditCard');
+  const tForms = useTranslations('forms.buttons');
+  const locale = useLocale() as AppLocale;
+  const currency = useCurrency();
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [payOpenId, setPayOpenId] = useState<string | null>(null);
@@ -44,14 +52,14 @@ export function CreditCardList({
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Excluir este cartão?')) return;
+    if (!confirm(t('deleteConfirm'))) return;
     await deleteCreditCard(id);
   }
 
   return (
     <div className="space-y-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <h3 className="font-semibold text-base sm:text-sm">Meus cartões</h3>
+        <h3 className="font-semibold text-base sm:text-sm">{t('myCards')}</h3>
         <Button
           variant="outline"
           size="sm"
@@ -62,7 +70,7 @@ export function CreditCardList({
           }}
         >
           <Plus className="h-4 w-4 mr-2 shrink-0" />
-          Novo cartão
+          {t('newCard')}
         </Button>
       </div>
 
@@ -74,15 +82,18 @@ export function CreditCardList({
           <AlertTriangle className="h-5 w-5 shrink-0 text-destructive mt-0.5 flex-shrink-0" />
           <div className="space-y-1 min-w-0 overflow-hidden">
             <p className="font-semibold text-destructive">
-              Fatura do cartão em atraso
+              {t('overdueTitle')}
             </p>
             <ul className="list-disc pl-4 text-muted-foreground space-y-1 break-words">
               {overdueNotices.map((n) => (
                 <li key={`${n.cardId}-${n.closingLabel}`} className="break-words">
                   <span className="text-foreground font-medium">{n.cardName}</span>
-                  {n.lastFour ? ` •••• ${n.lastFour}` : ''}: R${' '}
-                  {n.unpaid.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em
-                  aberto (venc. {n.dueDateLabel}, fech. {n.closingLabel})
+                  {n.lastFour ? ` •••• ${n.lastFour}` : ''}:{' '}
+                  {formatCurrency(n.unpaid, locale, currency)}{' '}
+                  {t('openBalance', {
+                    dueDate: n.dueDateLabel,
+                    closingDate: n.closingLabel,
+                  })}
                 </li>
               ))}
             </ul>
@@ -91,11 +102,7 @@ export function CreditCardList({
       ) : null}
 
       <p className="text-xs sm:text-sm text-muted-foreground rounded-md border bg-muted/20 px-3 py-2">
-        Compras no cartão <strong>não entram no orçamento de caixa</strong> (só reduzem
-        o limite). Use <strong>Pagar</strong> para registrar a saída no caixa e{' '}
-        <strong>restaurar o limite</strong>. Dias de fechamento e vencimento ficam no
-        cadastro como referência; com saldo em aberto após o vencimento, pode aparecer
-        alerta de atraso.
+        {t('helpText')}
       </p>
 
       {(showForm || editingId) && (
@@ -110,7 +117,7 @@ export function CreditCardList({
       <div className="space-y-2">
         {cards.length === 0 ? (
           <p className="text-sm text-muted-foreground py-6 text-center">
-            Nenhum cartão cadastrado. Clique em &quot;Novo cartão&quot; para começar.
+            {t('empty')}
           </p>
         ) : (
           cards.map((card) => {
@@ -148,22 +155,16 @@ export function CreditCardList({
                       </p>
                       <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs text-muted-foreground sm:text-sm sm:flex-nowrap">
                         <span>
-                          Total R${' '}
-                          {total.toLocaleString('pt-BR', {
-                            minimumFractionDigits: 2,
-                          })}
+                          {t('total')} {formatCurrency(total, locale, currency)}
                         </span>
                         <span className="hidden sm:inline">·</span>
                         <span>
-                          Disp. R${' '}
-                          {available.toLocaleString('pt-BR', {
-                            minimumFractionDigits: 2,
-                          })}
+                          {t('available')} {formatCurrency(available, locale, currency)}
                         </span>
                         <span className="hidden sm:inline">·</span>
-                        <span>Fech. {card.closingDay}</span>
+                        <span>{t('closing')} {card.closingDay}</span>
                         <span className="hidden sm:inline">·</span>
-                        <span>Venc. {card.dueDay}</span>
+                        <span>{t('due')} {card.dueDay}</span>
                       </div>
                       <div className="mt-2 h-2 rounded-full bg-muted overflow-hidden w-full max-w-md">
                         <div
@@ -187,7 +188,7 @@ export function CreditCardList({
                       disabled={maxPay <= 0}
                     >
                       <Banknote className="h-3.5 w-3.5 sm:mr-1.5" />
-                      <span className="ml-1.5 sm:ml-0">Pagar</span>
+                      <span className="ml-1.5 sm:ml-0">{t('pay')}</span>
                     </Button>
                     <Button
                       variant="ghost"
@@ -198,7 +199,7 @@ export function CreditCardList({
                         setPayOpenId(null);
                         setEditingId(editingId === card.id ? null : card.id);
                       }}
-                      aria-label="Editar"
+                      aria-label={tForms('edit')}
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
@@ -207,7 +208,7 @@ export function CreditCardList({
                       size="icon"
                       className="h-10 w-10 text-muted-foreground hover:text-destructive touch-manipulation sm:h-8 sm:w-8"
                       onClick={() => handleDelete(card.id)}
-                      aria-label="Excluir"
+                      aria-label={tForms('delete')}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

@@ -3,6 +3,7 @@ import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { absoluteUrl } from '@/lib/stripe'
 import { syncSubscriptionFromCheckoutSession } from '@/lib/stripe-subscription-sync'
+import { getUserLocale } from '@/app/actions/locale'
 
 /**
  * GET /api/billing/post-checkout?session_id=...
@@ -13,15 +14,18 @@ export async function GET(req: NextRequest) {
   const session = await auth()
 
   if (!session?.user?.id || !sessionId) {
-    return NextResponse.redirect(absoluteUrl('/dashboard/assinatura?checkout=invalid'))
+    return NextResponse.redirect(absoluteUrl('/pt-BR/dashboard/assinatura?checkout=invalid'))
   }
 
+  const locale = await getUserLocale(session.user.id)
   const result = await syncSubscriptionFromCheckoutSession(sessionId, session.user.id)
-  revalidatePath('/dashboard')
+  revalidatePath(`/${locale}/dashboard`)
 
   if (result.ok) {
-    return NextResponse.redirect(absoluteUrl('/dashboard'))
+    return NextResponse.redirect(absoluteUrl(`/${locale}/dashboard`))
   }
 
-  return NextResponse.redirect(absoluteUrl('/dashboard/assinatura?checkout=sync_failed'))
+  return NextResponse.redirect(
+    absoluteUrl(`/${locale}/dashboard/assinatura?checkout=sync_failed`),
+  )
 }

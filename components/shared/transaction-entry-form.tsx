@@ -1,6 +1,7 @@
 'use client'
 
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/lib/i18n/navigation'
 import { TransactionForm } from '@/components/forms/transaction-form'
 import { DateBanner } from '@/components/shared/date-banner'
 import { buttonVariants } from '@/components/ui/button'
@@ -34,21 +35,6 @@ const FORM_CLASSES = cn(
   '[&_select]:min-h-11 [&_select]:text-base sm:[&_select]:min-h-10 sm:[&_select]:text-sm',
 )
 
-const STYLE = {
-  income: {
-    colorClass: 'border-emerald-500/25 bg-emerald-500/[0.06]',
-    iconColorClass: 'text-emerald-600 dark:text-emerald-400',
-    sectionId: 'entradas-lancamento-title',
-    sectionLabel: 'Formulário de nova entrada na data selecionada no calendário',
-  },
-  expense: {
-    colorClass: 'border-red-500/25 bg-red-500/[0.06]',
-    iconColorClass: 'text-red-600 dark:text-red-400',
-    sectionId: 'saidas-lancamento-title',
-    sectionLabel: 'Formulário de nova saída na data selecionada no calendário',
-  },
-} as const
-
 export function TransactionEntryForm({
   type,
   categories,
@@ -59,8 +45,18 @@ export function TransactionEntryForm({
   action,
   emptyCategoryMessage,
 }: Props) {
+  const t = useTranslations('dashboard.shared')
   const dateValue = buildDateValue(year, month, selectedDay)
-  const style = STYLE[type]
+  const colorClass =
+    type === 'income'
+      ? 'border-emerald-500/25 bg-emerald-500/[0.06]'
+      : 'border-red-500/25 bg-red-500/[0.06]'
+  const iconColorClass =
+    type === 'income'
+      ? 'text-emerald-600 dark:text-emerald-400'
+      : 'text-red-600 dark:text-red-400'
+  const sectionId = type === 'income' ? 'entradas-lancamento-title' : 'saidas-lancamento-title'
+  const sectionLabel = type === 'income' ? t('incomeFormSection') : t('expenseFormSection')
 
   if (categories.length === 0) {
     return (
@@ -78,24 +74,24 @@ export function TransactionEntryForm({
             'mt-5 inline-flex min-h-11 w-full max-w-xs touch-manipulation sm:w-auto',
           )}
         >
-          Ir para categorias
+          {t('goToCategories')}
         </Link>
       </div>
     )
   }
 
   return (
-    <section aria-labelledby={style.sectionId} className="space-y-5">
-      <h2 id={style.sectionId} className="sr-only">
-        {style.sectionLabel}
+    <section aria-labelledby={sectionId} className="space-y-5">
+      <h2 id={sectionId} className="sr-only">
+        {sectionLabel}
       </h2>
 
       <DateBanner
         year={year}
         month={month}
         selectedDay={selectedDay}
-        colorClass={style.colorClass}
-        iconColorClass={style.iconColorClass}
+        colorClass={colorClass}
+        iconColorClass={iconColorClass}
       />
 
       <TransactionForm

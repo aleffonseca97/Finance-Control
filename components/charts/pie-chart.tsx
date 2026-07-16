@@ -8,18 +8,14 @@ import {
   chartTooltipContentStyle,
   chartTooltipItemStyle,
   chartTooltipLabelStyle,
-  formatChartCurrency,
+  useChartCurrency,
 } from '@/components/charts/chart-shared'
-
-const SLICE_COLOR: Record<string, string> = {
-  Entradas: 'hsl(var(--chart-income))',
-  Saídas: 'hsl(var(--chart-expense))',
-  'Gastos Cartão': 'hsl(var(--chart-card))',
-}
+import { useTranslations } from 'next-intl'
 
 interface DataPoint {
   name: string
   value: number
+  color: string
 }
 
 export function IncomeExpensePieChart({
@@ -31,22 +27,24 @@ export function IncomeExpensePieChart({
   expense: number
   creditCardExpense?: number
 }) {
+  const t = useTranslations('common.charts')
+  const formatValue = useChartCurrency()
   const expenseWithoutCard = Math.max(0, expense - creditCardExpense)
   const data: DataPoint[] = [
-    { name: 'Entradas', value: income },
-    { name: 'Saídas', value: expenseWithoutCard },
-    { name: 'Gastos Cartão', value: creditCardExpense },
+    { name: t('income'), value: income, color: 'hsl(var(--chart-income))' },
+    { name: t('expense'), value: expenseWithoutCard, color: 'hsl(var(--chart-expense))' },
+    { name: t('creditCardSpending'), value: creditCardExpense, color: 'hsl(var(--chart-card))' },
   ].filter((d) => d.value > 0)
 
   if (data.length === 0) {
-    return <ChartEmpty>Adicione transações para ver o gráfico</ChartEmpty>
+    return <ChartEmpty>{t('addTransactions')}</ChartEmpty>
   }
 
   return (
     <div
       className={chartSurfaceClass}
       role="img"
-      aria-label="Gráfico de rosca: entradas, saídas e gastos no cartão"
+      aria-label={t('incomeExpenseDonut')}
     >
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
@@ -62,14 +60,14 @@ export function IncomeExpensePieChart({
             strokeWidth={2}
           >
             {data.map((d) => (
-              <Cell key={d.name} fill={SLICE_COLOR[d.name] ?? 'hsl(var(--chart-1))'} />
+              <Cell key={d.name} fill={d.color} />
             ))}
           </Pie>
           <Tooltip
             contentStyle={chartTooltipContentStyle}
             labelStyle={chartTooltipLabelStyle}
             itemStyle={chartTooltipItemStyle}
-            formatter={(value: number) => formatChartCurrency(value)}
+            formatter={(value: number) => formatValue(value)}
           />
           <Legend
             layout="horizontal"

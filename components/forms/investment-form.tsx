@@ -7,6 +7,9 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import type { Category } from '@prisma/client'
+import { useLocale, useTranslations } from 'next-intl'
+import { localizeStoredLabel } from '@/lib/i18n/localize-label'
+import type { AppLocale } from '@/i18n/routing'
 
 interface InvestmentFormProps {
   reserveCategories: Category[]
@@ -18,14 +21,20 @@ interface InvestmentFormProps {
 
 function SubmitButton() {
   const { pending } = useFormStatus()
+  const t = useTranslations('forms')
   return (
     <Button type="submit" disabled={pending}>
-      {pending ? 'Salvando...' : 'Adicionar aporte'}
+      {pending ? t('buttons.saving') : t('buttons.addContribution')}
     </Button>
   )
 }
 
 export function InvestmentForm({ reserveCategories, walletCategories, action, dateValue }: InvestmentFormProps) {
+  const tLabels = useTranslations('forms.labels')
+  const tPlaceholders = useTranslations('forms.placeholders')
+  const tInvestment = useTranslations('forms.investment')
+  const tTransaction = useTranslations('forms.transaction')
+  const locale = useLocale() as AppLocale
   const [error, setError] = useState('')
   const today = new Date().toISOString().slice(0, 10)
 
@@ -55,57 +64,57 @@ export function InvestmentForm({ reserveCategories, walletCategories, action, da
       )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-6">
         <div className="space-y-2">
-          <Label htmlFor="reserveCategoryId">Reserva</Label>
+          <Label htmlFor="reserveCategoryId">{tLabels('reserve')}</Label>
           <Select id="reserveCategoryId" name="reserveCategoryId" required>
-            <option value="">Selecione a reserva...</option>
+            <option value="">{tInvestment('selectReserve')}</option>
             {reserveCategories.map((cat) => (
               <option key={cat.id} value={cat.id}>
-                {cat.name}
+                {localizeStoredLabel(cat.name, locale)}
               </option>
             ))}
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="walletCategoryId">Carteira</Label>
+          <Label htmlFor="walletCategoryId">{tLabels('wallet')}</Label>
           <Select id="walletCategoryId" name="walletCategoryId" required>
-            <option value="">Selecione a carteira...</option>
+            <option value="">{tInvestment('selectWallet')}</option>
             {walletCategories.map((cat) => (
               <option key={cat.id} value={cat.id}>
-                {cat.name}
+                {localizeStoredLabel(cat.name, locale)}
               </option>
             ))}
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="amount">Valor (R$)</Label>
+          <Label htmlFor="amount">{tLabels('amount')}</Label>
           <Input
             id="amount"
             name="amount"
             type="number"
             step="0.01"
             min="0"
-            placeholder="0,00"
+            placeholder={tPlaceholders('amount')}
             required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="useBalance">Usar saldo</Label>
+          <Label htmlFor="useBalance">{tInvestment('useCash')}</Label>
           <Select id="useBalance" name="useBalance" defaultValue="true">
-            <option value="true">Sim, debitar do caixa</option>
-            <option value="false">Não, apenas monitorar</option>
+            <option value="true">{tInvestment('debitCash')}</option>
+            <option value="false">{tInvestment('monitorOnly')}</option>
           </Select>
         </div>
         {dateValue == null ? (
           <div className="space-y-2">
-            <Label htmlFor="date">Data</Label>
+            <Label htmlFor="date">{tLabels('date')}</Label>
             <Input id="date" name="date" type="date" defaultValue={today} required />
           </div>
         ) : (
           <input type="hidden" name="date" value={dateValue} />
         )}
         <div className="space-y-2">
-          <Label htmlFor="notes">Observações</Label>
-          <Input id="notes" name="notes" type="text" placeholder="Opcional" />
+          <Label htmlFor="notes">{tLabels('notes')}</Label>
+          <Input id="notes" name="notes" type="text" placeholder={tTransaction('optional')} />
         </div>
       </div>
       <SubmitButton />

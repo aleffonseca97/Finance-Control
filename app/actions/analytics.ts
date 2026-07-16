@@ -1,8 +1,10 @@
 'use server'
 
+import { getLocale } from 'next-intl/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { budgetExpenseWhere } from '@/lib/budget-expense'
+import type { AppLocale } from '@/i18n/routing'
 import type { TransactionWithCategory } from '@/lib/transaction-types'
 
 export async function getLastTransactions(
@@ -32,6 +34,7 @@ export async function getMonthlyEvolution(months = 6) {
   const session = await auth()
   if (!session?.user?.id) return []
 
+  const locale = (await getLocale()) as AppLocale
   const now = new Date()
   const result: { month: string; income: number; expense: number; investment: number }[] = []
 
@@ -64,7 +67,7 @@ export async function getMonthlyEvolution(months = 6) {
     ])
 
     result.push({
-      month: d.toLocaleDateString('pt-BR', { month: 'short', year: '2-digit' }),
+      month: d.toLocaleDateString(locale, { month: 'short', year: '2-digit' }),
       income: income._sum.amount ?? 0,
       expense: expense._sum.amount ?? 0,
       investment: investment._sum.amount ?? 0,

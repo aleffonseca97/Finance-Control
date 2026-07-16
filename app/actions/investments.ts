@@ -2,13 +2,33 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { investmentSchema, withdrawalSchema } from '@/lib/validations'
-import { revalidatePath } from 'next/cache'
+import {
+  createInvestmentSchema,
+  createWithdrawalSchema,
+} from '@/lib/validations'
+import { revalidateLocalePaths } from '@/lib/i18n/revalidate'
+import {
+  getErrorTranslations,
+  getServerErrorTranslations,
+  getValidationTranslations,
+} from '@/lib/i18n/validation'
 import type { Category } from '@prisma/client'
+
+const INVESTMENT_PATHS = [
+  '/dashboard',
+  '/dashboard/investimentos',
+  '/dashboard/metas',
+  '/dashboard/analise',
+]
 
 export async function createInvestment(formData: FormData) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tServer = await getServerErrorTranslations()
+  const tValidation = await getValidationTranslations()
+  const investmentSchema = createInvestmentSchema(tValidation)
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const parsed = investmentSchema.safeParse({
     reserveCategoryId: formData.get('reserveCategoryId'),
@@ -42,8 +62,8 @@ export async function createInvestment(formData: FormData) {
     }),
   ])
 
-  if (!reserveCat) return { error: 'Reserva inválida' }
-  if (!walletCat) return { error: 'Carteira inválida' }
+  if (!reserveCat) return { error: tServer('invalidReserve') }
+  if (!walletCat) return { error: tServer('invalidWallet') }
 
   await prisma.investment.create({
     data: {
@@ -57,16 +77,18 @@ export async function createInvestment(formData: FormData) {
     },
   })
 
-  revalidatePath('/dashboard')
-  revalidatePath('/dashboard/investimentos')
-  revalidatePath('/dashboard/metas')
-  revalidatePath('/dashboard/analise')
+  await revalidateLocalePaths(INVESTMENT_PATHS)
   return { success: true }
 }
 
 export async function createWithdrawal(formData: FormData) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tServer = await getServerErrorTranslations()
+  const tValidation = await getValidationTranslations()
+  const withdrawalSchema = createWithdrawalSchema(tValidation)
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const parsed = withdrawalSchema.safeParse({
     reserveCategoryId: formData.get('reserveCategoryId'),
@@ -86,7 +108,7 @@ export async function createWithdrawal(formData: FormData) {
     parsed.data.walletCategoryId
   )
   if (balance < parsed.data.amount) {
-    return { error: 'Saldo insuficiente na combinação reserva/carteira selecionada' }
+    return { error: tServer('insufficientBalance') }
   }
 
   await prisma.investment.create({
@@ -101,10 +123,7 @@ export async function createWithdrawal(formData: FormData) {
     },
   })
 
-  revalidatePath('/dashboard')
-  revalidatePath('/dashboard/investimentos')
-  revalidatePath('/dashboard/metas')
-  revalidatePath('/dashboard/analise')
+  await revalidateLocalePaths(INVESTMENT_PATHS)
   return { success: true }
 }
 
@@ -184,16 +203,14 @@ export async function getAllReserveWalletBalances(
 
 export async function deleteInvestment(id: string) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   await prisma.investment.deleteMany({
     where: { id, userId: session.user.id },
   })
 
-  revalidatePath('/dashboard')
-  revalidatePath('/dashboard/investimentos')
-  revalidatePath('/dashboard/metas')
-  revalidatePath('/dashboard/analise')
+  await revalidateLocalePaths(INVESTMENT_PATHS)
   return { success: true }
 }
 

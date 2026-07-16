@@ -1,16 +1,22 @@
-import { withAuth } from 'next-auth/middleware'
-import type { NextMiddlewareWithAuth } from 'next-auth/middleware'
+import createIntlMiddleware from 'next-intl/middleware'
 import type { JWT } from 'next-auth/jwt'
+import { getToken } from 'next-auth/jwt'
 import type { NextRequest } from 'next/server'
 import { NextResponse } from 'next/server'
 import { encode } from 'next-auth/jwt'
+import { routing } from '@/i18n/routing'
 import { IDLE_MAX_MS, SESSION_MAX_AGE_SEC } from './lib/session-ttl'
 
-/** Clone request headers and set pathname for Server Components (see Next.js middleware docs). */
-function nextWithPathname(req: NextRequest) {
-  const requestHeaders = new Headers(req.headers)
-  requestHeaders.set('x-pathname', req.nextUrl.pathname)
-  return NextResponse.next({ request: { headers: requestHeaders } })
+const intlMiddleware = createIntlMiddleware(routing)
+const localesPattern = routing.locales.join('|')
+
+function getLocaleFromPath(pathname: string): string {
+  const match = pathname.match(new RegExp(`^/(${localesPattern})(/|$)`))
+  return match?.[1] ?? routing.defaultLocale
+}
+
+function isDashboardPath(pathname: string): boolean {
+  return new RegExp(`^/(${localesPattern})/dashboard`).test(pathname)
 }
 
 function secureCookie(): boolean {
@@ -26,16 +32,14 @@ function sessionCookieName(): string {
     : 'next-auth.session-token'
 }
 
-const middleware: NextMiddlewareWithAuth = async (req) => {
-  const token = req.nextauth.token as JWT | null
-  if (!token) {
-    return nextWithPathname(req)
-  }
-
+/** Refresh idle TTL on the existing intl response (do not replace it — that drops locale headers). */
+async function applySessionRefresh(
+  req: NextRequest,
+  token: JWT,
+  response: NextResponse,
+): Promise<NextResponse> {
   const secret = process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET
-  if (!secret) {
-    return nextWithPathname(req)
-  }
+  if (!secret) return response
 
   const now = Date.now()
   const lastActivity =
@@ -46,7 +50,8 @@ const middleware: NextMiddlewareWithAuth = async (req) => {
         : now
 
   if (now - lastActivity > IDLE_MAX_MS) {
-    const url = new URL('/login', req.url)
+    const locale = getLocaleFromPath(req.nextUrl.pathname)
+    const url = new URL(`/${locale}/login`, req.url)
     url.searchParams.set(
       'callbackUrl',
       `${req.nextUrl.pathname}${req.nextUrl.search}`,
@@ -76,30 +81,62 @@ const middleware: NextMiddlewareWithAuth = async (req) => {
       maxAge: SESSION_MAX_AGE_SEC,
     })
 
-    const res = nextWithPathname(req)
-    const secure = secureCookie()
-    res.cookies.set(sessionCookieName(), newJwt, {
+    response.cookies.set(sessionCookieName(), newJwt, {
       httpOnly: true,
-      secure,
+      secure: secureCookie(),
       sameSite: 'lax',
       path: '/',
       maxAge: SESSION_MAX_AGE_SEC,
     })
-    return res
   } catch {
-    return nextWithPathname(req)
+    // Keep intl response even if session refresh fails
   }
+
+  return response
 }
 
-export default withAuth(middleware, {
-  callbacks: {
-    authorized: ({ token }) => !!token,
-  },
-  pages: {
-    signIn: '/login',
-  },
-})
+export default async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl
+
+  if (
+    pathname.startsWith('/api') ||
+    pathname.startsWith('/_next') ||
+    pathname.startsWith('/_vercel') ||
+    pathname.includes('.')
+  ) {
+    return NextResponse.next()
+  }
+
+  if (isDashboardPath(pathname)) {
+    const token = (await getToken({
+      req,
+      secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
+    })) as JWT | null
+
+    if (!token) {
+      const locale = getLocaleFromPath(pathname)
+      const url = new URL(`/${locale}/login`, req.url)
+      url.searchParams.set(
+        'callbackUrl',
+        `${pathname}${req.nextUrl.search}`,
+      )
+      return NextResponse.redirect(url)
+    }
+
+    // Always run next-intl on dashboard routes. Skipping it made requestLocale
+    // fall back to pt-BR, so /en/dashboard still rendered Portuguese copy.
+    const intlResponse = intlMiddleware(req)
+    return applySessionRefresh(req, token, intlResponse)
+  }
+
+  return intlMiddleware(req)
+}
 
 export const config = {
-  matcher: ['/dashboard/:path*'],
+  matcher: [
+    '/',
+    '/(pt-BR|en|it)/:path*',
+    // Redireciona paths sem locale (ex.: /login do NextAuth) para /{locale}/...
+    '/((?!api|_next|_vercel|.*\\..*).*)',
+  ],
 }

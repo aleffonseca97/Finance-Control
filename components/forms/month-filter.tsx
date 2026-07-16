@@ -1,13 +1,18 @@
 'use client'
 
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { usePathname, useRouter } from '@/lib/i18n/navigation'
 import { Select } from '@/components/ui/select'
-import { MONTHS } from '@/lib/constants'
+import { useSearchParams } from 'next/navigation'
+import { useLocale, useTranslations } from 'next-intl'
+import { getMonthTitle } from '@/lib/i18n/format'
+import type { AppLocale } from '@/i18n/routing'
 
 export function MonthFilter() {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const t = useTranslations('forms.labels')
+  const locale = useLocale() as AppLocale
   const month = searchParams.get('month')
   const year = searchParams.get('year')
   const now = new Date()
@@ -32,13 +37,18 @@ export function MonthFilter() {
   const options: { value: string; label: string }[] = []
   for (let y = currentYear; y >= currentYear - 2; y--) {
     for (let m = 11; m >= 0; m--) {
-      options.push({ value: `${m}-${y}`, label: `${MONTHS[m]} ${y}` })
+      options.push({ value: `${m}-${y}`, label: `${getMonthTitle(y, m, locale)} ${y}` })
       if (y === currentYear - 2 && m === 0) break
     }
   }
 
   return (
-    <Select value={value} onChange={handleChange} className="w-auto min-w-[160px]">
+    <Select
+      value={value}
+      onChange={handleChange}
+      className="w-auto min-w-[160px]"
+      aria-label={t('month')}
+    >
       {options.map((opt) => (
         <option key={opt.value} value={opt.value}>{opt.label}</option>
       ))}

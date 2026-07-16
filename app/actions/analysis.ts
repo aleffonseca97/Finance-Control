@@ -3,7 +3,8 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { budgetExpenseWhere } from '@/lib/budget-expense'
-import { MONTHS_SHORT } from '@/lib/constants'
+import { getLocale } from 'next-intl/server'
+import type { AppLocale } from '@/i18n/routing'
 
 export type AnalysisRow = {
   label: string
@@ -224,8 +225,14 @@ export async function getMonthlyAnalysis(year?: number): Promise<AnalysisRow[]> 
   const session = await auth()
   if (!session?.user?.id) return []
 
+  const locale = (await getLocale()) as AppLocale
   const y = year ?? new Date().getFullYear()
-  const rows = MONTHS_SHORT.map((label) => makeRow(label))
+  const rows = Array.from({ length: 12 }, (_, monthIndex) => {
+    const label = new Date(y, monthIndex, 1).toLocaleDateString(locale, {
+      month: 'short',
+    })
+    return makeRow(label)
+  })
 
   const transactions = await prisma.transaction.findMany({
     where: {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useMemo, useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 
 type SubscriptionData = {
@@ -15,30 +16,18 @@ interface SubscriptionSectionProps {
   subscription: SubscriptionData
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  trialing: 'Em avaliação',
-  active: 'Ativa',
-  past_due: 'Pagamento pendente',
-  canceled: 'Cancelada',
-  unpaid: 'Não paga',
-  incomplete: 'Incompleta',
-}
-
-function formatDate(date: Date) {
-  return new Intl.DateTimeFormat('pt-BR', {
+function formatDate(date: Date, locale: string) {
+  return new Intl.DateTimeFormat(locale, {
     dateStyle: 'long',
   }).format(new Date(date))
-}
-
-function getStatusLabel(status?: string) {
-  if (!status) return 'Sem assinatura'
-  return STATUS_LABELS[status] ?? status
 }
 
 export function SubscriptionSection({
   stripeCustomerId,
   subscription,
 }: SubscriptionSectionProps) {
+  const t = useTranslations('settings.subscription')
+  const locale = useLocale()
   const [loadingAction, setLoadingAction] = useState<'checkout' | 'portal' | null>(null)
   const [error, setError] = useState('')
 
@@ -47,9 +36,29 @@ export function SubscriptionSection({
   }, [subscription])
 
   const nextBillingDate = subscription?.currentPeriodEnd
-    ? formatDate(subscription.currentPeriodEnd)
+    ? formatDate(subscription.currentPeriodEnd, locale)
     : null
-  const trialEndDate = subscription?.trialEnd ? formatDate(subscription.trialEnd) : null
+  const trialEndDate = subscription?.trialEnd ? formatDate(subscription.trialEnd, locale) : null
+
+  function getStatusLabel(status?: string) {
+    if (!status) return t('statusLabels.none')
+    switch (status) {
+      case 'trialing':
+        return t('statusLabels.trialing')
+      case 'active':
+        return t('statusLabels.active')
+      case 'past_due':
+        return t('statusLabels.past_due')
+      case 'canceled':
+        return t('statusLabels.canceled')
+      case 'unpaid':
+        return t('statusLabels.unpaid')
+      case 'incomplete':
+        return t('statusLabels.incomplete')
+      default:
+        return status
+    }
+  }
 
   async function openBillingFlow(action: 'checkout' | 'portal') {
     try {
@@ -59,11 +68,11 @@ export function SubscriptionSection({
       const res = await fetch(endpoint, { method: 'POST' })
       const data = await res.json()
       if (!res.ok || !data?.url) {
-        throw new Error(data?.error ?? 'Não foi possível continuar no momento.')
+        throw new Error(data?.error ?? t('billingError'))
       }
       window.location.href = data.url
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erro inesperado ao processar assinatura.')
+      setError(err instanceof Error ? err.message : t('unexpectedError'))
     } finally {
       setLoadingAction(null)
     }
@@ -72,42 +81,42 @@ export function SubscriptionSection({
   return (
     <section className="dashboard-bento-card-muted space-y-5 p-4 sm:p-5">
       <div className="space-y-1">
-        <h2 className="font-semibold">Assinatura</h2>
+        <h2 className="font-semibold">{t('title')}</h2>
         <p className="text-sm text-muted-foreground">
-          Gerencie seu plano, cobrança e acesso aos recursos premium.
+          {t('description')}
         </p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div className="rounded-lg border bg-card p-3">
-          <p className="text-xs text-muted-foreground">Status</p>
+          <p className="text-xs text-muted-foreground">{t('status')}</p>
           <p className="mt-1 text-sm font-medium">{getStatusLabel(subscription?.status)}</p>
         </div>
         <div className="rounded-lg border bg-card p-3">
-          <p className="text-xs text-muted-foreground">Plano</p>
-          <p className="mt-1 text-sm font-medium">Pro Mensal</p>
+          <p className="text-xs text-muted-foreground">{t('plan')}</p>
+          <p className="mt-1 text-sm font-medium">{t('planName')}</p>
         </div>
         <div className="rounded-lg border bg-card p-3">
           <p className="text-xs text-muted-foreground">
-            {subscription?.status === 'trialing' ? 'Fim da avaliação' : 'Próxima renovação'}
+            {subscription?.status === 'trialing' ? t('trialEnd') : t('nextRenewal')}
           </p>
           <p className="mt-1 text-sm font-medium">{trialEndDate ?? nextBillingDate ?? '-'}</p>
         </div>
         <div className="rounded-lg border bg-card p-3">
-          <p className="text-xs text-muted-foreground">Valor</p>
-          <p className="mt-1 text-sm font-medium">R$10,00 / mês</p>
+          <p className="text-xs text-muted-foreground">{t('price')}</p>
+          <p className="mt-1 text-sm font-medium">{t('priceValue')}</p>
         </div>
       </div>
 
       {subscription?.cancelAtPeriodEnd && (
         <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-700 dark:text-amber-300">
-          Sua assinatura está configurada para cancelar ao fim do período atual.
+          {t('cancelAtPeriodEnd')}
         </div>
       )}
 
       {!subscription && (
         <div className="rounded-md border border-dashed p-3 text-sm text-muted-foreground">
-          Nenhuma assinatura encontrada. Ative seu plano para continuar com acesso completo.
+          {t('noSubscription')}
         </div>
       )}
 
@@ -122,7 +131,7 @@ export function SubscriptionSection({
             onClick={() => openBillingFlow('portal')}
             disabled={loadingAction !== null}
           >
-            {loadingAction === 'portal' ? 'Abrindo...' : 'Gerenciar assinatura'}
+            {loadingAction === 'portal' ? t('manageOpening') : t('manage')}
           </Button>
         ) : (
           <Button
@@ -130,7 +139,7 @@ export function SubscriptionSection({
             onClick={() => openBillingFlow('checkout')}
             disabled={loadingAction !== null}
           >
-            {loadingAction === 'checkout' ? 'Redirecionando...' : 'Ativar assinatura'}
+            {loadingAction === 'checkout' ? t('activateRedirecting') : t('activate')}
           </Button>
         )}
 
@@ -141,7 +150,7 @@ export function SubscriptionSection({
             onClick={() => openBillingFlow('portal')}
             disabled={loadingAction !== null}
           >
-            Portal de cobrança
+            {t('billingPortal')}
           </Button>
         )}
       </div>

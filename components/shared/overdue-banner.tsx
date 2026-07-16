@@ -1,13 +1,23 @@
 import { AlertTriangle } from 'lucide-react'
+import { getTranslations, getLocale } from 'next-intl/server'
 import type { SerializedCreditCardOverdue } from '@/app/actions/credit-cards'
-import { formatBRL } from '@/lib/date-utils'
+import { formatCurrency } from '@/lib/i18n/format'
+import { getCurrentCurrency } from '@/lib/i18n/get-currency'
+import type { AppLocale } from '@/i18n/routing'
 
 type Props = {
   notices: SerializedCreditCardOverdue[]
 }
 
-export function OverdueBanner({ notices }: Props) {
+export async function OverdueBanner({ notices }: Props) {
   if (notices.length === 0) return null
+
+  const [t, locale, currency] = await Promise.all([
+    getTranslations('dashboard.creditCard'),
+    getLocale(),
+    getCurrentCurrency(),
+  ])
+  const appLocale = locale as AppLocale
 
   return (
     <div
@@ -17,15 +27,18 @@ export function OverdueBanner({ notices }: Props) {
       <AlertTriangle className="h-5 w-5 shrink-0 text-destructive" />
       <div className="space-y-1">
         <p className="font-semibold text-destructive">
-          Fatura do cartão em atraso
+          {t('overdueTitle')}
         </p>
         <ul className="list-disc pl-4 text-muted-foreground space-y-0.5">
           {notices.map((n) => (
             <li key={`${n.cardId}-${n.closingLabel}`}>
-              <span className="text-foreground font-medium">{n.cardName}</span>
-              {n.lastFour ? ` •••• ${n.lastFour}` : ''}: R${' '}
-              {formatBRL(n.unpaid)} (venc. {n.dueDateLabel}, fech.{' '}
-              {n.closingLabel})
+              {t('overdueItem', {
+                cardName: n.cardName,
+                lastFour: n.lastFour ? ` •••• ${n.lastFour}` : '',
+                amount: formatCurrency(n.unpaid, appLocale, currency),
+                dueDate: n.dueDateLabel,
+                closingDate: n.closingLabel,
+              })}
             </li>
           ))}
         </ul>

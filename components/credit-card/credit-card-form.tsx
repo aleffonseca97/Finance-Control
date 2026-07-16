@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import type { CreditCard } from '@prisma/client'
+import { useTranslations } from 'next-intl'
 
 interface CreditCardFormProps {
   initialCard?: CreditCard | null
@@ -16,13 +17,14 @@ interface CreditCardFormProps {
 
 function SubmitButton({ isEdit }: { isEdit: boolean }) {
   const { pending } = useFormStatus()
+  const tForms = useTranslations('forms.buttons')
   return (
     <Button
       type="submit"
       disabled={pending}
       className="min-h-10 touch-manipulation sm:min-h-9"
     >
-      {pending ? 'Salvando...' : isEdit ? 'Salvar' : 'Adicionar'}
+      {pending ? tForms('saving') : isEdit ? tForms('save') : tForms('add')}
     </Button>
   )
 }
@@ -35,6 +37,8 @@ export function CreditCardForm({
   updateAction,
   onCancel,
 }: CreditCardFormProps) {
+  const t = useTranslations('dashboard.creditCard')
+  const tForms = useTranslations('forms')
   const [error, setError] = useState('')
   const isEdit = !!initialCard
 
@@ -62,27 +66,27 @@ export function CreditCardForm({
       )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Nome</Label>
+          <Label htmlFor="name">{tForms('labels.name')}</Label>
           <Input
             id="name"
             name="name"
             defaultValue={initialCard?.name}
-            placeholder="Ex: Nubank, Itaú"
+            placeholder={t('cardNamePlaceholder')}
             required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="lastFour">Últimos 4 dígitos</Label>
+          <Label htmlFor="lastFour">{tForms('labels.lastFour')}</Label>
           <Input
             id="lastFour"
             name="lastFour"
             maxLength={4}
             defaultValue={initialCard?.lastFour ?? ''}
-            placeholder="1234"
+            placeholder={tForms('placeholders.lastFour')}
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="totalLimit">Limite total (R$)</Label>
+          <Label htmlFor="totalLimit">{tForms('labels.limit')}</Label>
           <Input
             id="totalLimit"
             name="totalLimit"
@@ -90,15 +94,15 @@ export function CreditCardForm({
             step="0.01"
             min="0"
             defaultValue={initialCard?.totalLimit ?? initialCard?.limit}
-            placeholder="0,00"
+            placeholder={tForms('placeholders.amount')}
             required
           />
           <p className="text-xs text-muted-foreground">
-            O disponível para compras só aumenta quando você registrar o pagamento da fatura.
+            {t('limitHelp')}
           </p>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="closingDay">Dia do fechamento</Label>
+          <Label htmlFor="closingDay">{tForms('labels.closingDay')}</Label>
           <select
             id="closingDay"
             name="closingDay"
@@ -114,7 +118,7 @@ export function CreditCardForm({
           </select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="dueDay">Dia do vencimento</Label>
+          <Label htmlFor="dueDay">{tForms('labels.dueDay')}</Label>
           <select
             id="dueDay"
             name="dueDay"
@@ -130,7 +134,7 @@ export function CreditCardForm({
           </select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="color">Cor</Label>
+          <Label htmlFor="color">{tForms('labels.color')}</Label>
           <Input
             id="color"
             name="color"
@@ -148,7 +152,7 @@ export function CreditCardForm({
               onClick={onCancel}
               className="min-h-10 touch-manipulation sm:min-h-9"
             >
-              Cancelar
+              {tForms('buttons.cancel')}
             </Button>
           )}
         </div>

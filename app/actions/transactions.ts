@@ -3,17 +3,35 @@
 import type { Prisma } from '@prisma/client';
 import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/db';
-import { transactionSchema } from '@/lib/validations';
-import { revalidatePath } from 'next/cache';
+import { createTransactionSchema } from '@/lib/validations';
+import { revalidateLocalePaths } from '@/lib/i18n/revalidate';
+import {
+  getErrorTranslations,
+  getServerErrorTranslations,
+  getValidationTranslations,
+} from '@/lib/i18n/validation';
 import { budgetExpenseWhere } from '@/lib/budget-expense';
 import { roundMoney } from '@/lib/credit-card-billing';
+
+const DASHBOARD_PATHS = [
+  '/dashboard',
+  '/dashboard/entradas',
+  '/dashboard/saidas',
+  '/dashboard/analise',
+  '/dashboard/cartao-credito',
+];
 
 export async function createTransaction(
   type: 'income' | 'expense',
   formData: FormData,
 ) {
   const session = await auth();
-  if (!session?.user?.id) return { error: 'Não autorizado' };
+  const t = await getErrorTranslations();
+  const tServer = await getServerErrorTranslations();
+  if (!session?.user?.id) return { error: t('unauthorized') };
+
+  const tValidation = await getValidationTranslations();
+  const transactionSchema = createTransactionSchema(tValidation);
 
   const creditCardIdRaw = formData.get('creditCardId');
   const parsed = transactionSchema.safeParse({
@@ -37,7 +55,7 @@ export async function createTransaction(
     },
   });
 
-  if (!category) return { error: 'Categoria inválida' };
+  if (!category) return { error: tServer('invalidCategory') };
 
   const creditCardId =
     type === 'expense' && parsed.data.creditCardId ? parsed.data.creditCardId : null;
@@ -46,9 +64,9 @@ export async function createTransaction(
     const card = await prisma.creditCard.findFirst({
       where: { id: creditCardId, userId: session.user.id },
     });
-    if (!card) return { error: 'Cartão de crédito inválido' };
+    if (!card) return { error: tServer('invalidCreditCard') };
     if (card.limit + 1e-6 < parsed.data.amount)
-      return { error: 'Limite disponível insuficiente' };
+      return { error: tServer('insufficientLimit') };
   }
 
   await prisma.$transaction(async (tx) => {
@@ -82,11 +100,7 @@ export async function createTransaction(
     }
   });
 
-  revalidatePath('/dashboard');
-  revalidatePath('/dashboard/entradas');
-  revalidatePath('/dashboard/saidas');
-  revalidatePath('/dashboard/analise');
-  revalidatePath('/dashboard/cartao-credito');
+  await revalidateLocalePaths(DASHBOARD_PATHS);
   return { success: true };
 }
 
@@ -103,16 +117,18 @@ export async function updateTransaction(
   data: { categoryId?: string; amount?: number; description?: string | null },
 ) {
   const session = await auth();
-  if (!session?.user?.id) return { error: 'Não autorizado' };
+  const t = await getErrorTranslations();
+  const tServer = await getServerErrorTranslations();
+  if (!session?.user?.id) return { error: t('unauthorized') };
 
   const tx = await prisma.transaction.findFirst({
     where: { id, userId: session.user.id },
     select: { id: true, type: true },
   });
-  if (!tx) return { error: 'Transação não encontrada' };
+  if (!tx) return { error: tServer('transactionNotFound') };
 
   if (!['income', 'expense'].includes(tx.type)) {
-    return { error: 'Tipo de transação inválido' };
+    return { error: tServer('invalidTransactionType') };
   }
 
   if (data.categoryId) {
@@ -123,7 +139,7 @@ export async function updateTransaction(
         OR: [{ userId: null, isCustom: false }, { userId: session.user.id, isCustom: true }],
       },
     });
-    if (!category) return { error: 'Categoria inválida' };
+    if (!category) return { error: tServer('invalidCategory') };
   }
 
   await prisma.transaction.update({
@@ -137,10 +153,12 @@ export async function updateTransaction(
     },
   });
 
-  revalidatePath('/dashboard');
-  revalidatePath('/dashboard/entradas');
-  revalidatePath('/dashboard/saidas');
-  revalidatePath('/dashboard/analise');
+  await revalidateLocalePaths([
+    '/dashboard',
+    '/dashboard/entradas',
+    '/dashboard/saidas',
+    '/dashboard/analise',
+  ]);
   return { success: true };
 }
 
@@ -153,14 +171,16 @@ export async function updateTransactionDescription(
 
 export async function deleteTransaction(id: string) {
   const session = await auth();
-  if (!session?.user?.id) return { error: 'Não autorizado' };
+  const t = await getErrorTranslations();
+  const tServer = await getServerErrorTranslations();
+  if (!session?.user?.id) return { error: t('unauthorized') };
 
   const tx = await prisma.transaction.findFirst({
     where: { id, userId: session.user.id },
     select: { amount: true, creditCardId: true, paysCreditCardId: true },
   });
 
-  if (!tx) return { error: 'Transação não encontrada' };
+  if (!tx) return { error: tServer('transactionNotFound') };
 
   await prisma.$transaction(async (db) => {
     await db.transaction.deleteMany({
@@ -200,11 +220,7 @@ export async function deleteTransaction(id: string) {
     }
   });
 
-  revalidatePath('/dashboard');
-  revalidatePath('/dashboard/entradas');
-  revalidatePath('/dashboard/saidas');
-  revalidatePath('/dashboard/analise');
-  revalidatePath('/dashboard/cartao-credito');
+  await revalidateLocalePaths(DASHBOARD_PATHS);
   return { success: true };
 }
 
@@ -213,6 +229,7 @@ export async function ensureFixedExpensesForMonth(
   month: number,
   year: number,
 ) {
+  const tServer = await getServerErrorTranslations();
   const start = new Date(year, month, 1);
   const end = new Date(year, month + 1, 0);
 
@@ -245,7 +262,7 @@ export async function ensureFixedExpensesForMonth(
         userId,
         categoryId: cat.id,
         amount: cat.defaultValue!,
-        description: 'Lançamento automático',
+        description: tServer('autoTransaction'),
         date: start,
         type: 'expense',
       })),

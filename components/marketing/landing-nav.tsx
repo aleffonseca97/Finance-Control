@@ -1,14 +1,24 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import Link from 'next/link'
+import { useTranslations } from 'next-intl'
+import { Link } from '@/lib/i18n/navigation'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { LocaleSwitcherButtons } from '@/components/locale-switcher'
 import { APP_NAME } from '@/lib/version'
 
 export default function LandingNav() {
+  const t = useTranslations('nav.landing')
+  const tNav = useTranslations('nav')
   const [scrolled, setScrolled] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+
+  const navLinks = [
+    { label: t('features'), href: '#funcionalidades' },
+    { label: t('pricing'), href: '#precos' },
+    { label: t('faq'), href: '#faq' },
+  ]
 
   useEffect(() => {
     const handler = () => setScrolled(window.scrollY > 10)
@@ -26,7 +36,6 @@ export default function LandingNav() {
       )}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        {/* Logo */}
         <Link href="/" className="flex items-center gap-2 shrink-0">
           <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
             <span className="text-primary-foreground text-sm font-bold select-none">L</span>
@@ -36,13 +45,8 @@ export default function LandingNav() {
           </span>
         </Link>
 
-        {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-8">
-          {[
-            { label: 'Funcionalidades', href: '#funcionalidades' },
-            { label: 'Preços', href: '#precos' },
-            { label: 'FAQ', href: '#faq' },
-          ].map((link) => (
+          {navLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}
@@ -53,19 +57,18 @@ export default function LandingNav() {
           ))}
         </div>
 
-        {/* Actions */}
         <div className="flex items-center gap-2">
+          <LocaleSwitcherButtons className="hidden sm:flex" />
           <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
-            <Link href="/login">Entrar</Link>
+            <Link href="/login">{t('signIn')}</Link>
           </Button>
           <Button size="sm" asChild>
-            <Link href="/registro">Começar grátis</Link>
+            <Link href="/registro">{t('startFree')}</Link>
           </Button>
-          {/* Mobile menu toggle */}
           <button
             className="md:hidden ml-1 p-2 rounded-md text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
             onClick={() => setMobileOpen((v) => !v)}
-            aria-label="Menu"
+            aria-label={mobileOpen ? tNav('closeMenu') : tNav('openMenu')}
           >
             <div className="space-y-1.5">
               <span
@@ -91,20 +94,15 @@ export default function LandingNav() {
         </div>
       </div>
 
-      {/* Mobile menu */}
       <div
         className={cn(
           'md:hidden overflow-hidden transition-all duration-200 ease-in-out border-t border-zinc-200 dark:border-zinc-800',
           'bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md',
-          mobileOpen ? 'max-h-56' : 'max-h-0 border-transparent'
+          mobileOpen ? 'max-h-72' : 'max-h-0 border-transparent'
         )}
       >
         <div className="px-4 py-4 space-y-1">
-          {[
-            { label: 'Funcionalidades', href: '#funcionalidades' },
-            { label: 'Preços', href: '#precos' },
-            { label: 'FAQ', href: '#faq' },
-          ].map((link) => (
+          {navLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}
@@ -114,13 +112,14 @@ export default function LandingNav() {
               {link.label}
             </a>
           ))}
-          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800">
+          <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
+            <LocaleSwitcherButtons className="justify-start" />
             <Link
               href="/login"
               onClick={() => setMobileOpen(false)}
               className="block py-2.5 text-sm text-zinc-700 dark:text-zinc-300 hover:text-primary transition-colors"
             >
-              Entrar
+              {t('signIn')}
             </Link>
           </div>
         </div>

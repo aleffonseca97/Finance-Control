@@ -7,6 +7,11 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import type { ReserveWalletBalance } from '@/app/actions/investments'
+import { useLocale, useTranslations } from 'next-intl'
+import { formatCurrency } from '@/lib/i18n/format'
+import { useCurrency } from '@/components/currency-provider'
+import { localizeStoredLabel } from '@/lib/i18n/localize-label'
+import type { AppLocale } from '@/i18n/routing'
 
 interface WithdrawalFormProps {
   balances: ReserveWalletBalance[]
@@ -16,14 +21,21 @@ interface WithdrawalFormProps {
 
 function SubmitButton() {
   const { pending } = useFormStatus()
+  const t = useTranslations('forms')
   return (
     <Button type="submit" disabled={pending} variant="outline">
-      {pending ? 'Processando...' : 'Realizar saque'}
+      {pending ? t('investment.processing') : t('buttons.confirm')}
     </Button>
   )
 }
 
 export function WithdrawalForm({ balances, action, dateValue }: WithdrawalFormProps) {
+  const tLabels = useTranslations('forms.labels')
+  const tPlaceholders = useTranslations('forms.placeholders')
+  const tInvestment = useTranslations('forms.investment')
+  const tTransaction = useTranslations('forms.transaction')
+  const locale = useLocale() as AppLocale
+  const currency = useCurrency()
   const [error, setError] = useState('')
   const [selectedKey, setSelectedKey] = useState('')
   const today = new Date().toISOString().slice(0, 10)
@@ -55,7 +67,7 @@ export function WithdrawalForm({ balances, action, dateValue }: WithdrawalFormPr
   if (balances.length === 0) {
     return (
       <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-        Nenhuma combinação reserva/carteira com saldo disponível para saque
+        {tInvestment('noBalances')}
       </div>
     )
   }
@@ -73,47 +85,47 @@ export function WithdrawalForm({ balances, action, dateValue }: WithdrawalFormPr
       )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div className="space-y-2 lg:col-span-2">
-          <Label htmlFor="withdrawal-source">Origem (Reserva → Carteira)</Label>
+          <Label htmlFor="withdrawal-source">{tInvestment('origin')}</Label>
           <Select
             id="withdrawal-source"
             value={selectedKey}
             onChange={(e) => setSelectedKey(e.target.value)}
             required
           >
-            <option value="">Selecione a origem...</option>
+            <option value="">{tInvestment('selectOrigin')}</option>
             {balances.map((b) => {
               const key = `${b.reserveCategory.id}:${b.walletCategory.id}`
               return (
                 <option key={key} value={key}>
-                  {b.reserveCategory.name} → {b.walletCategory.name}: R${' '}
-                  {b.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  {localizeStoredLabel(b.reserveCategory.name, locale)} →{' '}
+                  {localizeStoredLabel(b.walletCategory.name, locale)}:{' '}
+                  {formatCurrency(b.balance, locale, currency)}
                 </option>
               )
             })}
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="withdrawal-amount">Valor (R$)</Label>
+          <Label htmlFor="withdrawal-amount">{tLabels('amount')}</Label>
           <Input
             id="withdrawal-amount"
             name="amount"
             type="number"
             step="0.01"
             min="0"
-            placeholder="0,00"
+            placeholder={tPlaceholders('amount')}
             required
             max={selected?.balance}
           />
           {selected && (
             <p className="text-xs text-muted-foreground">
-              Saldo disponível: R${' '}
-              {selected.balance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              {tInvestment('availableBalance')} {formatCurrency(selected.balance, locale, currency)}
             </p>
           )}
         </div>
         {dateValue == null ? (
           <div className="space-y-2">
-            <Label htmlFor="withdrawal-date">Data</Label>
+            <Label htmlFor="withdrawal-date">{tLabels('date')}</Label>
             <Input
               id="withdrawal-date"
               name="date"
@@ -126,8 +138,8 @@ export function WithdrawalForm({ balances, action, dateValue }: WithdrawalFormPr
           <input type="hidden" name="date" value={dateValue} />
         )}
         <div className="space-y-2">
-          <Label htmlFor="withdrawal-notes">Observações</Label>
-          <Input id="withdrawal-notes" name="notes" type="text" placeholder="Opcional" />
+          <Label htmlFor="withdrawal-notes">{tLabels('notes')}</Label>
+          <Input id="withdrawal-notes" name="notes" type="text" placeholder={tTransaction('optional')} />
         </div>
       </div>
       <SubmitButton />

@@ -8,29 +8,27 @@ import {
   chartTooltipContentStyle,
   chartTooltipItemStyle,
   chartTooltipLabelStyle,
-  formatChartCurrency,
+  useChartCurrency,
 } from '@/components/charts/chart-shared'
-
-const SLICE_COLOR: Record<string, string> = {
-  'Despesas fixas': 'hsl(var(--chart-fixed))',
-  'Despesas variáveis': 'hsl(var(--chart-variable))',
-}
+import { useTranslations } from 'next-intl'
 
 export function FixedVariableChart({ fixed, variable }: { fixed: number; variable: number }) {
+  const t = useTranslations('common.charts')
+  const formatValue = useChartCurrency()
   const data = [
-    { name: 'Despesas fixas', value: fixed },
-    { name: 'Despesas variáveis', value: variable },
+    { name: t('fixedExpenses'), value: fixed, color: 'hsl(var(--chart-fixed))' },
+    { name: t('variableExpenses'), value: variable, color: 'hsl(var(--chart-variable))' },
   ].filter((d) => d.value > 0)
 
   if (data.length === 0) {
-    return <ChartEmpty>Adicione despesas para ver o gráfico</ChartEmpty>
+    return <ChartEmpty>{t('addExpenses')}</ChartEmpty>
   }
 
   return (
     <div
       className={chartSurfaceClass}
       role="img"
-      aria-label="Gráfico de rosca: despesas fixas e variáveis"
+      aria-label={t('fixedVariableDonut')}
     >
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
@@ -46,14 +44,14 @@ export function FixedVariableChart({ fixed, variable }: { fixed: number; variabl
             strokeWidth={2}
           >
             {data.map((d) => (
-              <Cell key={d.name} fill={SLICE_COLOR[d.name] ?? 'hsl(var(--chart-1))'} />
+              <Cell key={d.name} fill={d.color} />
             ))}
           </Pie>
           <Tooltip
             contentStyle={chartTooltipContentStyle}
             labelStyle={chartTooltipLabelStyle}
             itemStyle={chartTooltipItemStyle}
-            formatter={(value: number) => formatChartCurrency(value)}
+            formatter={(value: number) => formatValue(value)}
           />
           <Legend
             layout="horizontal"

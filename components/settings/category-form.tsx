@@ -2,12 +2,14 @@
 
 import { useState } from 'react'
 import { useFormStatus } from 'react-dom'
+import { useLocale, useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
-import { CategoryIcon } from '@/components/category/category-icon'
 import { CATEGORY_ICON_OPTIONS } from '@/components/category/category-icon'
+import { localizeStoredLabel } from '@/lib/i18n/localize-label'
+import type { AppLocale } from '@/i18n/routing'
 import type { Category } from '@prisma/client'
 
 interface CategoryFormProps {
@@ -22,10 +24,11 @@ interface CategoryFormProps {
 }
 
 function SubmitButton({ isEdit }: { isEdit: boolean }) {
+  const t = useTranslations('forms.buttons')
   const { pending } = useFormStatus()
   return (
     <Button type="submit" disabled={pending}>
-      {pending ? 'Salvando...' : isEdit ? 'Salvar' : 'Adicionar'}
+      {pending ? t('saving') : isEdit ? t('save') : t('add')}
     </Button>
   )
 }
@@ -40,9 +43,13 @@ export function CategoryForm({
   onCancel,
   investmentSubtype,
 }: CategoryFormProps) {
+  const t = useTranslations('settings.categories')
+  const tForms = useTranslations('forms')
+  const tIcons = useTranslations('common.icons')
+  const locale = useLocale() as AppLocale
   const [error, setError] = useState('')
   const isEdit = !!initialCategory
-  const fallbackGroup = type === 'investment' ? 'Investimentos' : 'Personalizada'
+  const fallbackGroup = type === 'investment' ? t('investmentsGroup') : t('customGroup')
   const selectedGroup = initialCategory?.group?.trim() || fallbackGroup
   const groupOptions = Array.from(
     new Set(
@@ -50,7 +57,9 @@ export function CategoryForm({
         .map((group) => group.trim())
         .filter((group) => group.length > 0)
     )
-  ).sort((a, b) => a.localeCompare(b, 'pt-BR'))
+  ).sort((a, b) =>
+    localizeStoredLabel(a, locale).localeCompare(localizeStoredLabel(b, locale), locale)
+  )
 
   async function handleSubmit(formData: FormData) {
     setError('')
@@ -81,17 +90,17 @@ export function CategoryForm({
       )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-2">
-          <Label htmlFor="name">Nome</Label>
+          <Label htmlFor="name">{tForms('labels.name')}</Label>
           <Input
             id="name"
             name="name"
             defaultValue={initialCategory?.name}
-            placeholder="Ex: Mercado"
+            placeholder={tForms('placeholders.categoryName')}
             required
           />
         </div>
         <div className="space-y-2">
-          <Label htmlFor="group">Categoria principal</Label>
+          <Label htmlFor="group">{tForms('labels.mainCategory')}</Label>
           <Select
             id="group"
             name="group"
@@ -100,28 +109,28 @@ export function CategoryForm({
           >
             {groupOptions.map((group) => (
               <option key={group} value={group}>
-                {group}
+                {localizeStoredLabel(group, locale)}
               </option>
             ))}
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="icon">Ícone</Label>
+          <Label htmlFor="icon">{tForms('labels.icon')}</Label>
           <Select
             id="icon"
             name="icon"
             defaultValue={initialCategory?.icon ?? 'CircleDollarSign'}
             required
           >
-            {CATEGORY_ICON_OPTIONS.map(({ key, label }) => (
+            {CATEGORY_ICON_OPTIONS.map((key) => (
               <option key={key} value={key}>
-                {label}
+                {tIcons(key)}
               </option>
             ))}
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="color">Cor</Label>
+          <Label htmlFor="color">{tForms('labels.color')}</Label>
           <Input
             id="color"
             name="color"
@@ -132,7 +141,7 @@ export function CategoryForm({
         </div>
         {type === 'investment' && (
           <div className="space-y-2">
-            <Label htmlFor="investmentSubtype">Tipo</Label>
+            <Label htmlFor="investmentSubtype">{tForms('labels.type')}</Label>
             <Select
               id="investmentSubtype"
               name="investmentSubtype"
@@ -143,22 +152,22 @@ export function CategoryForm({
               }
               required
             >
-              <option value="">Selecione...</option>
-              <option value="reserva">Reserva (objetivo da economia)</option>
-              <option value="carteira">Carteira (onde o dinheiro está aplicado)</option>
+              <option value="">{tForms('placeholders.select')}</option>
+              <option value="reserva">{tForms('investmentSubtype.reserve')}</option>
+              <option value="carteira">{tForms('investmentSubtype.wallet')}</option>
             </Select>
           </div>
         )}
         {type === 'expense' && isFixed && (
           <div className="space-y-2">
-            <Label htmlFor="defaultValue">Valor prefixado (R$)</Label>
+            <Label htmlFor="defaultValue">{tForms('labels.defaultValue')}</Label>
             <Input
               id="defaultValue"
               name="defaultValue"
               type="number"
               step="0.01"
               min="0"
-              placeholder="0,00"
+              placeholder={tForms('placeholders.amount')}
               defaultValue={
                 initialCategory && 'defaultValue' in initialCategory && initialCategory.defaultValue != null
                   ? String(initialCategory.defaultValue)
@@ -171,7 +180,7 @@ export function CategoryForm({
           <SubmitButton isEdit={isEdit} />
           {onCancel && (
             <Button type="button" variant="outline" onClick={onCancel}>
-              Cancelar
+              {tForms('buttons.cancel')}
             </Button>
           )}
         </div>

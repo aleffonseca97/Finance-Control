@@ -2,12 +2,17 @@
 
 import { useState } from 'react'
 import { useFormStatus } from 'react-dom'
+import { useLocale, useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import type { Category } from '@prisma/client'
 import { cn } from '@/lib/utils'
+import { compareLocale, formatCurrency } from '@/lib/i18n/format'
+import { useCurrency } from '@/components/currency-provider'
+import { localizeStoredLabel } from '@/lib/i18n/localize-label'
+import type { AppLocale } from '@/i18n/routing'
 
 interface CreditCard {
   id: string
@@ -22,21 +27,24 @@ interface TransactionFormProps {
   categories: Category[]
   creditCards?: CreditCard[]
   action: (formData: FormData) => Promise<{ error?: string; success?: boolean }>
-  /** When provided, hides the date input and uses this value (for day selector card) */
   dateValue?: string
-  /** Extra classes for the form root (e.g. strip inner card when already inside a Card) */
   className?: string
 }
 
 function SubmitButton({ type }: { type: 'income' | 'expense' }) {
   const { pending } = useFormStatus()
+  const t = useTranslations('forms.buttons')
   return (
     <Button
       type="submit"
       disabled={pending}
       className="min-h-11 w-full touch-manipulation sm:min-h-10 sm:w-auto"
     >
-      {pending ? 'Salvando...' : type === 'income' ? 'Adicionar entrada' : 'Adicionar saída'}
+      {pending
+        ? t('saving')
+        : type === 'income'
+          ? t('addIncome')
+          : t('addExpense')}
     </Button>
   )
 }
@@ -49,18 +57,22 @@ export function TransactionForm({
   dateValue,
   className,
 }: TransactionFormProps) {
+  const locale = useLocale() as AppLocale
+  const currency = useCurrency()
+  const t = useTranslations('forms')
   const [error, setError] = useState('')
+  const generalGroup = t('generalGroup')
   const initialGroup =
     categories
       .map((c) => c.group?.trim())
-      .find((group): group is string => Boolean(group)) ?? 'Geral'
+      .find((group): group is string => Boolean(group)) ?? generalGroup
   const [selectedGroup, setSelectedGroup] = useState(initialGroup)
   const today = new Date().toISOString().slice(0, 10)
   const groups = Array.from(
-    new Set(categories.map((c) => c.group?.trim() || 'Geral')),
-  ).sort((a, b) => a.localeCompare(b, 'pt-BR'))
+    new Set(categories.map((c) => c.group?.trim() || generalGroup)),
+  ).sort((a, b) => compareLocale(a, b, locale))
   const filteredCategories = categories.filter(
-    (cat) => (cat.group?.trim() || 'Geral') === selectedGroup,
+    (cat) => (cat.group?.trim() || generalGroup) === selectedGroup,
   )
 
   function handleCategoryChange(e: React.ChangeEvent<HTMLSelectElement>) {
@@ -102,7 +114,7 @@ export function TransactionForm({
       )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <div className="space-y-2">
-          <Label htmlFor="categoryGroup">Categoria principal</Label>
+          <Label htmlFor="categoryGroup">{t('labels.mainCategory')}</Label>
           <Select
             id="categoryGroup"
             name="categoryGroup"
@@ -111,60 +123,60 @@ export function TransactionForm({
           >
             {groups.map((group) => (
               <option key={group} value={group}>
-                {group}
+                {localizeStoredLabel(group, locale)}
               </option>
             ))}
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="categoryId">Categoria</Label>
+          <Label htmlFor="categoryId">{t('labels.category')}</Label>
           <Select
             id="categoryId"
             name="categoryId"
             required
             onChange={handleCategoryChange}
           >
-            <option value="">Selecione...</option>
+            <option value="">{t('placeholders.select')}</option>
             {filteredCategories.map((cat) => (
               <option key={cat.id} value={cat.id}>
-                {cat.name}
+                {localizeStoredLabel(cat.name, locale)}
               </option>
             ))}
           </Select>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="amount">Valor (R$)</Label>
+          <Label htmlFor="amount">{t('labels.amount')}</Label>
           <Input
             id="amount"
             name="amount"
             type="number"
             step="0.01"
             min="0"
-            placeholder="0,00"
+            placeholder={t('placeholders.amount')}
             required
           />
         </div>
         {dateValue == null ? (
           <div className="space-y-2">
-            <Label htmlFor="date">Data</Label>
+            <Label htmlFor="date">{t('labels.date')}</Label>
             <Input id="date" name="date" type="date" defaultValue={today} required />
           </div>
         ) : (
           <input type="hidden" name="date" value={dateValue} />
         )}
         <div className="space-y-2">
-          <Label htmlFor="description">Descrição</Label>
-          <Input id="description" name="description" type="text" placeholder="Opcional" />
+          <Label htmlFor="description">{t('labels.description')}</Label>
+          <Input id="description" name="description" type="text" placeholder={t('transaction.optional')} />
         </div>
         {type === 'expense' && creditCards.length > 0 && (
           <div className="space-y-2">
-            <Label htmlFor="creditCardId">Método de pagamento</Label>
+            <Label htmlFor="creditCardId">{t('paymentMethod.label')}</Label>
             <Select id="creditCardId" name="creditCardId">
-              <option value="">À vista (dinheiro/PIX)</option>
+              <option value="">{t('paymentMethod.cash')}</option>
               {creditCards.map((card) => (
                 <option key={card.id} value={card.id}>
                   {card.name}
-                  {card.lastFour ? ` •••• ${card.lastFour}` : ''} (R$ {card.limit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} disponível)
+                  {card.lastFour ? ` •••• ${card.lastFour}` : ''} ({formatCurrency(card.limit, locale, currency)} {t('paymentMethod.available')})
                 </option>
               ))}
             </Select>

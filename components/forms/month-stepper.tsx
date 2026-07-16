@@ -1,10 +1,13 @@
 'use client'
 
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { useLocale, useTranslations } from 'next-intl'
+import { useRouter, usePathname } from '@/lib/i18n/navigation'
+import { useSearchParams } from 'next/navigation'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
-import { MONTHS } from '@/lib/constants'
+import { getMonthTitle } from '@/lib/i18n/format'
+import type { AppLocale } from '@/i18n/routing'
 
 function addCalendarMonth(year: number, month: number, delta: number) {
   const d = new Date(year, month + delta, 1)
@@ -20,6 +23,8 @@ export function MonthStepper({ className, showLabel = false }: MonthStepperProps
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const locale = useLocale() as AppLocale
+  const t = useTranslations('dashboard.shared')
   const month = searchParams.get('month')
   const year = searchParams.get('year')
   const now = new Date()
@@ -44,7 +49,7 @@ export function MonthStepper({ className, showLabel = false }: MonthStepperProps
     router.push(`${pathname}?${params.toString()}`, { scroll: false })
   }
 
-  const monthLabel = `${MONTHS[currentMonth]} ${currentYear}`
+  const monthLabel = `${getMonthTitle(currentYear, currentMonth, locale)} ${currentYear}`
 
   return (
     <div
@@ -54,11 +59,11 @@ export function MonthStepper({ className, showLabel = false }: MonthStepperProps
         type="button"
         variant="outline"
         className="flex-1 gap-1.5"
-        aria-label="Mês anterior"
+        aria-label={t('monthStepperPrevious')}
         onClick={() => navigate(-1)}
       >
         <ChevronLeft className="h-4 w-4 shrink-0" />
-        Anterior
+        {t('previous')}
       </Button>
       {showLabel && (
         <span className="flex min-w-[120px] items-center justify-center px-3 text-sm font-medium">
@@ -69,10 +74,10 @@ export function MonthStepper({ className, showLabel = false }: MonthStepperProps
         type="button"
         variant="outline"
         className="flex-1 gap-1.5"
-        aria-label="Próximo mês"
+        aria-label={t('monthStepperNext')}
         onClick={() => navigate(1)}
       >
-        Próximo
+        {t('next')}
         <ChevronRight className="h-4 w-4 shrink-0" />
       </Button>
     </div>

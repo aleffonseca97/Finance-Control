@@ -1,25 +1,41 @@
 'use server'
 
 import { hash } from 'bcryptjs'
+import { getLocale } from 'next-intl/server'
 import { prisma } from '@/lib/db'
 import { getAppBaseUrl } from '@/lib/email/app-url'
 import { sendPasswordResetEmail } from '@/lib/email/send'
 import { createPasswordResetToken, hashResetToken } from '@/lib/email/reset-token'
+import { isAppLocale } from '@/i18n/routing'
+import {
+  getServerErrorTranslations,
+  getValidationTranslations,
+} from '@/lib/i18n/validation'
 import { z } from 'zod'
 
-const GENERIC_REQUEST_MESSAGE =
-  'Se existir uma conta com este e-mail, enviamos instruções para redefinir a senha.'
+function createRequestSchema(
+  t: Awaited<ReturnType<typeof getValidationTranslations>>,
+) {
+  return z.object({
+    email: z.string().email(t('invalidEmail')),
+  })
+}
 
-const requestSchema = z.object({
-  email: z.string().email('Email inválido'),
-})
-
-const resetSchema = z.object({
-  token: z.string().min(1, 'Token inválido'),
-  newPassword: z.string().min(6, 'Nova senha deve ter pelo menos 6 caracteres'),
-})
+function createResetSchema(
+  t: Awaited<ReturnType<typeof getValidationTranslations>>,
+) {
+  return z.object({
+    token: z.string().min(1, t('tokenInvalid')),
+    newPassword: z.string().min(6, t('newPasswordMin')),
+  })
+}
 
 export async function requestPasswordReset(formData: FormData) {
+  const tValidation = await getValidationTranslations()
+  const tServer = await getServerErrorTranslations()
+  const requestSchema = createRequestSchema(tValidation)
+  const requestLocale = await getLocale()
+
   const parsed = requestSchema.safeParse({
     email: formData.get('email'),
   })
@@ -46,10 +62,13 @@ export async function requestPasswordReset(formData: FormData) {
 
     try {
       const base = getAppBaseUrl()
-      const resetUrl = `${base}/redefinir-senha?token=${encodeURIComponent(token)}`
+      const userLocale =
+        user.locale && isAppLocale(user.locale) ? user.locale : requestLocale
+      const resetUrl = `${base}/${userLocale}/redefinir-senha?token=${encodeURIComponent(token)}`
       const sent = await sendPasswordResetEmail({
         to: user.email,
         resetUrl,
+        locale: userLocale,
       })
       if (sent.ok === false && !sent.skipped) {
         console.error('[email] Falha ao enviar reset de senha:', sent.error)
@@ -59,10 +78,14 @@ export async function requestPasswordReset(formData: FormData) {
     }
   }
 
-  return { success: true, message: GENERIC_REQUEST_MESSAGE }
+  return { success: true, message: tServer('passwordResetGeneric') }
 }
 
 export async function resetPasswordWithToken(formData: FormData) {
+  const tValidation = await getValidationTranslations()
+  const tServer = await getServerErrorTranslations()
+  const resetSchema = createResetSchema(tValidation)
+
   const parsed = resetSchema.safeParse({
     token: formData.get('token'),
     newPassword: formData.get('newPassword'),
@@ -83,7 +106,7 @@ export async function resetPasswordWithToken(formData: FormData) {
   })
 
   if (!user) {
-    return { error: 'Link inválido ou expirado. Solicite um novo e-mail de redefinição.' }
+    return { error: tServer('resetLinkInvalid') }
   }
 
   const passwordHash = await hash(newPassword, 12)

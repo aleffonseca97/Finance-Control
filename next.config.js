@@ -5,6 +5,8 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts')
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: 'standalone',
+  // Allow Playwright (and local tools) hitting 127.0.0.1 during `next dev`
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
   async redirects() {
     return [
       {

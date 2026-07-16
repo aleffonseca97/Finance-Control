@@ -41,7 +41,7 @@ export default async function PagamentosRecorrentesPage({
         description={t('description')}
       />
 
-      <Card className="dashboard-bento-card-hero h-fit lg:sticky lg:top-24">
+      <Card className="dashboard-bento-card-hero sticky top-24 z-20 h-fit">
         <CardContent className="flex flex-col gap-4 py-4 sm:py-5">
           <div>
             <p className="dashboard-section-label text-primary/80">{tShared('editingMonth')}</p>

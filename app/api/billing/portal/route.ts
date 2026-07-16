@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { stripe, absoluteUrl } from '@/lib/stripe'
+import { getStripe, absoluteUrl } from '@/lib/stripe'
 
 /**
  * POST /api/billing/portal
@@ -26,7 +26,7 @@ export async function POST() {
     )
   }
 
-  const portalSession = await stripe.billingPortal.sessions.create({
+  const portalSession = await getStripe().billingPortal.sessions.create({
     customer: user.stripeCustomerId,
     return_url: absoluteUrl('/dashboard/configuracoes'),
   })

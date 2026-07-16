@@ -3,7 +3,7 @@ import { getLocale, getTranslations } from 'next-intl/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { SUBSCRIPTION_TRIAL_PERIOD_DAYS } from '@/lib/billing'
-import { stripe, absoluteUrl } from '@/lib/stripe'
+import { getStripe, absoluteUrl } from '@/lib/stripe'
 import { getUserLocale } from '@/app/actions/locale'
 import type { AppLocale } from '@/i18n/routing'
 
@@ -47,7 +47,7 @@ export async function POST() {
     user.subscription &&
     ['active', 'trialing'].includes(user.subscription.status)
   ) {
-    const portalSession = await stripe.billingPortal.sessions.create({
+    const portalSession = await getStripe().billingPortal.sessions.create({
       customer: user.stripeCustomerId!,
       return_url: absoluteUrl(`/${activeLocale}/dashboard`),
     })
@@ -56,7 +56,7 @@ export async function POST() {
 
   let customerId = user.stripeCustomerId
   if (!customerId) {
-    const customer = await stripe.customers.create({
+    const customer = await getStripe().customers.create({
       email: user.email,
       name: user.name ?? undefined,
       metadata: { userId: user.id },
@@ -68,7 +68,7 @@ export async function POST() {
     })
   }
 
-  const checkoutSession = await stripe.checkout.sessions.create({
+  const checkoutSession = await getStripe().checkout.sessions.create({
     customer: customerId,
     mode: 'subscription',
     payment_method_types: ['card'],
@@ -77,8 +77,9 @@ export async function POST() {
       trial_period_days: SUBSCRIPTION_TRIAL_PERIOD_DAYS,
       metadata: { userId: user.id },
     },
+    // Land on route handler first: sync DB + revalidatePath (unsupported during RSC render).
     success_url: absoluteUrl(
-      `/${activeLocale}/dashboard/assinatura?checkout=success&session_id={CHECKOUT_SESSION_ID}`,
+      '/api/billing/post-checkout?session_id={CHECKOUT_SESSION_ID}',
     ),
     cancel_url: absoluteUrl(`/${activeLocale}/?checkout=canceled`),
     allow_promotion_codes: true,

@@ -67,7 +67,42 @@ function createRegisterSchema(
     })
 }
 
-export async function register(formData: FormData) {
+export type RegisterFieldErrors = Partial<
+  Record<
+    | 'firstName'
+    | 'lastName'
+    | 'email'
+    | 'cpf'
+    | 'phoneDial'
+    | 'phoneNational'
+    | 'password'
+    | 'passwordConfirm',
+    string
+  >
+>
+
+export type RegisterResult = { success: true } | { errors: RegisterFieldErrors }
+
+function zodToFieldErrors(fieldErrors: Record<string, string[] | undefined>) {
+  const errors: RegisterFieldErrors = {}
+  const keys: (keyof RegisterFieldErrors)[] = [
+    'firstName',
+    'lastName',
+    'email',
+    'cpf',
+    'phoneDial',
+    'phoneNational',
+    'password',
+    'passwordConfirm',
+  ]
+  for (const key of keys) {
+    const msgs = fieldErrors[key]
+    if (msgs?.[0]) errors[key] = msgs[0]
+  }
+  return errors
+}
+
+export async function register(formData: FormData): Promise<RegisterResult> {
   const tValidation = await getValidationTranslations()
   const tServer = await getServerErrorTranslations()
   const registerSchema = createRegisterSchema(tValidation)
@@ -85,7 +120,8 @@ export async function register(formData: FormData) {
   })
 
   if (!parsed.success) {
-    return { error: parsed.error.errors[0].message }
+    const { fieldErrors } = parsed.error.flatten()
+    return { errors: zodToFieldErrors(fieldErrors) }
   }
 
   const {
@@ -108,14 +144,14 @@ export async function register(formData: FormData) {
   })
 
   if (existing) {
-    return { error: tServer('emailTaken') }
+    return { errors: { email: tServer('emailTaken') } }
   }
 
   const cpfTaken = await prisma.user.findFirst({
     where: { cpf: cpfNormalized },
   })
   if (cpfTaken) {
-    return { error: tServer('cpfTaken') }
+    return { errors: { cpf: tServer('cpfTaken') } }
   }
 
   const passwordHash = await hash(password, 12)

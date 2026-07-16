@@ -14,7 +14,7 @@ import {
   X,
   Settings,
   CreditCard,
-  Table2,
+  Receipt,
   Flag,
   ChevronDown,
   ChevronRight,
@@ -25,6 +25,7 @@ import {
   ChevronsRight,
   LogOut,
   Repeat,
+  Table2,
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -78,6 +79,7 @@ const navItems: NavItem[] = [
     icon: BarChart3,
     children: [
       { href: '/dashboard/analise', labelKey: 'analysisSummary', icon: BarChart3 },
+      { href: '/dashboard/parcelamentos', labelKey: 'installments', icon: Receipt },
       { href: '/dashboard/tabela-anual', labelKey: 'annualTable', icon: Table2 },
     ],
   },
@@ -112,7 +114,9 @@ export function Sidebar() {
       pathname.startsWith('/dashboard/recorrencia/investimentos')
   );
   const [analiseOpen, setAnaliseOpen] = useState(
-    pathname.startsWith('/dashboard/analise') || pathname.startsWith('/dashboard/tabela-anual')
+    pathname.startsWith('/dashboard/analise') ||
+      pathname.startsWith('/dashboard/parcelamentos') ||
+      pathname.startsWith('/dashboard/tabela-anual')
   );
   const [investimentosOpen, setInvestimentosOpen] = useState(
     pathname.startsWith('/dashboard/investimentos') || pathname.startsWith('/dashboard/metas')
@@ -166,7 +170,10 @@ export function Sidebar() {
   }, [pathname]);
 
   useEffect(() => {
-    if (pathname.startsWith('/dashboard/analise') || pathname.startsWith('/dashboard/tabela-anual')) {
+    if (
+      pathname.startsWith('/dashboard/analise') ||
+      pathname.startsWith('/dashboard/parcelamentos')
+    ) {
       setAnaliseOpen(true);
     }
   }, [pathname]);
@@ -317,7 +324,9 @@ export function Sidebar() {
             const isRecurrenceActive =
               pathname.startsWith('/dashboard/pagamentos-recorrentes') ||
               pathname.startsWith('/dashboard/recorrencia/investimentos');
-            const isAnaliseActive = pathname.startsWith('/dashboard/analise') || pathname.startsWith('/dashboard/tabela-anual');
+            const isAnaliseActive =
+              pathname.startsWith('/dashboard/analise') ||
+              pathname.startsWith('/dashboard/parcelamentos');
             const isConfigActive = pathname.startsWith('/dashboard/configuracoes');
             const isParentActive =
               (isRecurrenceSection && isRecurrenceActive) ||

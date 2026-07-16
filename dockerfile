@@ -20,6 +20,8 @@ RUN apt-get update -y && apt-get install -y openssl libssl1.1 && rm -rf /var/lib
 WORKDIR /app
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+# Next.js standalone (next start) usa PORT; alinhar com o mapeamento em docker-compose
+ENV PORT=3000
 RUN groupadd --system --gid 1001 nodejs
 RUN useradd --system --uid 1001 --gid nodejs nextjs
 
@@ -36,6 +38,6 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modul
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 USER nextjs
-EXPOSE 4000
+EXPOSE 3000
 
 CMD ["sh", "-c", "node node_modules/prisma/build/index.js migrate deploy && node server.js"]

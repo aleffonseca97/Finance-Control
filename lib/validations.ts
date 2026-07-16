@@ -139,6 +139,39 @@ export function createGoalSchema(t: ValidationTranslator) {
   })
 }
 
+export const INSTALLMENT_PLAN_KINDS = [
+  'FINANCING_CAR',
+  'FINANCING_HOME',
+  'LOAN',
+  'GENERAL',
+] as const
+
+export type InstallmentPlanKind = (typeof INSTALLMENT_PLAN_KINDS)[number]
+
+export const installmentPlanUpsertSchema = z
+  .object({
+    id: z.string().optional(),
+    kind: z.enum(INSTALLMENT_PLAN_KINDS),
+    name: z.string().trim().min(1, 'Informe um nome'),
+    monthlyAmount: z.coerce.number().positive('Valor da parcela deve ser positivo'),
+    totalInstallments: z.coerce.number().int().min(1, 'Informe o total de parcelas'),
+    paidInstallments: z.coerce.number().int().min(0).default(0),
+    firstInstallmentDate: z.string().min(1, 'Data da primeira parcela é obrigatória'),
+    notes: z.preprocess(
+      (v) => (v == null || v === '' ? undefined : String(v).trim() || undefined),
+      z.string().max(2000).optional(),
+    ),
+  })
+  .superRefine((data, ctx) => {
+    if (data.paidInstallments > data.totalInstallments) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Parcelas pagas não podem exceder o total contratado',
+        path: ['paidInstallments'],
+      })
+    }
+  })
+
 export const transactionSchema = createTransactionSchema(legacyValidationT)
 export const investmentSchema = createInvestmentSchema(legacyValidationT)
 export const withdrawalSchema = createWithdrawalSchema(legacyValidationT)

@@ -1,3 +1,11 @@
+import {
+  formatDate as formatDateI18n,
+  formatNumber as formatNumberI18n,
+  getMonthTitle as getMonthTitleI18n,
+} from '@/lib/i18n/format'
+import type { AppLocale } from '@/i18n/routing'
+import { defaultLocale } from '@/i18n/routing'
+
 export function parseMonthYearParams(
   monthStr?: string,
   yearStr?: string,
@@ -22,11 +30,12 @@ export function parseMonthYearParams(
   return { month, year, daysInMonth, selectedDay, now }
 }
 
-export function getMonthTitle(year: number, month: number) {
-  const label = new Date(year, month, 1).toLocaleDateString('pt-BR', {
-    month: 'long',
-  })
-  return label.charAt(0).toUpperCase() + label.slice(1)
+export function getMonthTitle(
+  year: number,
+  month: number,
+  locale: AppLocale = defaultLocale,
+) {
+  return getMonthTitleI18n(year, month, locale)
 }
 
 export function buildDateValue(year: number, month: number, day: number) {
@@ -45,15 +54,10 @@ export function groupByDay<T extends { date: Date | string }>(
   return grouped
 }
 
-export function formatBRL(value: number) {
-  return value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })
+export function formatBRL(value: number, locale: AppLocale = defaultLocale) {
+  return formatNumberI18n(value, locale)
 }
 
-export function formatDateBR(date: Date | string) {
-  return new Date(date)
-    .toISOString()
-    .slice(0, 10)
-    .split('-')
-    .reverse()
-    .join('/')
+export function formatDateBR(date: Date | string, locale: AppLocale = defaultLocale) {
+  return formatDateI18n(date, locale)
 }

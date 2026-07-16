@@ -1,8 +1,13 @@
 'use server'
 
 import { hash } from 'bcryptjs'
+import { getLocale } from 'next-intl/server'
 import { prisma } from '@/lib/db'
 import { sendWelcomeEmail } from '@/lib/email/send'
+import {
+  getServerErrorTranslations,
+  getValidationTranslations,
+} from '@/lib/i18n/validation'
 import { z } from 'zod'
 import {
   buildE164,
@@ -11,57 +16,62 @@ import {
   isValidPhoneNational,
 } from '@/lib/validation/br'
 
-const registerSchema = z
-  .object({
-    firstName: z.string().trim().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-    lastName: z
-      .string()
-      .trim()
-      .min(2, 'Sobrenome deve ter pelo menos 2 caracteres'),
-    email: z.string().email('Email inválido'),
-    cpf: z.string().min(1, 'CPF é obrigatório'),
-    phoneDial: z.string().min(1, 'Código do país é obrigatório'),
-    phoneNational: z.string().min(1, 'Telefone é obrigatório'),
-    password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
-    passwordConfirm: z.string().min(1, 'Confirmação de senha é obrigatória'),
-    marketingOptIn: z.boolean().optional(),
-  })
-  .refine((d) => d.password === d.passwordConfirm, {
-    message: 'As senhas não coincidem',
-    path: ['passwordConfirm'],
-  })
-  .superRefine((data, ctx) => {
-    const cpfDigits = digitsOnly(data.cpf)
-    if (cpfDigits.length !== 11) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'CPF deve ter 11 dígitos',
-        path: ['cpf'],
-      })
-      return
-    }
-    if (!isValidCpf(cpfDigits)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message: 'CPF inválido',
-        path: ['cpf'],
-      })
-    }
-  })
-  .superRefine((data, ctx) => {
-    if (!isValidPhoneNational(data.phoneDial, data.phoneNational)) {
-      ctx.addIssue({
-        code: z.ZodIssueCode.custom,
-        message:
-          data.phoneDial === '55'
-            ? 'Telefone inválido: use DDD + número (10 ou 11 dígitos)'
-            : 'Telefone inválido para o código de país selecionado',
-        path: ['phoneNational'],
-      })
-    }
-  })
+function createRegisterSchema(
+  t: Awaited<ReturnType<typeof getValidationTranslations>>,
+) {
+  return z
+    .object({
+      firstName: z.string().trim().min(2, t('firstNameMin')),
+      lastName: z.string().trim().min(2, t('lastNameMin')),
+      email: z.string().email(t('invalidEmail')),
+      cpf: z.string().min(1, t('cpfRequired')),
+      phoneDial: z.string().min(1, t('countryCodeRequired')),
+      phoneNational: z.string().min(1, t('phoneRequired')),
+      password: z.string().min(6, t('passwordMin')),
+      passwordConfirm: z.string().min(1, t('passwordConfirmRequired')),
+      marketingOptIn: z.boolean().optional(),
+    })
+    .refine((d) => d.password === d.passwordConfirm, {
+      message: t('passwordsMismatch'),
+      path: ['passwordConfirm'],
+    })
+    .superRefine((data, ctx) => {
+      const cpfDigits = digitsOnly(data.cpf)
+      if (cpfDigits.length !== 11) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: t('cpfDigits'),
+          path: ['cpf'],
+        })
+        return
+      }
+      if (!isValidCpf(cpfDigits)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: t('cpfInvalid'),
+          path: ['cpf'],
+        })
+      }
+    })
+    .superRefine((data, ctx) => {
+      if (!isValidPhoneNational(data.phoneDial, data.phoneNational)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            data.phoneDial === '55'
+              ? t('phoneInvalidBr')
+              : t('phoneInvalidIntl'),
+          path: ['phoneNational'],
+        })
+      }
+    })
+}
 
 export async function register(formData: FormData) {
+  const tValidation = await getValidationTranslations()
+  const tServer = await getServerErrorTranslations()
+  const registerSchema = createRegisterSchema(tValidation)
+
   const parsed = registerSchema.safeParse({
     firstName: formData.get('firstName'),
     lastName: formData.get('lastName'),
@@ -98,19 +108,19 @@ export async function register(formData: FormData) {
   })
 
   if (existing) {
-    return { error: 'Este email já está cadastrado' }
+    return { error: tServer('emailTaken') }
   }
 
   const cpfTaken = await prisma.user.findFirst({
     where: { cpf: cpfNormalized },
   })
   if (cpfTaken) {
-    return { error: 'Este CPF já está cadastrado' }
+    return { error: tServer('cpfTaken') }
   }
 
   const passwordHash = await hash(password, 12)
-
   const emailNormalized = email.trim().toLowerCase()
+  const locale = await getLocale()
 
   await prisma.user.create({
     data: {
@@ -120,10 +130,15 @@ export async function register(formData: FormData) {
       cpf: cpfNormalized,
       phone: phoneE164,
       marketingOptIn: marketingOptIn ?? false,
+      locale,
     },
   })
 
-  void sendWelcomeEmail({ to: emailNormalized, name: name ?? null }).catch((err) => {
+  void sendWelcomeEmail({
+    to: emailNormalized,
+    name: name ?? null,
+    locale,
+  }).catch((err) => {
     console.error('[email] Falha ao enviar boas-vindas:', err)
   })
 

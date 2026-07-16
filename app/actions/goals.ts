@@ -2,8 +2,13 @@
 
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { goalSchema } from '@/lib/validations'
-import { revalidatePath } from 'next/cache'
+import { createGoalSchema } from '@/lib/validations'
+import { revalidateLocalePath, revalidateLocalePaths } from '@/lib/i18n/revalidate'
+import {
+  getErrorTranslations,
+  getServerErrorTranslations,
+  getValidationTranslations,
+} from '@/lib/i18n/validation'
 import { z } from 'zod'
 
 export type GoalWithReserveProgress = {
@@ -17,17 +22,32 @@ export type GoalWithReserveProgress = {
   currentAmount: number
 }
 
-const createReserveFromGoalSchema = z.object({
-  name: z.string().trim().min(1, 'Nome da reserva é obrigatório'),
-})
+const GOAL_PATHS = ['/dashboard/metas', '/dashboard/investimentos']
 
-const updateGoalCurrentAmountSchema = z.object({
-  currentAmount: z.coerce.number().min(0, 'Valor acumulado não pode ser negativo'),
-})
+function buildReserveFromGoalSchema(
+  t: Awaited<ReturnType<typeof getValidationTranslations>>,
+) {
+  return z.object({
+    name: z.string().trim().min(1, t('reserveNameRequired')),
+  })
+}
+
+function buildUpdateGoalCurrentAmountSchema(
+  t: Awaited<ReturnType<typeof getValidationTranslations>>,
+) {
+  return z.object({
+    currentAmount: z.coerce.number().min(0, t('accumulatedNonNegative')),
+  })
+}
 
 export async function createGoal(formData: FormData) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tServer = await getServerErrorTranslations()
+  const tValidation = await getValidationTranslations()
+  const goalSchema = createGoalSchema(tValidation)
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const parsed = goalSchema.safeParse({
     name: formData.get('name'),
@@ -44,13 +64,13 @@ export async function createGoal(formData: FormData) {
   if (parsed.data.deadline) {
     deadline = new Date(parsed.data.deadline)
     if (Number.isNaN(deadline.getTime())) {
-      return { error: 'Prazo inválido' }
+      return { error: tServer('invalidDeadline') }
     }
 
     const now = new Date()
     const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
     if (deadline <= endOfToday) {
-      return { error: 'Defina um prazo futuro para a meta' }
+      return { error: tServer('futureDeadlineRequired') }
     }
   }
 
@@ -66,7 +86,7 @@ export async function createGoal(formData: FormData) {
     })
 
     if (!reserveCategory) {
-      return { error: 'Reserva inválida' }
+      return { error: tServer('invalidReserve') }
     }
   }
 
@@ -80,21 +100,20 @@ export async function createGoal(formData: FormData) {
     },
   })
 
-  revalidatePath('/dashboard/metas')
-  revalidatePath('/dashboard/investimentos')
+  await revalidateLocalePaths(GOAL_PATHS)
   return { success: true }
 }
 
 export async function deleteGoal(id: string) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   await prisma.goal.deleteMany({
     where: { id, userId: session.user.id },
   })
 
-  revalidatePath('/dashboard/metas')
-  revalidatePath('/dashboard/investimentos')
+  await revalidateLocalePaths(GOAL_PATHS)
   return { success: true }
 }
 
@@ -147,9 +166,14 @@ export async function getGoals(): Promise<GoalWithReserveProgress[]> {
 
 export async function createReserveFromGoal(formData: FormData) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tServer = await getServerErrorTranslations()
+  const tValidation = await getValidationTranslations()
+  const reserveFromGoalSchema = buildReserveFromGoalSchema(tValidation)
 
-  const parsed = createReserveFromGoalSchema.safeParse({
+  if (!session?.user?.id) return { error: t('unauthorized') }
+
+  const parsed = reserveFromGoalSchema.safeParse({
     name: formData.get('reserveName'),
   })
 
@@ -169,7 +193,7 @@ export async function createReserveFromGoal(formData: FormData) {
   })
 
   if (existing) {
-    return { error: 'Já existe uma reserva com esse nome' }
+    return { error: tServer('reserveNameTaken') }
   }
 
   const createdReserve = await prisma.category.create({
@@ -187,14 +211,18 @@ export async function createReserveFromGoal(formData: FormData) {
     select: { id: true, name: true },
   })
 
-  revalidatePath('/dashboard/metas')
-  revalidatePath('/dashboard/investimentos')
+  await revalidateLocalePaths(GOAL_PATHS)
   return { success: true, reserve: createdReserve }
 }
 
 export async function updateGoalCurrentAmount(id: string, formData: FormData) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tServer = await getServerErrorTranslations()
+  const tValidation = await getValidationTranslations()
+  const updateGoalCurrentAmountSchema = buildUpdateGoalCurrentAmountSchema(tValidation)
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const parsed = updateGoalCurrentAmountSchema.safeParse({
     currentAmount: formData.get('currentAmount'),
@@ -209,9 +237,9 @@ export async function updateGoalCurrentAmount(id: string, formData: FormData) {
     select: { id: true, reserveCategoryId: true },
   })
 
-  if (!goal) return { error: 'Meta não encontrada' }
+  if (!goal) return { error: tServer('goalNotFound') }
   if (goal.reserveCategoryId) {
-    return { error: 'Metas com reserva vinculada são atualizadas automaticamente pelos aportes' }
+    return { error: tServer('linkedGoalAutoUpdate') }
   }
 
   await prisma.goal.update({
@@ -219,6 +247,6 @@ export async function updateGoalCurrentAmount(id: string, formData: FormData) {
     data: { currentAmount: parsed.data.currentAmount },
   })
 
-  revalidatePath('/dashboard/metas')
+  await revalidateLocalePath('/dashboard/metas')
   return { success: true }
 }

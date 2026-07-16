@@ -1,10 +1,15 @@
 'use client'
 
 import { useState } from 'react'
+import { useLocale, useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { CategoryIcon } from '@/components/category/category-icon'
 import { CategoryForm } from './category-form'
 import { createCategory, updateCategory, deleteCategory } from '@/app/actions/categories'
+import { localizeStoredLabel } from '@/lib/i18n/localize-label'
+import { formatCurrency } from '@/lib/i18n/format'
+import { useCurrency } from '@/components/currency-provider'
+import type { AppLocale } from '@/i18n/routing'
 import type { Category } from '@prisma/client'
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 
@@ -18,6 +23,9 @@ interface CategoryListProps {
 }
 
 export function CategoryList({ categories, availableGroups = [], type, isFixed, title, investmentSubtype }: CategoryListProps) {
+  const t = useTranslations('settings.categories')
+  const locale = useLocale() as AppLocale
+  const currency = useCurrency()
   const [showForm, setShowForm] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
@@ -31,7 +39,7 @@ export function CategoryList({ categories, availableGroups = [], type, isFixed, 
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Excluir esta categoria? Transações e investimentos vinculados também serão removidos.')) return
+    if (!confirm(t('deleteConfirm'))) return
     await deleteCategory(id)
   }
 
@@ -48,7 +56,7 @@ export function CategoryList({ categories, availableGroups = [], type, isFixed, 
           }}
         >
           <Plus className="h-4 w-4 mr-2" />
-          Nova categoria
+          {t('newCategory')}
         </Button>
       </div>
 
@@ -67,7 +75,7 @@ export function CategoryList({ categories, availableGroups = [], type, isFixed, 
 
       <div className="space-y-2">
         {categories.length === 0 ? (
-          <p className="text-sm text-muted-foreground py-4">Nenhuma categoria cadastrada</p>
+          <p className="text-sm text-muted-foreground py-4">{t('noCategories')}</p>
         ) : (
           categories.map((cat) => (
             <div
@@ -82,10 +90,10 @@ export function CategoryList({ categories, availableGroups = [], type, isFixed, 
                   <CategoryIcon icon={cat.icon} className="text-foreground" size={18} />
                 </div>
                 <div>
-                  <span className="font-medium">{cat.name}</span>
+                  <span className="font-medium">{localizeStoredLabel(cat.name, locale)}</span>
                   {isFixed && 'defaultValue' in cat && cat.defaultValue != null && (
                     <span className="ml-2 text-sm text-muted-foreground">
-                      R$ {cat.defaultValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      {formatCurrency(cat.defaultValue, locale, currency)}
                     </span>
                   )}
                 </div>
@@ -99,7 +107,7 @@ export function CategoryList({ categories, availableGroups = [], type, isFixed, 
                     setShowForm(false)
                     setEditingId(editingId === cat.id ? null : cat.id)
                   }}
-                  aria-label="Editar"
+                  aria-label={t('edit')}
                 >
                   <Pencil className="h-4 w-4" />
                 </Button>
@@ -108,7 +116,7 @@ export function CategoryList({ categories, availableGroups = [], type, isFixed, 
                   size="icon"
                   className="h-8 w-8 text-muted-foreground hover:text-destructive"
                   onClick={() => handleDelete(cat.id)}
-                  aria-label="Excluir"
+                  aria-label={t('delete')}
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>

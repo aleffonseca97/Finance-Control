@@ -1,25 +1,43 @@
 'use server'
 
 import { hash, compare } from 'bcryptjs'
-import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
+import { revalidateLocalePath } from '@/lib/i18n/revalidate'
+import {
+  getErrorTranslations,
+  getServerErrorTranslations,
+  getValidationTranslations,
+} from '@/lib/i18n/validation'
 
-const updateProfileSchema = z.object({
-  name: z.string().min(2, 'Nome deve ter pelo menos 2 caracteres'),
-  email: z.string().email('Email inválido'),
-  marketingOptIn: z.literal('on').optional(),
-})
+function createUpdateProfileSchema(
+  t: Awaited<ReturnType<typeof getValidationTranslations>>,
+) {
+  return z.object({
+    name: z.string().min(2, t('nameMin')),
+    email: z.string().email(t('invalidEmail')),
+    marketingOptIn: z.literal('on').optional(),
+  })
+}
 
-const updatePasswordSchema = z.object({
-  currentPassword: z.string().min(1, 'Senha atual é obrigatória'),
-  newPassword: z.string().min(6, 'Nova senha deve ter pelo menos 6 caracteres'),
-})
+function createUpdatePasswordSchema(
+  t: Awaited<ReturnType<typeof getValidationTranslations>>,
+) {
+  return z.object({
+    currentPassword: z.string().min(1, t('currentPasswordRequired')),
+    newPassword: z.string().min(6, t('newPasswordMin')),
+  })
+}
 
 export async function updateProfile(formData: FormData) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tServer = await getServerErrorTranslations()
+  const tValidation = await getValidationTranslations()
+  const updateProfileSchema = createUpdateProfileSchema(tValidation)
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const marketingRaw = formData.get('marketingOptIn')
   const parsed = updateProfileSchema.safeParse({
@@ -33,7 +51,6 @@ export async function updateProfile(formData: FormData) {
   }
 
   const { name, email, marketingOptIn } = parsed.data
-
   const emailNormalized = email.trim().toLowerCase()
 
   const existingUser = await prisma.user.findFirst({
@@ -41,7 +58,7 @@ export async function updateProfile(formData: FormData) {
   })
 
   if (existingUser && existingUser.id !== session.user.id) {
-    return { error: 'Este email já está em uso' }
+    return { error: tServer('emailInUse') }
   }
 
   await prisma.user.update({
@@ -53,13 +70,18 @@ export async function updateProfile(formData: FormData) {
     },
   })
 
-  revalidatePath('/dashboard/configuracoes')
+  await revalidateLocalePath('/dashboard/configuracoes')
   return { success: true }
 }
 
 export async function updatePassword(formData: FormData) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tServer = await getServerErrorTranslations()
+  const tValidation = await getValidationTranslations()
+  const updatePasswordSchema = createUpdatePasswordSchema(tValidation)
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const parsed = updatePasswordSchema.safeParse({
     currentPassword: formData.get('currentPassword'),
@@ -76,10 +98,10 @@ export async function updatePassword(formData: FormData) {
     where: { id: session.user.id },
   })
 
-  if (!user) return { error: 'Usuário não encontrado' }
+  if (!user) return { error: tServer('userNotFound') }
 
   const isValid = await compare(currentPassword, user.passwordHash)
-  if (!isValid) return { error: 'Senha atual incorreta' }
+  if (!isValid) return { error: tServer('wrongCurrentPassword') }
 
   const passwordHash = await hash(newPassword, 12)
 
@@ -92,6 +114,6 @@ export async function updatePassword(formData: FormData) {
     },
   })
 
-  revalidatePath('/dashboard/configuracoes')
+  await revalidateLocalePath('/dashboard/configuracoes')
   return { success: true }
 }

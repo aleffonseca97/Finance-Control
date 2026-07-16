@@ -1,7 +1,7 @@
 'use client'
 
 import { SessionProvider } from 'next-auth/react'
-import { ThemeProvider } from 'next-themes'
+import { ThemeProvider } from '@teispace/next-themes'
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
@@ -15,6 +15,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         defaultTheme="light"
         enableSystem={false}
         disableTransitionOnChange
+        storage="local"
         storageKey="controle-financeiro-theme"
       >
         {children}

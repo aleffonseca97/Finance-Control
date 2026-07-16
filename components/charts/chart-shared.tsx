@@ -1,7 +1,11 @@
 'use client'
 
 import type { CSSProperties, ReactNode } from 'react'
+import { useLocale } from 'next-intl'
 import { cn } from '@/lib/utils'
+import { formatCurrency, getCurrencySymbol } from '@/lib/i18n/format'
+import { useCurrency } from '@/components/currency-provider'
+import type { AppLocale } from '@/i18n/routing'
 
 /** Tooltip alinhado ao tema (light/dark) e contraste legível */
 export const chartTooltipContentStyle: CSSProperties = {
@@ -28,8 +32,19 @@ export const chartLegendStyle: CSSProperties = {
   paddingTop: 16,
 }
 
-export function formatChartCurrency(value: number) {
-  return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+export function useChartCurrency() {
+  const locale = useLocale() as AppLocale
+  const currency = useCurrency()
+  return (value: number) => formatCurrency(value, locale, currency)
+}
+
+/** Compact axis tick label, e.g. "R$2k" / "$2k" / "€2k" */
+export function useChartCurrencyAxisTick() {
+  const locale = useLocale() as AppLocale
+  const currency = useCurrency()
+  const symbol = getCurrencySymbol(locale, currency)
+  return (value: number) =>
+    value >= 1000 ? `${symbol}${value / 1000}k` : `${symbol}${value}`
 }
 
 export function ChartEmpty({ children, className }: { children: ReactNode; className?: string }) {

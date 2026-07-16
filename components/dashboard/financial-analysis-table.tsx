@@ -1,6 +1,10 @@
 'use client';
 
+import { useLocale, useTranslations } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { formatCurrency } from '@/lib/i18n/format';
+import { useCurrency } from '@/components/currency-provider';
+import type { AppLocale } from '@/i18n/routing';
 
 type AnalysisRow = {
   label: string;
@@ -19,10 +23,6 @@ type FinancialAnalysisTableProps = {
   annualData: AnalysisRow[];
 };
 
-function formatCurrency(value: number) {
-  return `R$ ${value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-}
-
 function getBalanceColor(balance: number): string {
   if (balance <= 0) return 'rgb(239, 68, 68)';
   if (balance >= 100) return 'rgb(34, 197, 94)';
@@ -38,11 +38,16 @@ function SectionTable({
   title,
   labelTitle,
   rows,
+  locale,
+  t,
 }: {
   title: string;
   labelTitle: string;
   rows: AnalysisRow[];
+  locale: AppLocale;
+  t: ReturnType<typeof useTranslations<'dashboard.annualTable'>>;
 }) {
+  const currency = useCurrency();
   return (
     <section className="min-w-[760px] flex-shrink-0">
       <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
@@ -55,12 +60,12 @@ function SectionTable({
               <th className="sticky left-0 z-10 bg-muted/40 px-3 py-2 text-left font-semibold">
                 {labelTitle}
               </th>
-              <th className="px-3 py-2 text-right font-semibold">Entrada</th>
-              <th className="px-3 py-2 text-right font-semibold">Saida (Fixa)</th>
+              <th className="px-3 py-2 text-right font-semibold">{t('columnIncome')}</th>
+              <th className="px-3 py-2 text-right font-semibold">{t('columnFixedExpense')}</th>
               <th className="px-3 py-2 text-right font-semibold">
-                Saida (Variavel)
+                {t('columnVariableExpense')}
               </th>
-              <th className="px-3 py-2 text-right font-semibold">Saldo Final</th>
+              <th className="px-3 py-2 text-right font-semibold">{t('columnBalance')}</th>
             </tr>
           </thead>
           <tbody>
@@ -73,20 +78,20 @@ function SectionTable({
                   {row.label}
                 </td>
                 <td className="px-3 py-2 text-right text-emerald-500">
-                  {formatCurrency(row.income)}
+                  {formatCurrency(row.income, locale, currency)}
                 </td>
                 <td className="px-3 py-2 text-right text-violet-500">
-                  {formatCurrency(row.fixedExpense)}
+                  {formatCurrency(row.fixedExpense, locale, currency)}
                 </td>
                 <td className="px-3 py-2 text-right text-orange-500">
-                  {formatCurrency(row.variableExpense)}
+                  {formatCurrency(row.variableExpense, locale, currency)}
                 </td>
                 <td className="px-3 py-2 text-right">
                   <span
                     className="inline-block rounded-md px-2.5 py-1 text-xs font-semibold text-white"
                     style={{ backgroundColor: getBalanceColor(row.balance) }}
                   >
-                    {formatCurrency(row.balance)}
+                    {formatCurrency(row.balance, locale, currency)}
                   </span>
                 </td>
               </tr>
@@ -99,9 +104,9 @@ function SectionTable({
 }
 
 const VIEW_CONFIG = {
-  daily: { title: 'Diário', labelTitle: 'Dia' },
-  monthly: { title: 'Mensal', labelTitle: 'Mês' },
-  annual: { title: 'Anual', labelTitle: 'Ano' },
+  daily: { titleKey: 'viewDailyTitle', labelKey: 'viewDailyLabel' },
+  monthly: { titleKey: 'viewMonthlyTitle', labelKey: 'viewMonthlyLabel' },
+  annual: { titleKey: 'viewAnnualTitle', labelKey: 'viewAnnualLabel' },
 } as const
 
 export function FinancialAnalysisTable({
@@ -110,6 +115,9 @@ export function FinancialAnalysisTable({
   monthlyData,
   annualData,
 }: FinancialAnalysisTableProps) {
+  const locale = useLocale() as AppLocale
+  const t = useTranslations('dashboard.annualTable')
+
   const data =
     view === 'daily'
       ? dailyData
@@ -121,14 +129,16 @@ export function FinancialAnalysisTable({
   return (
     <Card className="dashboard-bento-card shadow-md">
       <CardHeader>
-        <CardTitle>Tabela Anual</CardTitle>
+        <CardTitle>{t('tableTitle')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto pb-2">
           <SectionTable
-            title={config.title}
-            labelTitle={config.labelTitle}
+            title={t(config.titleKey)}
+            labelTitle={t(config.labelKey)}
             rows={data}
+            locale={locale}
+            t={t}
           />
         </div>
       </CardContent>

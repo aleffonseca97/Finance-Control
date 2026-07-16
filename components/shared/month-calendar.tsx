@@ -1,8 +1,12 @@
 'use client'
 
-import { useRouter, usePathname, useSearchParams } from 'next/navigation'
+import { useLocale, useTranslations } from 'next-intl'
+import { useRouter, usePathname } from '@/lib/i18n/navigation'
+import { useSearchParams } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { WEEKDAYS } from '@/lib/constants'
+import type { AppLocale } from '@/i18n/routing'
+
+const WEEKDAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'] as const
 
 type Props = {
   year: number
@@ -27,11 +31,15 @@ export function MonthCalendar({
   todayMonth,
   todayDay,
   accentColor = 'emerald',
-  entryLabel = 'com lançamento',
+  entryLabel,
 }: Props) {
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
+  const locale = useLocale() as AppLocale
+  const t = useTranslations('dashboard.shared')
+  const tWeekdays = useTranslations('common.weekdays')
+  const resolvedEntryLabel = entryLabel ?? t('withEntry')
   const entriesSet = new Set(daysWithEntries)
 
   function selectDay(day: number) {
@@ -57,35 +65,40 @@ export function MonthCalendar({
   return (
     <div className="w-full space-y-2">
       <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-        Selecione o dia
+        {t('selectDay')}
       </p>
       <div className="grid grid-cols-7 gap-1 text-center text-[10px] font-medium uppercase text-muted-foreground sm:gap-1.5 sm:text-xs">
-        {WEEKDAYS.map((w) => (
-          <div key={w} className="py-1">
-            <span className="sr-only sm:not-sr-only">{w}</span>
-            <span className="sm:hidden" aria-hidden>
-              {w.charAt(0)}
-            </span>
-          </div>
-        ))}
+        {WEEKDAY_KEYS.map((key) => {
+          const label = tWeekdays(key)
+          return (
+            <div key={key} className="py-1">
+              <span className="sr-only sm:not-sr-only">{label}</span>
+              <span className="sm:hidden" aria-hidden>
+                {label.charAt(0)}
+              </span>
+            </div>
+          )
+        })}
       </div>
       <div
         className="grid grid-cols-7 gap-1 sm:gap-1.5"
         role="grid"
-        aria-label="Calendário do mês"
+        aria-label={t('monthCalendar')}
       >
         {cells.map((day, i) => {
           if (day === null) {
             return (
               <div
                 key={`empty-${i}`}
-                className="aspect-square min-h-[2.5rem] sm:min-h-[2.75rem]"
+                className="aspect-square rounded-md"
+                role="gridcell"
                 aria-hidden
               />
             )
           }
+
           const hasEntry = entriesSet.has(day)
-          const selected = day === selectedDay
+          const isSelected = day === selectedDay
           const today = isToday(day)
 
           return (
@@ -93,31 +106,24 @@ export function MonthCalendar({
               key={day}
               type="button"
               role="gridcell"
-              aria-pressed={selected}
-              aria-current={today ? 'date' : undefined}
-              aria-label={`Dia ${day}${hasEntry ? `, ${entryLabel}` : ''}`}
               onClick={() => selectDay(day)}
+              aria-label={t('dayWithEntry', {
+                day,
+                entryLabel: hasEntry ? resolvedEntryLabel : '',
+              })}
+              aria-current={isSelected ? 'date' : undefined}
               className={cn(
-                'relative flex aspect-square min-h-[2.5rem] w-full flex-col items-center justify-center rounded-lg border text-sm font-medium transition-colors',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
-                selected &&
-                  'border-primary bg-primary text-primary-foreground shadow-sm',
-                !selected &&
-                  today &&
-                  'border-primary/50 bg-primary/10 text-foreground hover:bg-primary/15',
-                !selected &&
-                  !today &&
-                  'border-transparent bg-muted/50 text-foreground hover:bg-muted',
-                hasEntry && !selected && ringClass,
+                'relative flex aspect-square flex-col items-center justify-center rounded-md border text-sm font-medium transition-colors',
+                isSelected
+                  ? 'border-primary bg-primary text-primary-foreground'
+                  : 'border-border bg-background hover:bg-muted',
+                today && !isSelected && ringClass,
               )}
             >
-              <span className="tabular-nums">{day}</span>
+              {day}
               {hasEntry && (
                 <span
-                  className={cn(
-                    'absolute bottom-1 h-1.5 w-1.5 rounded-full',
-                    selected ? 'bg-primary-foreground' : dotClass,
-                  )}
+                  className={cn('absolute bottom-1 h-1 w-1 rounded-full', dotClass)}
                   aria-hidden
                 />
               )}

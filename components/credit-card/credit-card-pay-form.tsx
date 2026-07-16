@@ -2,15 +2,20 @@
 
 import { useState } from 'react'
 import { useFormStatus } from 'react-dom'
-import { useRouter } from 'next/navigation'
+import { useRouter } from '@/lib/i18n/navigation'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { payCreditCardFromBalance } from '@/app/actions/credit-cards'
 import type { CreditCard } from '@prisma/client'
+import { useLocale, useTranslations } from 'next-intl'
+import { formatCurrency } from '@/lib/i18n/format'
+import { useCurrency } from '@/components/currency-provider'
+import type { AppLocale } from '@/i18n/routing'
 
 function SubmitPayButton() {
   const { pending } = useFormStatus()
+  const t = useTranslations('dashboard.creditCard')
   return (
     <Button
       type="submit"
@@ -18,7 +23,7 @@ function SubmitPayButton() {
       disabled={pending}
       className="min-h-10 touch-manipulation sm:min-h-9"
     >
-      {pending ? 'Registrando...' : 'Confirmar pagamento'}
+      {pending ? t('registering') : t('confirmPayment')}
     </Button>
   )
 }
@@ -37,6 +42,10 @@ export function CreditCardPayForm({
   onDone,
 }: CreditCardPayFormProps) {
   const router = useRouter()
+  const t = useTranslations('dashboard.creditCard')
+  const tForms = useTranslations('forms')
+  const locale = useLocale() as AppLocale
+  const currency = useCurrency()
   const [error, setError] = useState('')
   const today = new Date().toISOString().slice(0, 10)
 
@@ -54,7 +63,7 @@ export function CreditCardPayForm({
   if (maxPay <= 0) {
     return (
       <p className="text-sm text-muted-foreground">
-        Nada a pagar neste cartão (limite totalmente disponível).
+        {t('noInvoice')}
       </p>
     )
   }
@@ -67,29 +76,30 @@ export function CreditCardPayForm({
         </div>
       ) : null}
       <p className="text-xs text-muted-foreground">
-        O pagamento usa apenas o <strong>saldo em caixa do mês</strong> (entradas menos
-        despesas do orçamento e investimentos), <strong>registra uma saída</strong> nesse
-        mês e <strong>restaura o limite</strong> do cartão.
+        {t.rich('payHelp', {
+          cash: (chunks) => <strong>{chunks}</strong>,
+          expense: (chunks) => <strong>{chunks}</strong>,
+          limit: (chunks) => <strong>{chunks}</strong>,
+        })}
       </p>
       <div className="flex flex-col gap-1 text-xs text-muted-foreground sm:flex-row sm:flex-wrap sm:gap-x-2">
         <span>
-          Disponível em caixa:{' '}
+          {t('availableCash')}{': '}
           <span className="font-medium text-foreground">
-            R${' '}
-            {availableCash.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            {formatCurrency(availableCash, locale, currency)}
           </span>
         </span>
         <span className="hidden sm:inline">·</span>
         <span>
-          Máx. a pagar:{' '}
+          {t('maxPayment')}{': '}
           <span className="font-medium text-foreground">
-            R$ {maxPay.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+            {formatCurrency(maxPay, locale, currency)}
           </span>
         </span>
       </div>
       <div className="grid gap-3 sm:grid-cols-2">
         <div className="space-y-1.5">
-          <Label htmlFor={`pay-amount-${card.id}`}>Valor (R$)</Label>
+          <Label htmlFor={`pay-amount-${card.id}`}>{tForms('labels.amount')}</Label>
           <Input
             id={`pay-amount-${card.id}`}
             name="amount"
@@ -98,11 +108,11 @@ export function CreditCardPayForm({
             min="0.01"
             max={maxPay}
             required
-            placeholder="0,00"
+            placeholder={tForms('placeholders.amount')}
           />
         </div>
         <div className="space-y-1.5">
-          <Label htmlFor={`pay-date-${card.id}`}>Data</Label>
+          <Label htmlFor={`pay-date-${card.id}`}>{tForms('labels.date')}</Label>
           <Input
             id={`pay-date-${card.id}`}
             name="date"
@@ -122,7 +132,7 @@ export function CreditCardPayForm({
             onClick={onDone}
             className="min-h-10 touch-manipulation sm:min-h-9"
           >
-            Cancelar
+            {tForms('buttons.cancel')}
           </Button>
         ) : null}
       </div>

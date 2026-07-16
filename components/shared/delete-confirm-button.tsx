@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Trash2 } from 'lucide-react'
 
@@ -13,8 +14,9 @@ type Props = {
 export function DeleteConfirmButton({
   confirmMessage,
   onDelete,
-  ariaLabel = 'Excluir',
+  ariaLabel,
 }: Props) {
+  const t = useTranslations('forms.buttons')
   const [pending, setPending] = useState(false)
 
   async function handleDelete() {
@@ -31,7 +33,7 @@ export function DeleteConfirmButton({
       className="text-muted-foreground hover:text-destructive"
       onClick={handleDelete}
       disabled={pending}
-      aria-label={ariaLabel}
+      aria-label={ariaLabel ?? t('delete')}
       aria-busy={pending}
     >
       <Trash2 className="h-4 w-4" />

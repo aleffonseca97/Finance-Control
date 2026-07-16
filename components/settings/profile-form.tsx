@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useFormStatus } from 'react-dom'
+import { useTranslations } from 'next-intl'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,19 +15,21 @@ interface ProfileFormProps {
 }
 
 function ProfileSubmitButton() {
+  const t = useTranslations('settings.profile')
   const { pending } = useFormStatus()
   return (
     <Button type="submit" disabled={pending}>
-      {pending ? 'Salvando...' : 'Salvar'}
+      {pending ? t('saving') : t('save')}
     </Button>
   )
 }
 
 function PasswordSubmitButton() {
+  const t = useTranslations('settings.profile')
   const { pending } = useFormStatus()
   return (
     <Button type="submit" disabled={pending}>
-      {pending ? 'Alterando...' : 'Alterar senha'}
+      {pending ? t('changing') : t('changePassword')}
     </Button>
   )
 }
@@ -36,6 +39,8 @@ export function ProfileForm({
   email,
   marketingOptIn,
 }: ProfileFormProps) {
+  const t = useTranslations('settings.profile')
+  const tPlaceholders = useTranslations('auth.placeholders')
   const [profileError, setProfileError] = useState('')
   const [profileSuccess, setProfileSuccess] = useState(false)
   const [passwordError, setPasswordError] = useState('')
@@ -58,7 +63,7 @@ export function ProfileForm({
     const newPassword = formData.get('newPassword')
     const confirmPassword = formData.get('confirmPassword')
     if (newPassword !== confirmPassword) {
-      setPasswordError('As senhas não coincidem')
+      setPasswordError(t('passwordMismatch'))
       return
     }
     const result = await updatePassword(formData)
@@ -76,7 +81,7 @@ export function ProfileForm({
         action={handleProfileSubmit}
         className="space-y-4 p-4 rounded-lg border bg-card"
       >
-        <h3 className="font-semibold">Perfil</h3>
+        <h3 className="font-semibold">{t('sectionTitle')}</h3>
         {profileError && (
           <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
             {profileError}
@@ -84,27 +89,27 @@ export function ProfileForm({
         )}
         {profileSuccess && (
           <div className="text-sm text-emerald-600 bg-emerald-500/10 p-3 rounded-md">
-            Perfil atualizado com sucesso
+            {t('profileUpdated')}
           </div>
         )}
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="name">Nome</Label>
+            <Label htmlFor="name">{t('name')}</Label>
             <Input
               id="name"
               name="name"
               defaultValue={name ?? ''}
-              placeholder="Seu nome"
+              placeholder={t('namePlaceholder')}
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('email')}</Label>
             <Input
               id="email"
               name="email"
               type="email"
               defaultValue={email}
-              placeholder="seu@email.com"
+              placeholder={tPlaceholders('email')}
               required
             />
           </div>
@@ -121,7 +126,7 @@ export function ProfileForm({
             htmlFor="marketingOptIn"
             className="text-sm font-normal text-muted-foreground leading-snug cursor-pointer"
           >
-            Receber e-mails sobre novidades e melhorias do produto
+            {t('marketingOptIn')}
           </Label>
         </div>
         <ProfileSubmitButton />
@@ -132,7 +137,7 @@ export function ProfileForm({
         action={handlePasswordSubmit}
         className="space-y-4 p-4 rounded-lg border bg-card"
       >
-        <h3 className="font-semibold">Alterar senha</h3>
+        <h3 className="font-semibold">{t('passwordSectionTitle')}</h3>
         {passwordError && (
           <div className="text-sm text-destructive bg-destructive/10 p-3 rounded-md">
             {passwordError}
@@ -140,38 +145,38 @@ export function ProfileForm({
         )}
         {passwordSuccess && (
           <div className="text-sm text-emerald-600 bg-emerald-500/10 p-3 rounded-md">
-            Senha alterada com sucesso
+            {t('passwordUpdated')}
           </div>
         )}
         <div className="grid gap-4 sm:grid-cols-2">
           <div className="space-y-2">
-            <Label htmlFor="currentPassword">Senha atual</Label>
+            <Label htmlFor="currentPassword">{t('currentPassword')}</Label>
             <Input
               id="currentPassword"
               name="currentPassword"
               type="password"
-              placeholder="••••••••"
+              placeholder={t('passwordPlaceholder')}
               required
             />
           </div>
           <div className="space-y-2">
-            <Label htmlFor="newPassword">Nova senha</Label>
+            <Label htmlFor="newPassword">{t('newPassword')}</Label>
             <Input
               id="newPassword"
               name="newPassword"
               type="password"
-              placeholder="••••••••"
+              placeholder={t('passwordPlaceholder')}
               minLength={6}
               required
             />
           </div>
           <div className="space-y-2 sm:col-span-2">
-            <Label htmlFor="confirmPassword">Confirmar nova senha</Label>
+            <Label htmlFor="confirmPassword">{t('confirmPassword')}</Label>
             <Input
               id="confirmPassword"
               name="confirmPassword"
               type="password"
-              placeholder="••••••••"
+              placeholder={t('passwordPlaceholder')}
               minLength={6}
               required
             />

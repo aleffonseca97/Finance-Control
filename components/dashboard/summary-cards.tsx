@@ -1,11 +1,15 @@
 'use client'
 
 import { useMemo, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useTranslations, useLocale } from 'next-intl'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Dialog, DialogHeader } from '@/components/ui/dialog'
-import { formatBRL, formatDateBR } from '@/lib/date-utils'
+import { formatCurrency, formatDate } from '@/lib/i18n/format'
+import { useCurrency } from '@/components/currency-provider'
+import { localizeStoredLabel } from '@/lib/i18n/localize-label'
+import type { AppLocale } from '@/i18n/routing'
 import type { TransactionWithCategory } from '@/lib/transaction-types'
+import { useRouter } from '@/lib/i18n/navigation'
 import {
   CreditCard,
   PiggyBank,
@@ -45,6 +49,9 @@ const iconMap = {
 
 export function SummaryCards({ items, statementTransactions }: Props) {
   const router = useRouter()
+  const locale = useLocale() as AppLocale
+  const currency = useCurrency()
+  const t = useTranslations('dashboard.overview')
   const [isStatementOpen, setIsStatementOpen] = useState(false)
   const [statementDaysFilter, setStatementDaysFilter] = useState<15 | 30 | 60 | 90>(30)
 
@@ -104,7 +111,7 @@ export function SummaryCards({ items, statementTransactions }: Props) {
               </CardHeader>
               <CardContent>
                 <p className={`text-xl font-bold tabular-nums sm:text-2xl ${item.color}`}>
-                  R$ {formatBRL(item.value)}
+                  {formatCurrency(item.value, locale, currency)}
                 </p>
                 {item.footnote && (
                   <p className="mt-1.5 text-xs text-muted-foreground">
@@ -121,11 +128,11 @@ export function SummaryCards({ items, statementTransactions }: Props) {
         open={isStatementOpen}
         onOpenChange={setIsStatementOpen}
         className="max-w-2xl p-0"
-        aria-label="Extrato do mês"
+        aria-label={t('statement')}
       >
         <div className="p-4 sm:p-6">
           <DialogHeader onClose={() => setIsStatementOpen(false)}>
-            Extrato do mês
+            {t('statement')}
           </DialogHeader>
           <div className="mb-3 flex flex-wrap gap-2">
             {[15, 30, 60, 90].map((days) => {
@@ -141,7 +148,7 @@ export function SummaryCards({ items, statementTransactions }: Props) {
                       : 'border-border bg-background text-foreground hover:bg-muted'
                   }`}
                 >
-                  {days} dias
+                  {t('statementDays', { count: days })}
                 </button>
               )
             })}
@@ -149,7 +156,7 @@ export function SummaryCards({ items, statementTransactions }: Props) {
           <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
             {filteredStatementTransactions.length === 0 && (
               <p className="rounded-md border p-3 text-sm text-muted-foreground">
-                Nenhuma transação encontrada neste período.
+                {t('noTransactionsInPeriod')}
               </p>
             )}
             {filteredStatementTransactions.map((transaction) => {
@@ -161,10 +168,12 @@ export function SummaryCards({ items, statementTransactions }: Props) {
                 >
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">
-                      {transaction.description || transaction.category.name}
+                      {transaction.description ||
+                        localizeStoredLabel(transaction.category.name, locale)}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {transaction.category.name} - {formatDateBR(transaction.date)}
+                      {localizeStoredLabel(transaction.category.name, locale)} -{' '}
+                      {formatDate(transaction.date, locale)}
                     </p>
                   </div>
                   <p
@@ -172,7 +181,8 @@ export function SummaryCards({ items, statementTransactions }: Props) {
                       isIncome ? 'text-emerald-600' : 'text-red-600'
                     }`}
                   >
-                    {isIncome ? '+' : '-'} R$ {formatBRL(transaction.amount)}
+                    {isIncome ? '+' : '-'}{' '}
+                    {formatCurrency(transaction.amount, locale, currency)}
                   </p>
                 </div>
               )

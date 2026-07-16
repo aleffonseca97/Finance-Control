@@ -7,8 +7,9 @@ import {
   chartTooltipContentStyle,
   chartTooltipItemStyle,
   chartTooltipLabelStyle,
-  formatChartCurrency,
+  useChartCurrency,
 } from '@/components/charts/chart-shared'
+import { useTranslations } from 'next-intl'
 
 type InvestmentPieDatum = {
   name: string
@@ -25,12 +26,14 @@ const FALLBACK_FILLS = [
 ]
 
 export function InvestmentsPieChart({ data }: { data: InvestmentPieDatum[] }) {
+  const t = useTranslations('common.charts')
+  const formatValue = useChartCurrency()
   const filtered = data.filter((d) => d.value > 0)
 
   if (filtered.length === 0) {
     return (
       <ChartEmpty className="min-h-[200px] sm:min-h-[240px]">
-        Adicione investimentos para ver o gráfico
+        {t('addInvestments')}
       </ChartEmpty>
     )
   }
@@ -39,7 +42,7 @@ export function InvestmentsPieChart({ data }: { data: InvestmentPieDatum[] }) {
     <div
       className="h-[220px] w-full sm:h-[260px]"
       role="img"
-      aria-label="Gráfico de rosca: distribuição dos investimentos por tipo"
+      aria-label={t('investmentsDistribution')}
     >
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
@@ -65,7 +68,7 @@ export function InvestmentsPieChart({ data }: { data: InvestmentPieDatum[] }) {
             contentStyle={chartTooltipContentStyle}
             labelStyle={chartTooltipLabelStyle}
             itemStyle={chartTooltipItemStyle}
-            formatter={(value: number) => formatChartCurrency(value)}
+            formatter={(value: number) => formatValue(value)}
           />
           <Legend
             layout="horizontal"

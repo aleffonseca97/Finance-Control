@@ -17,8 +17,10 @@ import {
   chartTooltipContentStyle,
   chartTooltipItemStyle,
   chartTooltipLabelStyle,
-  formatChartCurrency,
+  useChartCurrency,
+  useChartCurrencyAxisTick,
 } from '@/components/charts/chart-shared'
+import { useTranslations } from 'next-intl'
 
 const SERIES = {
   income: { stroke: 'hsl(var(--chart-income))', key: 'income' as const, name: 'income' },
@@ -33,22 +35,25 @@ interface DataPoint {
   investment: number
 }
 
-const legendLabels: Record<string, string> = {
-  income: 'Entradas',
-  expense: 'Saídas',
-  investment: 'Investimentos',
-}
-
 export function MonthlyEvolutionChart({ data }: { data: DataPoint[] }) {
+  const t = useTranslations('common.charts')
+  const formatValue = useChartCurrency()
+  const formatAxisTick = useChartCurrencyAxisTick()
+  const legendLabels: Record<string, string> = {
+    income: t('income'),
+    expense: t('expense'),
+    investment: t('investments'),
+  }
+
   if (data.length === 0) {
-    return <ChartEmpty>Nenhum dado para o período</ChartEmpty>
+    return <ChartEmpty>{t('noData')}</ChartEmpty>
   }
 
   return (
     <div
       className={chartSurfaceClass}
       role="img"
-      aria-label="Gráfico de linhas: evolução mensal de entradas, saídas e investimentos"
+      aria-label={t('monthlyEvolution')}
     >
       <ResponsiveContainer width="100%" height="100%">
         <LineChart data={data} margin={{ left: 0, right: 8, top: 8, bottom: 0 }}>
@@ -64,14 +69,14 @@ export function MonthlyEvolutionChart({ data }: { data: DataPoint[] }) {
             tick={chartAxisTick}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(v) => (v >= 1000 ? `R$${v / 1000}k` : `R$${v}`)}
+            tickFormatter={formatAxisTick}
             width={52}
           />
           <Tooltip
             contentStyle={chartTooltipContentStyle}
             labelStyle={chartTooltipLabelStyle}
             itemStyle={chartTooltipItemStyle}
-            formatter={(value: number) => formatChartCurrency(value)}
+            formatter={(value: number) => formatValue(value)}
             labelFormatter={(label) => String(label)}
             cursor={{ stroke: 'hsl(var(--muted-foreground) / 0.35)', strokeWidth: 1 }}
           />

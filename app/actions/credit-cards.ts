@@ -1,15 +1,24 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
+import { getLocale } from 'next-intl/server'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { ensureGlobalCategories } from '@/app/actions/categories'
 import { budgetExpenseWhere } from '@/lib/budget-expense'
+import { revalidateLocalePaths } from '@/lib/i18n/revalidate'
+import {
+  getErrorTranslations,
+  getServerErrorTranslations,
+  getValidationTranslations,
+} from '@/lib/i18n/validation'
 import {
   serializeOverdueNotices,
   type CreditCardOverdueNotice,
 } from '@/lib/credit-card-overdue'
+import { formatCurrency, formatDate } from '@/lib/i18n/format'
+import { getCurrentCurrency } from '@/lib/i18n/get-currency'
+import type { AppLocale } from '@/i18n/routing'
 import {
   allocatePaymentsFifo,
   billingCycleForClosingEnd,
@@ -23,20 +32,35 @@ import {
 
 export type { CreditCardOverdueNotice, SerializedCreditCardOverdue } from '@/lib/credit-card-overdue'
 
-const creditCardSchema = z.object({
-  name: z.string().min(1, 'Nome é obrigatório'),
-  totalLimit: z.coerce.number().min(0, 'Limite deve ser positivo'),
-  closingDay: z.coerce.number().min(1, 'Dia inválido').max(31, 'Dia inválido'),
-  dueDay: z.coerce.number().min(1, 'Dia inválido').max(31, 'Dia inválido'),
-  lastFour: z.string().max(4).optional().nullable(),
-  color: z.string().optional(),
-})
+function buildCreditCardSchema(
+  t: Awaited<ReturnType<typeof getValidationTranslations>>,
+) {
+  return z.object({
+    name: z.string().min(1, t('nameRequired')),
+    totalLimit: z.coerce.number().min(0, t('amountPositive')),
+    closingDay: z.coerce.number().min(1, t('invalidDay')).max(31, t('invalidDay')),
+    dueDay: z.coerce.number().min(1, t('invalidDay')).max(31, t('invalidDay')),
+    lastFour: z.string().max(4).optional().nullable(),
+    color: z.string().optional(),
+  })
+}
 
-const paySchema = z.object({
-  creditCardId: z.string().min(1),
-  amount: z.coerce.number().positive('Valor deve ser positivo'),
-  date: z.string().min(1, 'Data é obrigatória'),
-})
+function buildPaySchema(
+  t: Awaited<ReturnType<typeof getValidationTranslations>>,
+) {
+  return z.object({
+    creditCardId: z.string().min(1),
+    amount: z.coerce.number().positive(t('amountPositive')),
+    date: z.string().min(1, t('dateRequired')),
+  })
+}
+
+const CREDIT_CARD_PATHS = [
+  '/dashboard/cartao-credito',
+  '/dashboard/saidas',
+  '/dashboard',
+  '/dashboard/analise',
+]
 
 export async function getAvailableCashForMonth(
   userId: string,
@@ -119,6 +143,7 @@ async function fetchChargesAndPayments(userId: string) {
 export async function getCreditCardOverdueNotices(
   userId: string,
 ): Promise<CreditCardOverdueNotice[]> {
+  const locale = (await getLocale()) as AppLocale
   const today = new Date()
   const cards = await prisma.creditCard.findMany({ where: { userId } })
   if (cards.length === 0) return []
@@ -141,7 +166,7 @@ export async function getCreditCardOverdueNotices(
         color: card.color,
         unpaid,
         dueDate: c.dueDate,
-        closingLabel: normalizePeriodEndKey(c.periodEnd).toLocaleDateString('pt-BR'),
+        closingLabel: formatDate(normalizePeriodEndKey(c.periodEnd), locale),
       })
     }
   }
@@ -200,12 +225,14 @@ export async function getCreditCardPagePayload() {
     }))
     .sort((a, b) => b.value - a.value)
 
+  const locale = (await getLocale()) as AppLocale
+
   return {
     cards,
     availableCash,
     month: now.getMonth(),
     year: now.getFullYear(),
-    overdueNotices: serializeOverdueNotices(overdueRaw),
+    overdueNotices: serializeOverdueNotices(overdueRaw, locale),
     creditCardCategorySpending,
   }
 }
@@ -222,7 +249,11 @@ export async function getCreditCards() {
 
 export async function createCreditCard(formData: FormData) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tValidation = await getValidationTranslations()
+  const creditCardSchema = buildCreditCardSchema(tValidation)
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const lastFour = formData.get('lastFour')
   const parsed = creditCardSchema.safeParse({
@@ -238,13 +269,13 @@ export async function createCreditCard(formData: FormData) {
     return { error: parsed.error.errors[0].message }
   }
 
-  const t = parsed.data.totalLimit
+  const totalLimit = parsed.data.totalLimit
   await prisma.creditCard.create({
     data: {
       userId: session.user.id,
       name: parsed.data.name,
-      totalLimit: t,
-      limit: t,
+      totalLimit,
+      limit: totalLimit,
       closingDay: parsed.data.closingDay,
       dueDay: parsed.data.dueDay,
       lastFour: parsed.data.lastFour,
@@ -252,13 +283,18 @@ export async function createCreditCard(formData: FormData) {
     },
   })
 
-  revalidatePath('/dashboard/cartao-credito')
+  await revalidateLocalePaths(['/dashboard/cartao-credito'])
   return { success: true }
 }
 
 export async function updateCreditCard(id: string, formData: FormData) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tServer = await getServerErrorTranslations()
+  const tValidation = await getValidationTranslations()
+  const creditCardSchema = buildCreditCardSchema(tValidation)
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const lastFour = formData.get('lastFour')
   const parsed = creditCardSchema.safeParse({
@@ -278,7 +314,7 @@ export async function updateCreditCard(id: string, formData: FormData) {
     where: { id, userId: session.user.id },
   })
 
-  if (!existing) return { error: 'Cartão não encontrado' }
+  if (!existing) return { error: tServer('cardNotFound') }
 
   const newTotal = parsed.data.totalLimit
   const delta = newTotal - existing.totalLimit
@@ -300,13 +336,18 @@ export async function updateCreditCard(id: string, formData: FormData) {
     },
   })
 
-  revalidatePath('/dashboard/cartao-credito')
+  await revalidateLocalePaths(['/dashboard/cartao-credito'])
   return { success: true }
 }
 
 export async function payCreditCardFromBalance(formData: FormData) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tServer = await getServerErrorTranslations()
+  const tValidation = await getValidationTranslations()
+  const paySchema = buildPaySchema(tValidation)
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const parsed = paySchema.safeParse({
     creditCardId: formData.get('creditCardId'),
@@ -321,13 +362,20 @@ export async function payCreditCardFromBalance(formData: FormData) {
   const card = await prisma.creditCard.findFirst({
     where: { id: parsed.data.creditCardId, userId: session.user.id },
   })
-  if (!card) return { error: 'Cartão não encontrado' }
+  if (!card) return { error: tServer('cardNotFound') }
+
+  const locale = (await getLocale()) as AppLocale
+  const currency = await getCurrentCurrency()
 
   const used = roundMoney(card.totalLimit - card.limit)
   const amount = roundMoney(parsed.data.amount)
-  if (used <= 1e-6) return { error: 'Não há fatura a pagar neste cartão' }
+  if (used <= 1e-6) return { error: tServer('noInvoiceToPay') }
   if (amount > used + 1e-6) {
-    return { error: `Máximo a pagar: R$ ${used.toFixed(2).replace('.', ',')}` }
+    return {
+      error: tServer('maxPayment', {
+        amount: formatCurrency(used, locale, currency),
+      }),
+    }
   }
 
   const payDate = new Date(parsed.data.date)
@@ -338,7 +386,9 @@ export async function payCreditCardFromBalance(formData: FormData) {
   )
   if (amount > cashAvail + 1e-6) {
     return {
-      error: `Saldo em caixa do mês insuficiente (disponível: R$ ${cashAvail.toFixed(2).replace('.', ',')})`,
+      error: tServer('insufficientCash', {
+        amount: formatCurrency(cashAvail, locale, currency),
+      }),
     }
   }
 
@@ -363,10 +413,11 @@ export async function payCreditCardFromBalance(formData: FormData) {
     })
   }
   if (!category) {
-    return { error: 'Cadastre uma categoria de despesa variável em Configurações' }
+    return { error: tServer('variableCategoryRequired') }
   }
 
   const newLimit = Math.min(card.totalLimit, roundMoney(card.limit + amount))
+  const invoiceDescription = tServer('invoicePayment', { cardName: card.name })
 
   await prisma.$transaction(async (tx) => {
     await tx.transaction.create({
@@ -374,7 +425,7 @@ export async function payCreditCardFromBalance(formData: FormData) {
         userId: session.user.id,
         categoryId: category.id,
         amount,
-        description: `Pagamento fatura (caixa) — ${card.name}`,
+        description: invoiceDescription,
         date: payDate,
         type: 'expense',
         paysCreditCardId: card.id,
@@ -386,25 +437,25 @@ export async function payCreditCardFromBalance(formData: FormData) {
     })
   })
 
-  revalidatePath('/dashboard/cartao-credito')
-  revalidatePath('/dashboard/saidas')
-  revalidatePath('/dashboard')
-  revalidatePath('/dashboard/analise')
+  await revalidateLocalePaths(CREDIT_CARD_PATHS)
   return { success: true }
 }
 
 export async function deleteCreditCard(id: string) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tServer = await getServerErrorTranslations()
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const existing = await prisma.creditCard.findFirst({
     where: { id, userId: session.user.id },
   })
 
-  if (!existing) return { error: 'Cartão não encontrado' }
+  if (!existing) return { error: tServer('cardNotFound') }
 
   await prisma.creditCard.delete({ where: { id } })
 
-  revalidatePath('/dashboard/cartao-credito')
+  await revalidateLocalePaths(['/dashboard/cartao-credito'])
   return { success: true }
 }

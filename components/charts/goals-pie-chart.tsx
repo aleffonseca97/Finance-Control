@@ -6,8 +6,9 @@ import {
   chartTooltipContentStyle,
   chartTooltipItemStyle,
   chartTooltipLabelStyle,
-  formatChartCurrency,
+  useChartCurrency,
 } from '@/components/charts/chart-shared'
+import { useTranslations } from 'next-intl'
 
 type GoalsPieChartProps = {
   achieved: number
@@ -20,13 +21,16 @@ const COLORS = {
 }
 
 export function GoalsPieChart({ achieved, remaining }: GoalsPieChartProps) {
+  const tGoals = useTranslations('dashboard.goals')
+  const tCharts = useTranslations('common.charts')
+  const formatValue = useChartCurrency()
   const data = [
-    { name: 'Acumulado', value: achieved, color: COLORS.achieved },
-    { name: 'Faltante', value: remaining, color: COLORS.remaining },
+    { name: tGoals('achieved'), value: achieved, color: COLORS.achieved },
+    { name: tGoals('remaining'), value: remaining, color: COLORS.remaining },
   ].filter((item) => item.value > 0)
 
   return (
-    <div className="h-[220px] w-full sm:h-[240px]" role="img" aria-label="Evolução da meta em gráfico de rosca">
+    <div className="h-[220px] w-full sm:h-[240px]" role="img" aria-label={tCharts('goalsProgress')}>
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
           <Pie
@@ -48,7 +52,7 @@ export function GoalsPieChart({ achieved, remaining }: GoalsPieChartProps) {
             contentStyle={chartTooltipContentStyle}
             labelStyle={chartTooltipLabelStyle}
             itemStyle={chartTooltipItemStyle}
-            formatter={(value: number) => formatChartCurrency(value)}
+            formatter={(value: number) => formatValue(value)}
           />
           <Legend
             layout="horizontal"

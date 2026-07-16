@@ -1,3 +1,6 @@
+import type { AppLocale } from '@/i18n/routing'
+import { formatDate } from '@/lib/i18n/format'
+
 export type CreditCardOverdueNotice = {
   cardId: string
   cardName: string
@@ -20,6 +23,7 @@ export type SerializedCreditCardOverdue = {
 
 export function serializeOverdueNotices(
   notices: CreditCardOverdueNotice[],
+  locale: AppLocale = 'pt-BR',
 ): SerializedCreditCardOverdue[] {
   return notices.map((n) => ({
     cardId: n.cardId,
@@ -27,7 +31,7 @@ export function serializeOverdueNotices(
     lastFour: n.lastFour,
     color: n.color,
     unpaid: n.unpaid,
-    dueDateLabel: n.dueDate.toLocaleDateString('pt-BR'),
+    dueDateLabel: formatDate(n.dueDate, locale),
     closingLabel: n.closingLabel,
   }))
 }

@@ -8,8 +8,11 @@ import {
   chartTooltipContentStyle,
   chartTooltipItemStyle,
   chartTooltipLabelStyle,
-  formatChartCurrency,
+  useChartCurrency,
 } from '@/components/charts/chart-shared'
+import { useLocale, useTranslations } from 'next-intl'
+import { localizeStoredLabel } from '@/lib/i18n/localize-label'
+import type { AppLocale } from '@/i18n/routing'
 
 type CreditCardMainCategoryDatum = {
   name: string
@@ -26,17 +29,25 @@ const FALLBACK_FILLS = [
 ]
 
 export function CreditCardMainCategoriesPieChart({ data }: { data: CreditCardMainCategoryDatum[] }) {
-  const filtered = data.filter((item) => item.value > 0)
+  const t = useTranslations('common.charts')
+  const locale = useLocale() as AppLocale
+  const formatValue = useChartCurrency()
+  const filtered = data
+    .filter((item) => item.value > 0)
+    .map((item) => ({
+      ...item,
+      name: localizeStoredLabel(item.name, locale),
+    }))
 
   if (filtered.length === 0) {
-    return <ChartEmpty>Nenhum gasto no cartão para exibir</ChartEmpty>
+    return <ChartEmpty>{t('noCreditCardSpending')}</ChartEmpty>
   }
 
   return (
     <div
       className={chartSurfaceClass}
       role="img"
-      aria-label="Gráfico de rosca: gastos no cartão por categoria principal"
+      aria-label={t('creditCardCategories')}
     >
       <ResponsiveContainer width="100%" height="100%">
         <PieChart>
@@ -62,7 +73,7 @@ export function CreditCardMainCategoriesPieChart({ data }: { data: CreditCardMai
             contentStyle={chartTooltipContentStyle}
             labelStyle={chartTooltipLabelStyle}
             itemStyle={chartTooltipItemStyle}
-            formatter={(value: number) => formatChartCurrency(value)}
+            formatter={(value: number) => formatValue(value)}
           />
           <Legend
             layout="horizontal"

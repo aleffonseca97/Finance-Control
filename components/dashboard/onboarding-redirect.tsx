@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
-import { usePathname, useRouter } from 'next/navigation'
+import { usePathname, useRouter } from '@/lib/i18n/navigation'
 
 interface OnboardingRedirectProps {
   hasSeenWelcome: boolean

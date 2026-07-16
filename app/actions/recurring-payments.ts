@@ -1,17 +1,25 @@
 'use server'
 
-import { revalidatePath } from 'next/cache'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { recurringPaymentCreateSchema } from '@/lib/validations'
+import { createRecurringPaymentCreateSchema } from '@/lib/validations'
+import { revalidateLocalePaths } from '@/lib/i18n/revalidate'
+import {
+  getErrorTranslations,
+  getServerErrorTranslations,
+  getValidationTranslations,
+} from '@/lib/i18n/validation'
+import { getTranslations } from 'next-intl/server'
 
-const RECURRING_TX_DESCRIPTION = 'Pagamento recorrente'
+const RECURRING_PATHS = [
+  '/dashboard/pagamentos-recorrentes',
+  '/dashboard',
+  '/dashboard/saidas',
+  '/dashboard/analise',
+]
 
-function revalidateRecurringPaths() {
-  revalidatePath('/dashboard/pagamentos-recorrentes')
-  revalidatePath('/dashboard')
-  revalidatePath('/dashboard/saidas')
-  revalidatePath('/dashboard/analise')
+async function revalidateRecurringPaths() {
+  await revalidateLocalePaths(RECURRING_PATHS)
 }
 
 async function ensureExpenseCategoryForUser(categoryId: string, userId: string) {
@@ -69,36 +77,33 @@ export type RecurringHealthInsight = {
   message: string
 }
 
-function buildHealthInsight(
+async function buildHealthInsight(
   totalRecurring: number,
   totalIncome: number,
-): RecurringHealthInsight {
+): Promise<RecurringHealthInsight> {
+  const t = await getTranslations('dashboard.recurringPayments.health')
   if (totalIncome <= 0) {
     return {
       variant: 'neutral',
-      message:
-        'Cadastre suas entradas neste mês para comparar com o total das contas recorrentes e receber uma leitura da saúde financeira.',
+      message: t('neutral'),
     }
   }
   const ratio = totalRecurring / totalIncome
   if (ratio >= 0.7) {
     return {
       variant: 'concern',
-      message:
-        'Suas contas recorrentes consomem 70% ou mais das suas entradas. Vale revisar gastos e reservas para não comprometer o equilíbrio financeiro.',
+      message: t('concern'),
     }
   }
   if (ratio > 0.6) {
     return {
       variant: 'attention',
-      message:
-        'Suas contas recorrentes estão entre 60% e 70% das entradas. Acompanhe de perto para manter folga no orçamento.',
+      message: t('attention'),
     }
   }
   return {
     variant: 'success',
-    message:
-      'Parabéns: suas contas recorrentes representam até 60% das entradas. Você mantém boa margem para imprevistos e objetivos.',
+    message: t('success'),
   }
 }
 
@@ -165,14 +170,19 @@ export async function getRecurringPaymentsForMonth(
   })
 
   const totalRecurring = rows.reduce((s, p) => s + p.amount, 0)
-  const health = buildHealthInsight(totalRecurring, totalIncome)
+  const health = await buildHealthInsight(totalRecurring, totalIncome)
 
   return { rows, totalRecurring, totalIncome, health }
 }
 
 export async function createRecurringPayment(formData: FormData) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tServer = await getServerErrorTranslations()
+  const tValidation = await getValidationTranslations()
+  const recurringPaymentCreateSchema = createRecurringPaymentCreateSchema(tValidation)
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const parsed = recurringPaymentCreateSchema.safeParse({
     categoryId: formData.get('categoryId'),
@@ -191,7 +201,7 @@ export async function createRecurringPayment(formData: FormData) {
     parsed.data.categoryId,
     session.user.id,
   )
-  if (!category) return { error: 'Categoria inválida' }
+  if (!category) return { error: tServer('invalidCategory') }
 
   await prisma.$transaction(async (db) => {
     await db.recurringPayment.create({
@@ -219,18 +229,23 @@ export async function createRecurringPayment(formData: FormData) {
     parsed.data.year,
   )
 
-  revalidateRecurringPaths()
+  await revalidateRecurringPaths()
   return { success: true }
 }
 
 export async function updateRecurringPayment(formData: FormData) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tServer = await getServerErrorTranslations()
+  const tValidation = await getValidationTranslations()
+  const recurringPaymentCreateSchema = createRecurringPaymentCreateSchema(tValidation)
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const recurringPaymentIdRaw = formData.get('recurringPaymentId')
   const recurringPaymentId =
     typeof recurringPaymentIdRaw === 'string' ? recurringPaymentIdRaw.trim() : ''
-  if (!recurringPaymentId) return { error: 'Pagamento recorrente inválido' }
+  if (!recurringPaymentId) return { error: tServer('invalidRecurringPayment') }
 
   const parsed = recurringPaymentCreateSchema.safeParse({
     categoryId: formData.get('categoryId'),
@@ -249,7 +264,7 @@ export async function updateRecurringPayment(formData: FormData) {
     parsed.data.categoryId,
     session.user.id,
   )
-  if (!nextCategory) return { error: 'Categoria inválida' }
+  if (!nextCategory) return { error: tServer('invalidCategory') }
 
   const existing = await prisma.recurringPayment.findFirst({
     where: { id: recurringPaymentId, userId: session.user.id },
@@ -261,7 +276,8 @@ export async function updateRecurringPayment(formData: FormData) {
     },
   })
 
-  if (!existing) return { error: 'Pagamento recorrente não encontrado' }
+  if (!existing) return { error: tServer('recurringPaymentNotFound') }
+  const recurringDescription = tServer('recurringPayment')
   const now = new Date()
   const isCurrentMonth =
     parsed.data.month === now.getMonth() && parsed.data.year === now.getFullYear()
@@ -326,7 +342,7 @@ export async function updateRecurringPayment(formData: FormData) {
         data: {
           categoryId: parsed.data.categoryId,
           amount: nextAmount,
-          description: RECURRING_TX_DESCRIPTION,
+          description: recurringDescription,
         },
       })
     }
@@ -342,7 +358,10 @@ export async function markRecurringPaymentPaid(
   year: number,
 ) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tServer = await getServerErrorTranslations()
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const payment = await prisma.recurringPayment.findFirst({
     where: { id: recurringPaymentId, userId: session.user.id },
@@ -354,7 +373,7 @@ export async function markRecurringPaymentPaid(
     },
   })
 
-  if (!payment) return { error: 'Pagamento recorrente não encontrado' }
+  if (!payment) return { error: tServer('recurringPaymentNotFound') }
 
   let occ = payment.occurrences[0]
   if (!occ) {
@@ -362,7 +381,7 @@ export async function markRecurringPaymentPaid(
     occ = await prisma.recurringPaymentOccurrence.findFirst({
       where: { recurringPaymentId, year, month },
     })
-    if (!occ) return { error: 'Não foi possível registrar o mês para este item.' }
+    if (!occ) return { error: tServer('couldNotRegisterMonth') }
   }
 
   if (occ.transactionId) {
@@ -376,13 +395,15 @@ export async function markRecurringPaymentPaid(
       ? (monthlyIncome * (payment.percentage ?? 0)) / 100
       : payment.amount
 
+  const recurringDescription = tServer('recurringPayment')
+
   await prisma.$transaction(async (db) => {
     const created = await db.transaction.create({
       data: {
         userId: session.user.id,
         categoryId: payment.categoryId,
         amount: amountToLaunch,
-        description: RECURRING_TX_DESCRIPTION,
+        description: recurringDescription,
         date: txDate,
         type: 'expense',
         creditCardId: null,
@@ -401,13 +422,16 @@ export async function markRecurringPaymentPaid(
 
 export async function deleteRecurringPayment(id: string) {
   const session = await auth()
-  if (!session?.user?.id) return { error: 'Não autorizado' }
+  const t = await getErrorTranslations()
+  const tServer = await getServerErrorTranslations()
+
+  if (!session?.user?.id) return { error: t('unauthorized') }
 
   const existing = await prisma.recurringPayment.findFirst({
     where: { id, userId: session.user.id },
     select: { id: true, categoryId: true },
   })
-  if (!existing) return { error: 'Item não encontrado' }
+  if (!existing) return { error: tServer('itemNotFound') }
 
   await prisma.$transaction(async (db) => {
     await db.recurringPayment.delete({

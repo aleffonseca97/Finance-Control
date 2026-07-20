@@ -58,7 +58,7 @@ export default function LandingNav() {
         </div>
 
         <div className="flex items-center gap-2">
-          <LocaleSwitcherButtons className="hidden sm:flex" />
+          <LocaleSwitcherButtons className="hidden sm:block" />
           <Button variant="ghost" size="sm" asChild className="hidden sm:inline-flex">
             <Link href="/login">{t('signIn')}</Link>
           </Button>
@@ -96,9 +96,11 @@ export default function LandingNav() {
 
       <div
         className={cn(
-          'md:hidden overflow-hidden transition-all duration-200 ease-in-out border-t border-zinc-200 dark:border-zinc-800',
+          'md:hidden transition-all duration-200 ease-in-out border-t border-zinc-200 dark:border-zinc-800',
           'bg-white/95 dark:bg-zinc-950/95 backdrop-blur-md',
-          mobileOpen ? 'max-h-72' : 'max-h-0 border-transparent'
+          mobileOpen
+            ? 'max-h-96 overflow-visible'
+            : 'max-h-0 overflow-hidden border-transparent'
         )}
       >
         <div className="px-4 py-4 space-y-1">
@@ -113,7 +115,7 @@ export default function LandingNav() {
             </a>
           ))}
           <div className="pt-2 border-t border-zinc-100 dark:border-zinc-800 space-y-2">
-            <LocaleSwitcherButtons className="justify-start" />
+            <LocaleSwitcherButtons />
             <Link
               href="/login"
               onClick={() => setMobileOpen(false)}

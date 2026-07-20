@@ -41,19 +41,23 @@ export default async function PagamentosRecorrentesPage({
         description={t('description')}
       />
 
-      <Card className="dashboard-bento-card-hero sticky top-24 z-20 h-fit">
-        <CardContent className="flex flex-col gap-4 py-4 sm:py-5">
-          <div>
-            <p className="dashboard-section-label text-primary/80">{tShared('editingMonth')}</p>
-            <p className="text-lg font-semibold">
-              {tShared('monthYear', { month: monthTitle, year })}
-            </p>
-          </div>
-          <div className="w-full min-w-0">
-            <MonthStepper />
-          </div>
-        </CardContent>
-      </Card>
+      <div className="top-[calc(4.75rem+env(safe-area-inset-top,0px))] z-20 lg:top-6">
+        <Card className="dashboard-bento-card-hero border-border/80 bg-card/95 shadow-md backdrop-blur-md supports-[backdrop-filter]:bg-card/90">
+          <CardContent className="flex flex-col gap-4 py-4 sm:py-5">
+            <div>
+              <p className="dashboard-section-label text-primary/80">
+                {tShared('editingMonth')}
+              </p>
+              <p className="text-lg font-semibold">
+                {tShared('monthYear', { month: monthTitle, year })}
+              </p>
+            </div>
+            <div className="w-full min-w-0">
+              <MonthStepper />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
       <RecurringPaymentsContent
         month={month}

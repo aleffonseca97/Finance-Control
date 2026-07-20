@@ -127,6 +127,9 @@
   html {
     -webkit-text-size-adjust: 100%;
     text-size-adjust: 100%;
+  }
+  /* Clip horizontal overflow outside the dashboard so sticky controls keep working. */
+  html:not(:has([data-dashboard-root])) {
     overflow-x: clip;
   }
   * {

@@ -19,7 +19,7 @@ import { Label } from '@/components/ui/label'
 import { Select } from '@/components/ui/select'
 import { DeleteConfirmButton } from '@/components/shared/delete-confirm-button'
 import { cn } from '@/lib/utils'
-import { Plus } from 'lucide-react'
+import { Check, Plus } from 'lucide-react'
 import { useLocale, useTranslations } from 'next-intl'
 import { compareLocale, formatCurrency, formatNumber } from '@/lib/i18n/format'
 import { useCurrency } from '@/components/currency-provider'
@@ -279,138 +279,218 @@ export function RecurringPaymentsContent({
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredRows.map((row) => (
-                      <tr
-                        key={row.id}
-                        className="border-b border-border/60 last:border-0"
-                      >
-                        <td className="px-4 py-3 font-medium sm:px-0">
-                          {localizeStoredLabel(row.categoryName, locale)}
-                        </td>
-                        <td className="px-4 py-3 text-muted-foreground">
-                          {localizeStoredLabel(row.categoryGroup, locale) || '—'}
-                        </td>
-                        <td className="px-4 py-3 text-right font-semibold tabular-nums text-red-600 dark:text-red-400">
-                          {formatCurrency(row.amount, locale, currency)}
-                          {row.amountType === 'percentage' && (
-                            <span className="ml-2 text-xs text-muted-foreground">
-                              ({formatNumber(row.percentage ?? 0, locale)}%)
-                            </span>
+                    {filteredRows.map((row) => {
+                      const paid = displayPaid(row)
+                      return (
+                        <tr
+                          key={row.id}
+                          className={cn(
+                            'border-b border-border/60 last:border-0 transition-colors duration-200',
+                            paid &&
+                              'bg-emerald-500/[0.07] dark:bg-emerald-500/10',
                           )}
-                        </td>
-                        <td className="px-4 py-3 text-center">
-                          <label className="inline-flex cursor-pointer items-center justify-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={displayPaid(row)}
-                              disabled={displayPaid(row) || isPending}
-                              onChange={(e) =>
-                                handlePaidChange(
-                                  row.id,
-                                  e.target.checked,
-                                  displayPaid(row),
-                                )
-                              }
-                              className="h-4 w-4 rounded border-input accent-primary"
-                              aria-label={t('markPaid', {
-                                name: localizeStoredLabel(row.categoryName, locale),
-                              })}
-                            />
-                          </label>
-                        </td>
-                        <td className="px-2 py-3 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              className="h-8 px-2 text-xs"
-                              onClick={() => {
-                                setEditError('')
-                                setEditAmountType(row.amountType)
-                                setEditingRow(row)
-                              }}
+                        >
+                          <td
+                            className={cn(
+                              'px-4 py-3 font-medium sm:px-0',
+                              paid && 'text-muted-foreground',
+                            )}
+                          >
+                            <span className="inline-flex items-center gap-2">
+                              {paid && (
+                                <span
+                                  className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                                  aria-hidden
+                                >
+                                  <Check className="h-3 w-3" strokeWidth={2.5} />
+                                </span>
+                              )}
+                              {localizeStoredLabel(row.categoryName, locale)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 text-muted-foreground">
+                            {localizeStoredLabel(row.categoryGroup, locale) || '—'}
+                          </td>
+                          <td
+                            className={cn(
+                              'px-4 py-3 text-right font-semibold tabular-nums',
+                              paid
+                                ? 'text-emerald-700 line-through decoration-emerald-700/40 dark:text-emerald-400 dark:decoration-emerald-400/40'
+                                : 'text-red-600 dark:text-red-400',
+                            )}
+                          >
+                            {formatCurrency(row.amount, locale, currency)}
+                            {row.amountType === 'percentage' && (
+                              <span className="ml-2 text-xs font-normal text-muted-foreground no-underline">
+                                ({formatNumber(row.percentage ?? 0, locale)}%)
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 text-center">
+                            <label
+                              className={cn(
+                                'inline-flex cursor-pointer items-center justify-center gap-2 rounded-md px-2 py-1.5 transition-colors',
+                                paid
+                                  ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
+                                  : 'hover:bg-muted/60',
+                                (paid || isPending) && 'cursor-default',
+                              )}
                             >
-                              {tForms('buttons.edit')}
-                            </Button>
-                            <DeleteConfirmButton
-                              confirmMessage={t('deleteConfirm')}
-                              onDelete={() => handleDelete(row.id)}
-                              ariaLabel={t('deleteAria', {
-                                name: localizeStoredLabel(row.categoryName, locale),
-                              })}
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                              <input
+                                type="checkbox"
+                                checked={paid}
+                                disabled={paid || isPending}
+                                onChange={(e) =>
+                                  handlePaidChange(row.id, e.target.checked, paid)
+                                }
+                                className="h-4 w-4 rounded border-input accent-emerald-600"
+                                aria-label={t('markPaid', {
+                                  name: localizeStoredLabel(row.categoryName, locale),
+                                })}
+                              />
+                              <span
+                                className={cn(
+                                  'text-xs font-medium',
+                                  paid ? 'text-emerald-800 dark:text-emerald-300' : 'sr-only',
+                                )}
+                              >
+                                {t('paid')}
+                              </span>
+                            </label>
+                          </td>
+                          <td className="px-2 py-3 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                className="h-8 px-2 text-xs"
+                                onClick={() => {
+                                  setEditError('')
+                                  setEditAmountType(row.amountType)
+                                  setEditingRow(row)
+                                }}
+                              >
+                                {tForms('buttons.edit')}
+                              </Button>
+                              <DeleteConfirmButton
+                                confirmMessage={t('deleteConfirm')}
+                                onDelete={() => handleDelete(row.id)}
+                                ariaLabel={t('deleteAria', {
+                                  name: localizeStoredLabel(row.categoryName, locale),
+                                })}
+                              />
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
 
               <ul className="divide-y divide-border/60 md:hidden">
-                {filteredRows.map((row) => (
-                  <li key={row.id} className="px-4 py-4 sm:px-6">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <p className="font-medium leading-snug">
-                          {localizeStoredLabel(row.categoryName, locale)}
-                        </p>
-                        <p className="mt-0.5 text-xs text-muted-foreground">
-                          {localizeStoredLabel(row.categoryGroup, locale) ||
-                            t('noMainCategory')}
-                        </p>
-                        <p className="mt-2 text-lg font-semibold tabular-nums text-red-600 dark:text-red-400">
-                          {formatCurrency(row.amount, locale, currency)}
-                        </p>
-                        {row.amountType === 'percentage' && (
-                          <p className="text-xs text-muted-foreground">
-                            {formatNumber(row.percentage ?? 0, locale)}%
+                {filteredRows.map((row) => {
+                  const paid = displayPaid(row)
+                  return (
+                    <li
+                      key={row.id}
+                      className={cn(
+                        'px-4 py-4 transition-colors duration-200 sm:px-6',
+                        paid && 'bg-emerald-500/[0.07] dark:bg-emerald-500/10',
+                      )}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <p
+                            className={cn(
+                              'flex items-center gap-2 font-medium leading-snug',
+                              paid && 'text-muted-foreground',
+                            )}
+                          >
+                            {paid && (
+                              <span
+                                className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                                aria-hidden
+                              >
+                                <Check className="h-3 w-3" strokeWidth={2.5} />
+                              </span>
+                            )}
+                            {localizeStoredLabel(row.categoryName, locale)}
                           </p>
-                        )}
-                      </div>
-                      <div className="flex shrink-0 flex-col items-end gap-2">
-                        <label className="flex items-center gap-2 text-sm">
-                          <span className="text-muted-foreground">{t('paid')}</span>
-                          <input
-                            type="checkbox"
-                            checked={displayPaid(row)}
-                            disabled={displayPaid(row) || isPending}
-                            onChange={(e) =>
-                              handlePaidChange(
-                                row.id,
-                                e.target.checked,
-                                displayPaid(row),
-                              )
-                            }
-                            className="h-5 w-5 rounded border-input accent-primary"
-                            aria-label={t('markPaid', {
+                          <p className="mt-0.5 text-xs text-muted-foreground">
+                            {localizeStoredLabel(row.categoryGroup, locale) ||
+                              t('noMainCategory')}
+                          </p>
+                          <p
+                            className={cn(
+                              'mt-2 text-lg font-semibold tabular-nums',
+                              paid
+                                ? 'text-emerald-700 line-through decoration-emerald-700/40 dark:text-emerald-400 dark:decoration-emerald-400/40'
+                                : 'text-red-600 dark:text-red-400',
+                            )}
+                          >
+                            {formatCurrency(row.amount, locale, currency)}
+                          </p>
+                          {row.amountType === 'percentage' && (
+                            <p className="text-xs text-muted-foreground">
+                              {formatNumber(row.percentage ?? 0, locale)}%
+                            </p>
+                          )}
+                          {paid && (
+                            <p className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2 py-1 text-xs font-medium text-emerald-800 dark:text-emerald-300">
+                              <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden />
+                              {t('paid')}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex shrink-0 flex-col items-end gap-2">
+                          <label
+                            className={cn(
+                              'flex items-center gap-2 rounded-md px-2 py-1.5 text-sm transition-colors',
+                              paid
+                                ? 'bg-emerald-500/10 text-emerald-800 dark:text-emerald-300'
+                                : 'text-muted-foreground',
+                              (paid || isPending) && 'cursor-default',
+                            )}
+                          >
+                            <span className="font-medium">{t('paid')}</span>
+                            <input
+                              type="checkbox"
+                              checked={paid}
+                              disabled={paid || isPending}
+                              onChange={(e) =>
+                                handlePaidChange(row.id, e.target.checked, paid)
+                              }
+                              className="h-5 w-5 rounded border-input accent-emerald-600"
+                              aria-label={t('markPaid', {
+                                name: localizeStoredLabel(row.categoryName, locale),
+                              })}
+                            />
+                          </label>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            className="h-8 px-2 text-xs"
+                            onClick={() => {
+                              setEditError('')
+                              setEditAmountType(row.amountType)
+                              setEditingRow(row)
+                            }}
+                          >
+                            {tForms('buttons.edit')}
+                          </Button>
+                          <DeleteConfirmButton
+                            confirmMessage={t('deleteConfirmShort')}
+                            onDelete={() => handleDelete(row.id)}
+                            ariaLabel={t('deleteAria', {
                               name: localizeStoredLabel(row.categoryName, locale),
                             })}
                           />
-                        </label>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="h-8 px-2 text-xs"
-                          onClick={() => {
-                            setEditError('')
-                            setEditAmountType(row.amountType)
-                            setEditingRow(row)
-                          }}
-                        >
-                          {tForms('buttons.edit')}
-                        </Button>
-                        <DeleteConfirmButton
-                          confirmMessage={t('deleteConfirmShort')}
-                          onDelete={() => handleDelete(row.id)}
-                          ariaLabel={t('deleteAria', {
-                            name: localizeStoredLabel(row.categoryName, locale),
-                          })}
-                        />
+                        </div>
                       </div>
-                    </div>
-                  </li>
-                ))}
+                    </li>
+                  )
+                })}
               </ul>
             </>
           )}

@@ -29,7 +29,6 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { LocaleSwitcher } from '@/components/locale-switcher';
 import { useState, useEffect, useCallback } from 'react';
 import { signOut } from 'next-auth/react';
 
@@ -249,7 +248,6 @@ export function Sidebar() {
             />
           </Link>
         </div>
-        <LocaleSwitcher />
       </header>
 
       {open && (
@@ -483,9 +481,6 @@ export function Sidebar() {
             effectiveCollapsed && 'lg:px-2',
           )}
         >
-          <div className={cn('mb-3', effectiveCollapsed && 'lg:hidden')}>
-            <LocaleSwitcher className="w-full" />
-          </div>
           <Button
             variant="outline"
             className={cn(

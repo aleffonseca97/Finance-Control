@@ -144,6 +144,7 @@ export const INSTALLMENT_PLAN_KINDS = [
   'FINANCING_HOME',
   'LOAN',
   'GENERAL',
+  'CREDIT_CARD',
 ] as const
 
 export type InstallmentPlanKind = (typeof INSTALLMENT_PLAN_KINDS)[number]
@@ -157,6 +158,10 @@ export const installmentPlanUpsertSchema = z
     totalInstallments: z.coerce.number().int().min(1, 'Informe o total de parcelas'),
     paidInstallments: z.coerce.number().int().min(0).default(0),
     firstInstallmentDate: z.string().min(1, 'Data da primeira parcela é obrigatória'),
+    creditCardId: z.preprocess(
+      (v) => (v == null || v === '' ? undefined : String(v)),
+      z.string().min(1).optional(),
+    ),
     notes: z.preprocess(
       (v) => (v == null || v === '' ? undefined : String(v).trim() || undefined),
       z.string().max(2000).optional(),
@@ -168,6 +173,13 @@ export const installmentPlanUpsertSchema = z
         code: z.ZodIssueCode.custom,
         message: 'Parcelas pagas não podem exceder o total contratado',
         path: ['paidInstallments'],
+      })
+    }
+    if (data.kind === 'CREDIT_CARD' && !data.creditCardId) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Selecione o cartão de crédito',
+        path: ['creditCardId'],
       })
     }
   })

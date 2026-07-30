@@ -1,11 +1,9 @@
 'use server'
 
-import { getLocale } from 'next-intl/server'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { ensureGlobalCategories } from '@/app/actions/categories'
-import { budgetExpenseWhere } from '@/lib/budget-expense'
 import { revalidateLocalePaths } from '@/lib/i18n/revalidate'
 import {
   getErrorTranslations,
@@ -13,24 +11,11 @@ import {
   getValidationTranslations,
 } from '@/lib/i18n/validation'
 import {
-  serializeOverdueNotices,
-  type CreditCardOverdueNotice,
-} from '@/lib/credit-card-overdue'
-import { formatCurrency, formatDate } from '@/lib/i18n/format'
-import { getCurrentCurrency } from '@/lib/i18n/get-currency'
-import type { AppLocale } from '@/i18n/routing'
-import {
-  allocatePaymentsFifo,
-  billingCycleForClosingEnd,
-  dateOnlyInRange,
-  isDueDatePassed,
-  listClosingEndsOnOrBefore,
-  normalizePeriodEndKey,
-  roundMoney,
-  startOfDay,
-} from '@/lib/credit-card-billing'
-
-export type { CreditCardOverdueNotice, SerializedCreditCardOverdue } from '@/lib/credit-card-overdue'
+  countRemainingDueInYear,
+  monthlyTotalsRemainingInYear,
+  remainingAmountInYear,
+} from '@/lib/installment-schedule'
+import { roundMoney } from '@/lib/credit-card-billing'
 
 function buildCreditCardSchema(
   t: Awaited<ReturnType<typeof getValidationTranslations>>,
@@ -45,167 +30,129 @@ function buildCreditCardSchema(
   })
 }
 
-function buildPaySchema(
-  t: Awaited<ReturnType<typeof getValidationTranslations>>,
-) {
-  return z.object({
-    creditCardId: z.string().min(1),
-    amount: z.coerce.number().positive(t('amountPositive')),
-    date: z.string().min(1, t('dateRequired')),
-  })
+export type CreditCardWithMonthUsage = {
+  id: string
+  userId: string
+  name: string
+  lastFour: string | null
+  limit: number
+  totalLimit: number
+  closingDay: number
+  dueDay: number
+  color: string | null
+  monthSpent: number
+  usagePct: number
 }
 
-const CREDIT_CARD_PATHS = [
-  '/dashboard/cartao-credito',
-  '/dashboard/saidas',
-  '/dashboard',
-  '/dashboard/analise',
-]
-
-export async function getAvailableCashForMonth(
-  userId: string,
-  month: number,
-  year: number,
-) {
-  const start = new Date(year, month, 1)
-  const end = new Date(year, month + 1, 0)
-  const [inc, cashExp, inv] = await Promise.all([
-    prisma.transaction.aggregate({
-      where: { userId, type: 'income', date: { gte: start, lte: end } },
-      _sum: { amount: true },
-    }),
-    prisma.transaction.aggregate({
-      where: {
-        userId,
-        date: { gte: start, lte: end },
-        ...budgetExpenseWhere,
-      },
-      _sum: { amount: true },
-    }),
-    prisma.investment.aggregate({
-      where: { userId, date: { gte: start, lte: end }, affectsCash: true },
-      _sum: { amount: true },
-    }),
-  ])
-  const income = inc._sum.amount ?? 0
-  const cashExpense = cashExp._sum.amount ?? 0
-  const investment = inv._sum.amount ?? 0
-  return roundMoney(income - investment - cashExpense)
+export type CreditCardInstallmentRow = {
+  id: string
+  creditCardId: string
+  creditCardName: string
+  creditCardLastFour: string | null
+  creditCardColor: string | null
+  name: string
+  monthlyAmount: number
+  totalInstallments: number
+  paidInstallments: number
+  firstInstallmentDate: string
+  notes: string | null
+  remainingInstallments: number
+  remainingAmount: number
+  remainingDueInYear: number
+  remainingAmountInYear: number
 }
 
-type ChargeRecord = { amount: number; date: Date; creditCardId: string | null }
-type PaymentRecord = { amount: number; date: Date; paysCreditCardId: string | null }
-type CardWithBilling = { id: string; name: string; closingDay: number; dueDay: number; lastFour: string | null; color: string | null }
-
-function buildCyclesForCard(
-  card: CardWithBilling,
-  charges: ChargeRecord[],
-  payments: PaymentRecord[],
-  today: Date,
-) {
-  const cardCharges = charges.filter((c) => c.creditCardId === card.id)
-  const cardPayments = payments
-    .filter((p) => p.paysCreditCardId === card.id)
-    .map((p) => ({ date: p.date, amount: p.amount }))
-
-  const closingEnds = listClosingEndsOnOrBefore(today, card.closingDay, 48)
-  const cyclesData = closingEnds.map((closingEnd) => {
-    const cycle = billingCycleForClosingEnd(closingEnd, card.closingDay, card.dueDay)
-    const invoice = roundMoney(
-      cardCharges
-        .filter((t) => dateOnlyInRange(t.date, cycle.periodStart, cycle.periodEnd))
-        .reduce((s, t) => s + t.amount, 0),
-    )
-    return { ...cycle, closingEnd, invoice }
-  })
-
-  const allocMap = allocatePaymentsFifo(
-    cyclesData.map((x) => ({ periodEnd: x.periodEnd, invoice: x.invoice })),
-    cardPayments,
-  )
-
-  return { cyclesData, allocMap }
+export type CreditCardPagePayload = {
+  cards: CreditCardWithMonthUsage[]
+  month: number
+  year: number
+  monthSpentTotal: number
+  totalLimitSum: number
+  activeMonthlyCommitment: number
+  totalRemainingInYear: number
+  installmentPlans: CreditCardInstallmentRow[]
+  creditCardCategorySpending: { name: string; value: number; color: string | null }[]
 }
 
-async function fetchChargesAndPayments(userId: string) {
-  return Promise.all([
-    prisma.transaction.findMany({
-      where: { userId, type: 'expense', creditCardId: { not: null } },
-      select: { amount: true, date: true, creditCardId: true },
-    }),
-    prisma.transaction.findMany({
-      where: { userId, type: 'expense', paysCreditCardId: { not: null } },
-      select: { amount: true, date: true, paysCreditCardId: true },
-    }),
-  ])
-}
-
-export async function getCreditCardOverdueNotices(
-  userId: string,
-): Promise<CreditCardOverdueNotice[]> {
-  const locale = (await getLocale()) as AppLocale
-  const today = new Date()
-  const cards = await prisma.creditCard.findMany({ where: { userId } })
-  if (cards.length === 0) return []
-
-  const [charges, payments] = await fetchChargesAndPayments(userId)
-  const notices: CreditCardOverdueNotice[] = []
-
-  for (const card of cards) {
-    const { cyclesData, allocMap } = buildCyclesForCard(card, charges, payments, today)
-
-    for (const c of cyclesData) {
-      const unpaid = roundMoney(c.invoice - (allocMap.get(startOfDay(c.periodEnd).getTime()) ?? 0))
-      if (unpaid <= 1e-6) continue
-      if (!isDueDatePassed(c.dueDate, today)) continue
-
-      notices.push({
-        cardId: card.id,
-        cardName: card.name,
-        lastFour: card.lastFour,
-        color: card.color,
-        unpaid,
-        dueDate: c.dueDate,
-        closingLabel: formatDate(normalizePeriodEndKey(c.periodEnd), locale),
-      })
-    }
-  }
-
-  return notices
-}
-
-export async function getCreditCardPagePayload() {
+export async function getCreditCardPagePayload(): Promise<CreditCardPagePayload | null> {
   const session = await auth()
   if (!session?.user?.id) return null
 
   await ensureGlobalCategories()
 
   const now = new Date()
-  const [cards, availableCash, overdueRaw, creditCardCategorySpendingRaw] = await Promise.all([
-    prisma.creditCard.findMany({
-      where: { userId: session.user.id },
-      orderBy: { name: 'asc' },
-    }),
-    getAvailableCashForMonth(session.user.id, now.getMonth(), now.getFullYear()),
-    getCreditCardOverdueNotices(session.user.id),
-    prisma.transaction.findMany({
-      where: {
-        userId: session.user.id,
-        type: 'expense',
-        creditCardId: { not: null },
-      },
-      select: {
-        amount: true,
-        category: {
-          select: {
-            group: true,
-            name: true,
-            color: true,
+  const month = now.getMonth()
+  const year = now.getFullYear()
+  const startOfMonth = new Date(year, month, 1)
+  const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999)
+
+  const [cardsRaw, monthCharges, creditCardCategorySpendingRaw, installmentRaw] =
+    await Promise.all([
+      prisma.creditCard.findMany({
+        where: { userId: session.user.id },
+        orderBy: { name: 'asc' },
+      }),
+      prisma.transaction.groupBy({
+        by: ['creditCardId'],
+        where: {
+          userId: session.user.id,
+          type: 'expense',
+          creditCardId: { not: null },
+          date: { gte: startOfMonth, lte: endOfMonth },
+        },
+        _sum: { amount: true },
+      }),
+      prisma.transaction.findMany({
+        where: {
+          userId: session.user.id,
+          type: 'expense',
+          creditCardId: { not: null },
+          date: { gte: startOfMonth, lte: endOfMonth },
+        },
+        select: {
+          amount: true,
+          category: {
+            select: {
+              group: true,
+              name: true,
+              color: true,
+            },
           },
         },
-      },
-    }),
-  ])
+      }),
+      prisma.installmentPlan.findMany({
+        where: {
+          userId: session.user.id,
+          creditCardId: { not: null },
+          kind: 'CREDIT_CARD',
+        },
+        include: {
+          creditCard: {
+            select: { id: true, name: true, lastFour: true, color: true },
+          },
+        },
+        orderBy: { createdAt: 'desc' },
+      }),
+    ])
+
+  const spentByCard = new Map<string, number>()
+  for (const row of monthCharges) {
+    if (row.creditCardId) {
+      spentByCard.set(row.creditCardId, roundMoney(row._sum.amount ?? 0))
+    }
+  }
+
+  const cards: CreditCardWithMonthUsage[] = cardsRaw.map((card) => {
+    const monthSpent = spentByCard.get(card.id) ?? 0
+    const totalLimit = card.totalLimit
+    const usagePct =
+      totalLimit > 0 ? Math.min(100, (monthSpent / totalLimit) * 100) : 0
+    return {
+      ...card,
+      monthSpent,
+      usagePct,
+    }
+  })
 
   const groupedMap = new Map<string, { value: number; color: string | null }>()
   for (const transaction of creditCardCategorySpendingRaw) {
@@ -225,14 +172,70 @@ export async function getCreditCardPagePayload() {
     }))
     .sort((a, b) => b.value - a.value)
 
-  const locale = (await getLocale()) as AppLocale
+  const installmentPlans: CreditCardInstallmentRow[] = installmentRaw
+    .filter((p) => p.creditCardId && p.creditCard)
+    .map((p) => {
+      const remainingInstallments = Math.max(0, p.totalInstallments - p.paidInstallments)
+      return {
+        id: p.id,
+        creditCardId: p.creditCardId!,
+        creditCardName: p.creditCard!.name,
+        creditCardLastFour: p.creditCard!.lastFour,
+        creditCardColor: p.creditCard!.color,
+        name: p.name,
+        monthlyAmount: p.monthlyAmount,
+        totalInstallments: p.totalInstallments,
+        paidInstallments: p.paidInstallments,
+        firstInstallmentDate: p.firstInstallmentDate.toISOString().slice(0, 10),
+        notes: p.notes,
+        remainingInstallments,
+        remainingAmount: roundMoney(remainingInstallments * p.monthlyAmount),
+        remainingDueInYear: countRemainingDueInYear(
+          p.firstInstallmentDate,
+          p.totalInstallments,
+          p.paidInstallments,
+          year,
+        ),
+        remainingAmountInYear: remainingAmountInYear(
+          p.monthlyAmount,
+          p.firstInstallmentDate,
+          p.totalInstallments,
+          p.paidInstallments,
+          year,
+        ),
+      }
+    })
+
+  const activeMonthlyCommitment = roundMoney(
+    installmentPlans
+      .filter((p) => p.remainingInstallments > 0)
+      .reduce((s, p) => s + p.monthlyAmount, 0),
+  )
+
+  const totalRemainingInYear = roundMoney(
+    monthlyTotalsRemainingInYear(
+      installmentRaw.map((p) => ({
+        monthlyAmount: p.monthlyAmount,
+        firstInstallmentDate: p.firstInstallmentDate,
+        totalInstallments: p.totalInstallments,
+        paidInstallments: p.paidInstallments,
+      })),
+      year,
+    ).reduce((a, b) => a + b, 0),
+  )
+
+  const monthSpentTotal = roundMoney(cards.reduce((s, c) => s + c.monthSpent, 0))
+  const totalLimitSum = roundMoney(cards.reduce((s, c) => s + c.totalLimit, 0))
 
   return {
     cards,
-    availableCash,
-    month: now.getMonth(),
-    year: now.getFullYear(),
-    overdueNotices: serializeOverdueNotices(overdueRaw, locale),
+    month,
+    year,
+    monthSpentTotal,
+    totalLimitSum,
+    activeMonthlyCommitment,
+    totalRemainingInYear,
+    installmentPlans,
     creditCardCategorySpending,
   }
 }
@@ -261,7 +264,10 @@ export async function createCreditCard(formData: FormData) {
     totalLimit: formData.get('totalLimit'),
     closingDay: formData.get('closingDay'),
     dueDay: formData.get('dueDay'),
-    lastFour: lastFour && String(lastFour).trim() ? String(lastFour).replace(/\D/g, '').slice(-4) : null,
+    lastFour:
+      lastFour && String(lastFour).trim()
+        ? String(lastFour).replace(/\D/g, '').slice(-4)
+        : null,
     color: formData.get('color') || '#6366f1',
   })
 
@@ -283,7 +289,7 @@ export async function createCreditCard(formData: FormData) {
     },
   })
 
-  await revalidateLocalePaths(['/dashboard/cartao-credito'])
+  await revalidateLocalePaths(['/dashboard/cartao-credito', '/dashboard'])
   return { success: true }
 }
 
@@ -302,7 +308,10 @@ export async function updateCreditCard(id: string, formData: FormData) {
     totalLimit: formData.get('totalLimit'),
     closingDay: formData.get('closingDay'),
     dueDay: formData.get('dueDay'),
-    lastFour: lastFour && String(lastFour).trim() ? String(lastFour).replace(/\D/g, '').slice(-4) : null,
+    lastFour:
+      lastFour && String(lastFour).trim()
+        ? String(lastFour).replace(/\D/g, '').slice(-4)
+        : null,
     color: formData.get('color') || '#6366f1',
   })
 
@@ -317,18 +326,13 @@ export async function updateCreditCard(id: string, formData: FormData) {
   if (!existing) return { error: tServer('cardNotFound') }
 
   const newTotal = parsed.data.totalLimit
-  const delta = newTotal - existing.totalLimit
-  const newAvail = Math.min(
-    Math.max(0, roundMoney(existing.limit + delta)),
-    newTotal,
-  )
 
   await prisma.creditCard.update({
     where: { id },
     data: {
       name: parsed.data.name,
       totalLimit: newTotal,
-      limit: newAvail,
+      limit: newTotal,
       closingDay: parsed.data.closingDay,
       dueDay: parsed.data.dueDay,
       lastFour: parsed.data.lastFour,
@@ -336,108 +340,7 @@ export async function updateCreditCard(id: string, formData: FormData) {
     },
   })
 
-  await revalidateLocalePaths(['/dashboard/cartao-credito'])
-  return { success: true }
-}
-
-export async function payCreditCardFromBalance(formData: FormData) {
-  const session = await auth()
-  const t = await getErrorTranslations()
-  const tServer = await getServerErrorTranslations()
-  const tValidation = await getValidationTranslations()
-  const paySchema = buildPaySchema(tValidation)
-
-  if (!session?.user?.id) return { error: t('unauthorized') }
-
-  const parsed = paySchema.safeParse({
-    creditCardId: formData.get('creditCardId'),
-    amount: formData.get('amount'),
-    date: formData.get('date'),
-  })
-
-  if (!parsed.success) {
-    return { error: parsed.error.errors[0].message }
-  }
-
-  const card = await prisma.creditCard.findFirst({
-    where: { id: parsed.data.creditCardId, userId: session.user.id },
-  })
-  if (!card) return { error: tServer('cardNotFound') }
-
-  const locale = (await getLocale()) as AppLocale
-  const currency = await getCurrentCurrency()
-
-  const used = roundMoney(card.totalLimit - card.limit)
-  const amount = roundMoney(parsed.data.amount)
-  if (used <= 1e-6) return { error: tServer('noInvoiceToPay') }
-  if (amount > used + 1e-6) {
-    return {
-      error: tServer('maxPayment', {
-        amount: formatCurrency(used, locale, currency),
-      }),
-    }
-  }
-
-  const payDate = new Date(parsed.data.date)
-  const cashAvail = await getAvailableCashForMonth(
-    session.user.id,
-    payDate.getMonth(),
-    payDate.getFullYear(),
-  )
-  if (amount > cashAvail + 1e-6) {
-    return {
-      error: tServer('insufficientCash', {
-        amount: formatCurrency(cashAvail, locale, currency),
-      }),
-    }
-  }
-
-  // 1. Tenta encontrar a categoria "Cartão de crédito"
-  let category = await prisma.category.findFirst({
-    where: {
-      type: 'expense',
-      isFixed: false,
-      name: 'Fatura cartao de credito',
-      OR: [{ userId: null, isCustom: false }, { userId: session.user.id, isCustom: true }],
-    },
-  })
-  // 2. Fallback: primeira categoria variável (comportamento atual)
-  if (!category) {
-    category = await prisma.category.findFirst({
-      where: {
-        type: 'expense',
-        isFixed: false,
-        OR: [{ userId: null, isCustom: false }, { userId: session.user.id, isCustom: true }],
-      },
-      orderBy: { name: 'asc' },
-    })
-  }
-  if (!category) {
-    return { error: tServer('variableCategoryRequired') }
-  }
-
-  const newLimit = Math.min(card.totalLimit, roundMoney(card.limit + amount))
-  const invoiceDescription = tServer('invoicePayment', { cardName: card.name })
-
-  await prisma.$transaction(async (tx) => {
-    await tx.transaction.create({
-      data: {
-        userId: session.user.id,
-        categoryId: category.id,
-        amount,
-        description: invoiceDescription,
-        date: payDate,
-        type: 'expense',
-        paysCreditCardId: card.id,
-      },
-    })
-    await tx.creditCard.update({
-      where: { id: card.id },
-      data: { limit: newLimit },
-    })
-  })
-
-  await revalidateLocalePaths(CREDIT_CARD_PATHS)
+  await revalidateLocalePaths(['/dashboard/cartao-credito', '/dashboard'])
   return { success: true }
 }
 
@@ -456,6 +359,6 @@ export async function deleteCreditCard(id: string) {
 
   await prisma.creditCard.delete({ where: { id } })
 
-  await revalidateLocalePaths(['/dashboard/cartao-credito'])
+  await revalidateLocalePaths(['/dashboard/cartao-credito', '/dashboard'])
   return { success: true }
 }

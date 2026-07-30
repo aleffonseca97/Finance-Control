@@ -5,11 +5,19 @@ import { useFormStatus } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import type { CreditCard } from '@prisma/client'
 import { useTranslations } from 'next-intl'
 
 interface CreditCardFormProps {
-  initialCard?: CreditCard | null
+  initialCard?: {
+    id: string
+    name: string
+    lastFour: string | null
+    limit: number
+    totalLimit: number
+    closingDay: number
+    dueDay: number
+    color: string | null
+  } | null
   createAction: (formData: FormData) => Promise<{ error?: string; success?: boolean }>
   updateAction: (id: string, formData: FormData) => Promise<{ error?: string; success?: boolean }>
   onCancel?: () => void

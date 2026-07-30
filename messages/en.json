@@ -188,7 +188,7 @@
       "trialEnd": "Trial end",
       "nextRenewal": "Next renewal",
       "price": "Price",
-      "priceValue": "R$10.00 / month",
+      "priceValue": "$5.00 / month",
       "cancelAtPeriodEnd": "Your subscription is set to cancel at the end of the current period.",
       "noSubscription": "No subscription found. Activate your plan to keep full access.",
       "manage": "Manage subscription",
@@ -221,8 +221,8 @@
       "activity": "Activity",
       "trends": "Trends",
       "balance": "Monthly balance",
-      "creditLimit": "Available limit (cards)",
-      "creditLimitFootnote": "Total limit: {amount}",
+      "creditLimit": "Card spend (month)",
+      "creditLimitFootnote": "Contracted limit: {amount}",
       "incomes": "Income",
       "expenses": "Expenses",
       "investments": "Investments",
@@ -311,31 +311,72 @@
     },
     "creditCard": {
       "title": "Credit Card",
-      "description": "Purchases do not affect cash budget; paying the bill records an expense and restores the limit",
-      "cardsAndPayments": "Cards and payments",
+      "description": "Register cards, track monthly usage, and plan installment purchases",
+      "cardsSection": "My cards",
+      "cardsAndPayments": "Cards",
+      "installmentsSection": "Card installments",
       "spendingByCategory": "Card spending by main category",
-      "overdueTitle": "Overdue credit card bill",
-      "overdueItem": "{cardName}{lastFour}: {amount} (due {dueDate}, closing {closingDate})",
       "deleteConfirm": "Delete this card?",
       "myCards": "My cards",
       "newCard": "New card",
-      "overdueBanner": "There are overdue bill(s) with an open balance.",
-      "helpText": "Card purchases reduce the available limit and do not affect cash budget until you pay the bill on the card tab.",
+      "helpText": "Card purchases (in Expenses) stay outside the cash budget. The bar shows this month's spend versus the contracted limit.",
       "empty": "No cards registered. Add a card to get started.",
-      "total": "Total",
+      "total": "Limit",
       "available": "Avail.",
+      "monthSpend": "Month spend",
+      "usageOfLimit": "{pct}% of limit this month",
       "closing": "Close",
       "due": "Due",
-      "pay": "Pay",
-      "openBalance": "open (due {dueDate}, closing {closingDate})",
-      "registering": "Processing...",
-      "confirmPayment": "Confirm payment",
-      "noInvoice": "There is no bill to pay on this card.",
-      "availableCash": "Available cash",
-      "maxPayment": "Max. payment",
       "cardNamePlaceholder": "E.g.: Nubank, Chase",
-      "limitHelp": "Total contracted limit at the bank (not the available amount)",
-      "payHelp": "Payment uses only the <cash>cash balance for the month</cash> (income minus budget expenses and investments), <expense>records an expense</expense> in that month, and <limit>restores the card limit</limit>."
+      "limitHelp": "Total contracted limit at the bank",
+      "summaryMonthSpend": "Month spend",
+      "summaryOfLimit": "Total limit: {amount}",
+      "summaryMonthlyCommitment": "Active installments / month",
+      "summaryActiveInstallments": "Sum of remaining installment amounts",
+      "summaryRemainingYear": "Remaining installments in {year}",
+      "summaryRemainingYearHint": "Estimated commitment through year end",
+      "installmentsTitle": "Installment purchases",
+      "installmentsHint": "Register long-term purchases and track installment progress (does not auto-create expenses).",
+      "installmentsNeedCard": "Add a card before creating installments.",
+      "installmentsEmpty": "No card installments yet. Add an installment purchase.",
+      "newInstallment": "New installment purchase",
+      "installmentCard": "Card",
+      "installmentNamePlaceholder": "E.g.: Laptop, Sofa",
+      "installmentAmount": "Installment amount",
+      "totalInstallments": "Total installments",
+      "paidInstallments": "Already paid",
+      "firstInstallmentDate": "First installment date",
+      "installmentNotesPlaceholder": "Notes (optional)",
+      "installmentDeleteConfirm": "Delete this installment plan?",
+      "progress": "Progress",
+      "progressCount": "{paid}/{total}",
+      "remaining": "Remaining",
+      "remainingInYear": "{count} installment(s) this year · {amount}"
+    },
+    "installmentsAnalysis": {
+      "title": "Installments",
+      "description": "Analysis of credit card installment purchases and their impact on the annual budget.",
+      "totalYear": "Projected total this year",
+      "totalYearHint": "Unpaid installments due in {year}.",
+      "peakMonth": "Peak month this year",
+      "peakMonthHint": "Highest sum of installments in a single month of {year}.",
+      "peakMonthIn": "In {month} — plan liquidity for that month.",
+      "monthlyCommitment": "Active monthly commitment",
+      "monthlyCommitmentHint": "Sum of installments still open.",
+      "monthlyDistribution": "Monthly distribution",
+      "monthlyDistributionHint": "Amounts still due, month by month.",
+      "byCard": "By card",
+      "byCardHint": "Monthly commitment and remaining this year, grouped by card.",
+      "activePlans": "{count, plural, one {# active purchase} other {# active purchases}}",
+      "plansTitle": "Installment purchases",
+      "plansHint": "Track progress. To add or edit, use Credit Card.",
+      "empty": "No installment purchases registered.",
+      "emptyCta": "Go to Credit Card",
+      "progressPaid": "{paid}/{total} paid",
+      "remainingCount": "{count, plural, =0 {No remaining installments this year} one {1 installment due} other {# installments due}}",
+      "inYear": "In {year}",
+      "firstInstallment": "1st installment on {date}",
+      "completed": "Completed"
     },
     "recurringPayments": {
       "title": "Recurring payments",
@@ -424,13 +465,13 @@
     },
     "subscription": {
       "activateTitle": "Activate your subscription",
-      "activateDescription": "After the trial, only R$10/month. No surprises.",
-      "afterTrial": "After the first 2 free months.",
-      "trialBadge": "2 months free",
+      "activateDescription": "After the trial, only $5/month. No surprises.",
+      "afterTrial": "After the first 30 free days.",
+      "trialBadge": "30 days free",
       "syncFailed": "Could not confirm subscription automatically. Configure the Stripe webhook or try opening the customer portal in settings.",
       "checkoutError": "Error starting checkout",
       "unexpectedError": "Unexpected error",
-      "startTrial": "Start 2 free months",
+      "startTrial": "Start 30 free days",
       "starting": "Starting..."
     },
     "trialBanner": {
@@ -483,11 +524,11 @@
       "balanceLabel": "balance",
       "investmentDefault": "Investment",
       "creditCardSpendingTitle": "Card spending",
-      "creditCardSpendingHint": "Card purchases this month (outside cash budget until you pay the bill)",
+      "creditCardSpendingHint": "Card purchases this month (outside cash budget)",
       "recentCreditCardSpending": "Recent spending",
       "noCreditCardSpending": "No card spending this month",
-      "cardsClosingHint": "Closing and due dates are reference in setup; overdue with open balance may trigger an alert",
-      "creditCardCategoriesHint": "Distribution of card purchases grouped by registered main categories",
+      "cardsClosingHint": "Closing and due dates are reference only on the card profile",
+      "creditCardCategoriesHint": "Distribution of this month's card purchases by main categories",
       "recurringPaymentsNote": "Recurring payments and fixed expenses share the same data. Changes here also update your fixed entries.",
       "recurringPaymentsEmpty": "No recurring bills registered. Use \"Add bill\" to include items that repeat every month.",
       "recurringPaymentsNoFilter": "No results for the selected filters.",
@@ -522,7 +563,7 @@
       "annualTableMobileDescription": "The Annual Table is available only on PC or tablet. Use a device with a larger screen to access this feature.",
       "subscriptionWait": "Please wait...",
       "subscriptionCancelAnytime": "Cancel anytime · No commitment",
-      "subscriptionPrice": "R$10",
+      "subscriptionPrice": "$5",
       "subscriptionPerMonth": "/month"
     }
   },
@@ -602,7 +643,8 @@
     "paymentMethod": {
       "label": "Payment method",
       "cash": "Cash (cash/PIX)",
-      "available": "available"
+      "available": "available",
+      "limit": "limit"
     },
     "investment": {
       "useCash": "Use cash balance",
@@ -721,7 +763,7 @@
   },
   "marketing": {
     "hero": {
-      "trialBadge": "2 months free — start today",
+      "trialBadge": "30 days free — start today",
       "headline1": "Take control",
       "headline2": "of your finances",
       "headline3": "personally.",
@@ -772,11 +814,11 @@
     "pricing": {
       "eyebrow": "Pricing",
       "title": "Simple and predictable.",
-      "trialBadge": "2 free months included",
-      "price": "R$10",
+      "trialBadge": "30 free days included",
+      "price": "$5",
       "perMonth": "/month",
-      "afterTrial": "After the first 2 months. No charge during the trial period.",
-      "cta": "Start 2 free months",
+      "afterTrial": "After the first 30 days. No charge during the trial period.",
+      "cta": "Start 30 free days",
       "trust": "Cancel anytime · No commitment · No setup fee",
       "features": [
         "Full financial dashboard",
@@ -796,12 +838,12 @@
       "subtitle": "Still have questions? Contact support by email.",
       "items": [
         {
-          "question": "What happens after the 2 free months?",
-          "answer": "After the trial, your subscription is automatically charged to the card on file at R$10/month. You will receive a reminder email before the trial ends."
+          "question": "What happens after the 30 free days?",
+          "answer": "After the trial, your subscription is automatically charged to the card on file at $5/month. You will receive a reminder email before the trial ends."
         },
         {
           "question": "Do I need to enter a credit card to start?",
-          "answer": "Yes, a card is required at signup to activate the trial. But there is no charge for the first 2 months. The first charge happens only after the free period ends."
+          "answer": "Yes, a card is required at signup to activate the trial. But there is no charge for the first 30 days. The first charge happens only after the free period ends."
         },
         {
           "question": "Can I cancel anytime?",
@@ -824,7 +866,7 @@
     "cta": {
       "title1": "Ready to organize",
       "title2": "your finances?",
-      "description": "Start with 2 months free. No hassle, no surprises.",
+      "description": "Start with 30 days free. No hassle, no surprises.",
       "button": "Create free account",
       "trust": "Cancel anytime · No commitment"
     },
@@ -838,11 +880,11 @@
     },
     "stats": {
       "trial": {
-        "value": "2 months",
+        "value": "30 days",
         "label": "free to try"
       },
       "price": {
-        "value": "R$10",
+        "value": "$5",
         "label": "per month after trial"
       },
       "loyalty": {

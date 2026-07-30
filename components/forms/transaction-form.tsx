@@ -19,6 +19,7 @@ interface CreditCard {
   name: string
   lastFour: string | null
   limit: number
+  totalLimit?: number
   color: string | null
 }
 
@@ -176,7 +177,7 @@ export function TransactionForm({
               {creditCards.map((card) => (
                 <option key={card.id} value={card.id}>
                   {card.name}
-                  {card.lastFour ? ` •••• ${card.lastFour}` : ''} ({formatCurrency(card.limit, locale, currency)} {t('paymentMethod.available')})
+                  {card.lastFour ? ` •••• ${card.lastFour}` : ''} ({formatCurrency(card.totalLimit ?? card.limit, locale, currency)} {t('paymentMethod.limit')})
                 </option>
               ))}
             </Select>

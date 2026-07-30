@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { getLocale, getTranslations } from 'next-intl/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
-import { SUBSCRIPTION_TRIAL_PERIOD_DAYS } from '@/lib/billing'
+import { getStripePriceIdForLocale, SUBSCRIPTION_TRIAL_PERIOD_DAYS } from '@/lib/billing'
 import { getStripe, absoluteUrl } from '@/lib/stripe'
 import { getUserLocale } from '@/app/actions/locale'
 import type { AppLocale } from '@/i18n/routing'
@@ -25,11 +25,6 @@ export async function POST() {
     return NextResponse.json({ error: t('unauthorized') }, { status: 401 })
   }
 
-  const priceId = process.env.STRIPE_PRICE_ID
-  if (!priceId) {
-    return NextResponse.json({ error: 'STRIPE_PRICE_ID não configurado' }, { status: 500 })
-  }
-
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
     select: { id: true, email: true, name: true, stripeCustomerId: true, subscription: true },
@@ -42,6 +37,14 @@ export async function POST() {
   const locale = await getUserLocale(session.user.id)
   const requestLocale = (await getLocale()) as AppLocale
   const activeLocale = locale || requestLocale
+
+  const priceId = getStripePriceIdForLocale(activeLocale)
+  if (!priceId) {
+    return NextResponse.json(
+      { error: 'Stripe Price ID não configurado para este idioma' },
+      { status: 500 },
+    )
+  }
 
   if (
     user.subscription &&
@@ -71,7 +74,6 @@ export async function POST() {
   const checkoutSession = await getStripe().checkout.sessions.create({
     customer: customerId,
     mode: 'subscription',
-    payment_method_types: ['card'],
     line_items: [{ price: priceId, quantity: 1 }],
     subscription_data: {
       trial_period_days: SUBSCRIPTION_TRIAL_PERIOD_DAYS,

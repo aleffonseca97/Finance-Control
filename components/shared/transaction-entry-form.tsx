@@ -14,6 +14,7 @@ type CreditCard = {
   name: string
   lastFour: string | null
   limit: number
+  totalLimit?: number
   color: string | null
 }
 

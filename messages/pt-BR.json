@@ -221,8 +221,8 @@
       "activity": "Atividade",
       "trends": "Tendências",
       "balance": "Saldo do Mês",
-      "creditLimit": "Limite disponível (cartões)",
-      "creditLimitFootnote": "Total contratado: {amount}",
+      "creditLimit": "Gasto no cartão (mês)",
+      "creditLimitFootnote": "Limite contratado: {amount}",
       "incomes": "Entradas",
       "expenses": "Saídas",
       "investments": "Investimentos",
@@ -311,31 +311,72 @@
     },
     "creditCard": {
       "title": "Cartão de Crédito",
-      "description": "Compras não entram no orçamento de caixa; o pagamento da fatura registra saída e restaura o limite",
-      "cardsAndPayments": "Cartões e pagamentos",
+      "description": "Cadastre cartões, acompanhe o uso do mês e planeje compras parceladas",
+      "cardsSection": "Meus cartões",
+      "cardsAndPayments": "Cartões",
+      "installmentsSection": "Parcelamentos no cartão",
       "spendingByCategory": "Gastos no cartão por categoria principal",
-      "overdueTitle": "Fatura do cartão em atraso",
-      "overdueItem": "{cardName}{lastFour}: {amount} (venc. {dueDate}, fech. {closingDate})",
       "deleteConfirm": "Excluir este cartão?",
       "myCards": "Meus cartões",
       "newCard": "Novo cartão",
-      "overdueBanner": "Há fatura(s) em atraso com saldo em aberto.",
-      "helpText": "Compras no cartão reduzem o limite disponível e não entram no orçamento de caixa até você pagar a fatura na aba do cartão.",
+      "helpText": "Compras no cartão (em Saídas) não entram no orçamento de caixa. A barra mostra o gasto do mês em relação ao limite contratado.",
       "empty": "Nenhum cartão cadastrado. Adicione um cartão para começar.",
-      "total": "Total",
+      "total": "Limite",
       "available": "Disp.",
+      "monthSpend": "Gasto no mês",
+      "usageOfLimit": "{pct}% do limite no mês",
       "closing": "Fech.",
       "due": "Venc.",
-      "pay": "Pagar",
-      "openBalance": "em aberto (venc. {dueDate}, fech. {closingDate})",
-      "registering": "Registrando...",
-      "confirmPayment": "Confirmar pagamento",
-      "noInvoice": "Não há fatura a pagar neste cartão.",
-      "availableCash": "Disponível em caixa",
-      "maxPayment": "Máx. a pagar",
       "cardNamePlaceholder": "Ex: Nubank, Itaú",
-      "limitHelp": "Limite total contratado no banco (não o disponível)",
-      "payHelp": "O pagamento usa apenas o <cash>saldo em caixa do mês</cash> (entradas menos despesas do orçamento e investimentos), <expense>registra uma saída</expense> nesse mês e <limit>restaura o limite</limit> do cartão."
+      "limitHelp": "Limite total contratado no banco",
+      "summaryMonthSpend": "Gasto no mês",
+      "summaryOfLimit": "Limite total: {amount}",
+      "summaryMonthlyCommitment": "Parcelas ativas / mês",
+      "summaryActiveInstallments": "Soma das parcelas ainda em aberto",
+      "summaryRemainingYear": "Parcelas restantes em {year}",
+      "summaryRemainingYearHint": "Compromisso estimado até o fim do ano",
+      "installmentsTitle": "Compras parceladas",
+      "installmentsHint": "Registre compras de longo prazo e acompanhe o progresso das parcelas (sem lançar saídas automaticamente).",
+      "installmentsNeedCard": "Cadastre um cartão antes de adicionar parcelamentos.",
+      "installmentsEmpty": "Nenhum parcelamento no cartão. Adicione uma compra parcelada.",
+      "newInstallment": "Nova compra parcelada",
+      "installmentCard": "Cartão",
+      "installmentNamePlaceholder": "Ex: Notebook, Sofá",
+      "installmentAmount": "Valor da parcela",
+      "totalInstallments": "Total de parcelas",
+      "paidInstallments": "Parcelas já pagas",
+      "firstInstallmentDate": "Data da 1ª parcela",
+      "installmentNotesPlaceholder": "Observações (opcional)",
+      "installmentDeleteConfirm": "Excluir este parcelamento?",
+      "progress": "Progresso",
+      "progressCount": "{paid}/{total}",
+      "remaining": "Restante",
+      "remainingInYear": "{count} parcela(s) neste ano · {amount}"
+    },
+    "installmentsAnalysis": {
+      "title": "Parcelamentos",
+      "description": "Análise das compras parceladas no cartão e do impacto no orçamento anual.",
+      "totalYear": "Total previsto no ano",
+      "totalYearHint": "Parcelas ainda não pagas com vencimento em {year}.",
+      "peakMonth": "Pico mensal no ano",
+      "peakMonthHint": "Maior soma de parcelas em um único mês de {year}.",
+      "peakMonthIn": "Em {month} — planeje liquidez nesse mês.",
+      "monthlyCommitment": "Compromisso mensal ativo",
+      "monthlyCommitmentHint": "Soma das parcelas ainda em aberto.",
+      "monthlyDistribution": "Distribuição por mês",
+      "monthlyDistributionHint": "Valores ainda a pagar, mês a mês.",
+      "byCard": "Por cartão",
+      "byCardHint": "Compromisso mensal e restante no ano, agrupados por cartão.",
+      "activePlans": "{count, plural, one {# compra ativa} other {# compras ativas}}",
+      "plansTitle": "Compras parceladas",
+      "plansHint": "Acompanhe o progresso. Para cadastrar ou editar, use Cartão de crédito.",
+      "empty": "Nenhuma compra parcelada cadastrada.",
+      "emptyCta": "Ir para Cartão de crédito",
+      "progressPaid": "{paid}/{total} pagas",
+      "remainingCount": "{count, plural, =0 {Nenhuma parcela restante neste ano} one {1 parcela prevista} other {# parcelas previstas}}",
+      "inYear": "No ano {year}",
+      "firstInstallment": "1ª parcela em {date}",
+      "completed": "Concluído"
     },
     "recurringPayments": {
       "title": "Pagamentos recorrentes",
@@ -425,12 +466,12 @@
     "subscription": {
       "activateTitle": "Ative sua assinatura",
       "activateDescription": "Após o período de teste, apenas R$10/mês. Sem surpresas.",
-      "afterTrial": "Após os 2 primeiros meses gratuitos.",
-      "trialBadge": "2 meses grátis",
+      "afterTrial": "Após os primeiros 30 dias gratuitos.",
+      "trialBadge": "30 dias grátis",
       "syncFailed": "Não foi possível confirmar a assinatura automaticamente. Configure o webhook do Stripe ou tente abrir o portal do cliente nas configurações.",
       "checkoutError": "Erro ao iniciar checkout",
       "unexpectedError": "Erro inesperado",
-      "startTrial": "Começar 2 meses grátis",
+      "startTrial": "Começar 30 dias grátis",
       "starting": "Iniciando..."
     },
     "trialBanner": {
@@ -483,11 +524,11 @@
       "balanceLabel": "saldo",
       "investmentDefault": "Investimento",
       "creditCardSpendingTitle": "Gastos com cartão",
-      "creditCardSpendingHint": "Compras no cartão no mês (fora do orçamento de caixa até você pagar a fatura)",
+      "creditCardSpendingHint": "Compras no cartão neste mês (fora do orçamento de caixa)",
       "recentCreditCardSpending": "Gastos recentes",
       "noCreditCardSpending": "Nenhum gasto com cartão no mês",
-      "cardsClosingHint": "Fechamento e vencimento são referência no cadastro; atraso com saldo em aberto pode gerar alerta",
-      "creditCardCategoriesHint": "Distribuição das compras no cartão agrupadas pelas categorias principais cadastradas",
+      "cardsClosingHint": "Fechamento e vencimento são apenas referência no cadastro do cartão",
+      "creditCardCategoriesHint": "Distribuição das compras no cartão neste mês, agrupadas pelas categorias principais",
       "recurringPaymentsNote": "Pagamentos recorrentes e despesas fixas usam a mesma base de dados. Alterações feitas aqui também atualizam seus lançamentos fixos.",
       "recurringPaymentsEmpty": "Nenhuma conta recorrente cadastrada. Use \"Adicionar conta\" para incluir itens que se repetem todo mês.",
       "recurringPaymentsNoFilter": "Nenhum resultado para os filtros selecionados.",
@@ -602,7 +643,8 @@
     "paymentMethod": {
       "label": "Método de pagamento",
       "cash": "À vista (dinheiro/PIX)",
-      "available": "disponível"
+      "available": "disponível",
+      "limit": "limite"
     },
     "investment": {
       "useCash": "Usar saldo",
@@ -721,7 +763,7 @@
   },
   "marketing": {
     "hero": {
-      "trialBadge": "2 meses grátis — comece hoje",
+      "trialBadge": "30 dias grátis — comece hoje",
       "headline1": "Tome o controle",
       "headline2": "das suas finanças",
       "headline3": "pessoais.",
@@ -772,11 +814,11 @@
     "pricing": {
       "eyebrow": "Preço",
       "title": "Simples e sem surpresas.",
-      "trialBadge": "2 meses grátis inclusos",
+      "trialBadge": "30 dias grátis inclusos",
       "price": "R$10",
       "perMonth": "/mês",
-      "afterTrial": "Após os 2 primeiros meses. Nenhuma cobrança durante o período de teste.",
-      "cta": "Começar 2 meses grátis",
+      "afterTrial": "Após os primeiros 30 dias. Nenhuma cobrança durante o período de teste.",
+      "cta": "Começar 30 dias grátis",
       "trust": "Cancele quando quiser · Sem fidelidade · Sem taxa de setup",
       "features": [
         "Dashboard financeiro completo",
@@ -796,12 +838,12 @@
       "subtitle": "Ainda tem dúvidas? Fale com o suporte por e-mail.",
       "items": [
         {
-          "question": "O que acontece depois dos 2 meses grátis?",
+          "question": "O que acontece depois dos 30 dias grátis?",
           "answer": "Após o período de teste, sua assinatura é cobrada automaticamente no cartão cadastrado no valor de R$10/mês. Você receberá um e-mail de lembrete com antecedência antes do fim do trial."
         },
         {
           "question": "Preciso informar o cartão de crédito para começar?",
-          "answer": "Sim, o cartão é solicitado no cadastro para ativar o trial. Mas não há nenhuma cobrança nos primeiros 2 meses. A primeira cobrança ocorre somente após o fim do período gratuito."
+          "answer": "Sim, o cartão é solicitado no cadastro para ativar o trial. Mas não há nenhuma cobrança nos primeiros 30 dias. A primeira cobrança ocorre somente após o fim do período gratuito."
         },
         {
           "question": "Posso cancelar a qualquer momento?",
@@ -824,7 +866,7 @@
     "cta": {
       "title1": "Pronto para organizar",
       "title2": "suas finanças?",
-      "description": "Comece com 2 meses grátis. Sem complicação, sem surpresa.",
+      "description": "Comece com 30 dias grátis. Sem complicação, sem surpresa.",
       "button": "Criar conta gratuita",
       "trust": "Cancele quando quiser · Sem fidelidade"
     },
@@ -838,7 +880,7 @@
     },
     "stats": {
       "trial": {
-        "value": "2 meses",
+        "value": "30 dias",
         "label": "grátis para testar"
       },
       "price": {

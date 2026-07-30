@@ -188,7 +188,7 @@
       "trialEnd": "Fine della prova",
       "nextRenewal": "Prossimo rinnovo",
       "price": "Prezzo",
-      "priceValue": "R$10.00 / mese",
+      "priceValue": "€5,00 / mese",
       "cancelAtPeriodEnd": "Il tuo abbonamento verrà annullato alla fine del periodo corrente.",
       "noSubscription": "Nessun abbonamento trovato. Attiva il tuo piano per mantenere l'accesso completo.",
       "manage": "Gestisci l'abbonamento",
@@ -221,8 +221,8 @@
       "activity": "Attività",
       "trends": "Tendenze",
       "balance": "Saldo mensile",
-      "creditLimit": "Limite disponibile (carte)",
-      "creditLimitFootnote": "Limite totale: {amount}",
+      "creditLimit": "Spesa con carta (mese)",
+      "creditLimitFootnote": "Limite contrattato: {amount}",
       "incomes": "Entrate",
       "expenses": "Spese",
       "investments": "Investimenti",
@@ -311,31 +311,72 @@
     },
     "creditCard": {
       "title": "Carta di credito",
-      "description": "Gli acquisti non incidono sul budget di cassa; il pagamento della fattura registra una spesa e ripristina il limite",
-      "cardsAndPayments": "Carte e pagamenti",
+      "description": "Registra le carte, monitora l'uso del mese e pianifica gli acquisti a rate",
+      "cardsSection": "Le mie carte",
+      "cardsAndPayments": "Carte",
+      "installmentsSection": "Rate sulla carta",
       "spendingByCategory": "Spesa con carta per categoria principale",
-      "overdueTitle": "Fattura della carta di credito scaduta",
-      "overdueItem": "{cardName}{lastFour}: {amount} (scadenza {dueDate}, chiusura {closingDate})",
       "deleteConfirm": "Eliminare questa carta?",
       "myCards": "Le mie carte",
       "newCard": "Nuova carta",
-      "overdueBanner": "Sono presenti fatture scadute con saldo aperto.",
-      "helpText": "Gli acquisti con carta riducono il limite disponibile e non influiscono sul budget in contanti finché non si paga il conto sulla scheda della carta.",
+      "helpText": "Gli acquisti con carta (in Uscite) restano fuori dal budget di cassa. La barra mostra la spesa del mese rispetto al limite contrattato.",
       "empty": "Nessuna carta registrata. Aggiungi una carta per iniziare.",
-      "total": "Totale",
+      "total": "Limite",
       "available": "Disp.",
-      "closing": "Chiudi",
-      "due": "Scadenza",
-      "pay": "Paga",
-      "openBalance": "aperto (scadenza {dueDate}, chiusura {closingDate})",
-      "registering": "Elaborazione...",
-      "confirmPayment": "Conferma il pagamento",
-      "noInvoice": "Non vi è alcuna fattura da pagare su questa carta.",
-      "availableCash": "Liquidità disponibile",
-      "maxPayment": "Pagamento max.",
+      "monthSpend": "Spesa del mese",
+      "usageOfLimit": "{pct}% del limite nel mese",
+      "closing": "Chius.",
+      "due": "Scad.",
       "cardNamePlaceholder": "Ad esempio: Nubank, Chase",
-      "limitHelp": "Limite totale contrattato presso la banca (non l'importo disponibile)",
-      "payHelp": "Il pagamento utilizza solo il <cash>saldo contante per il mese</cash> (entrate meno spese e investimenti di budget), <expense>registra una spesa</expense> in quel mese e <limit>ripristina il limite della carta</limit>."
+      "limitHelp": "Limite totale contrattato presso la banca",
+      "summaryMonthSpend": "Spesa del mese",
+      "summaryOfLimit": "Limite totale: {amount}",
+      "summaryMonthlyCommitment": "Rate attive / mese",
+      "summaryActiveInstallments": "Somma delle rate ancora aperte",
+      "summaryRemainingYear": "Rate residue nel {year}",
+      "summaryRemainingYearHint": "Impegno stimato fino a fine anno",
+      "installmentsTitle": "Acquisti a rate",
+      "installmentsHint": "Registra acquisti a lungo termine e segui il progresso delle rate (non crea uscite automaticamente).",
+      "installmentsNeedCard": "Aggiungi una carta prima di creare le rate.",
+      "installmentsEmpty": "Nessuna rata sulla carta. Aggiungi un acquisto rateizzato.",
+      "newInstallment": "Nuovo acquisto a rate",
+      "installmentCard": "Carta",
+      "installmentNamePlaceholder": "Es.: Notebook, Divano",
+      "installmentAmount": "Importo della rata",
+      "totalInstallments": "Totale rate",
+      "paidInstallments": "Rate già pagate",
+      "firstInstallmentDate": "Data della 1ª rata",
+      "installmentNotesPlaceholder": "Note (opzionale)",
+      "installmentDeleteConfirm": "Eliminare questo piano di rate?",
+      "progress": "Progresso",
+      "progressCount": "{paid}/{total}",
+      "remaining": "Residuo",
+      "remainingInYear": "{count} rata/e quest'anno · {amount}"
+    },
+    "installmentsAnalysis": {
+      "title": "Rate",
+      "description": "Analisi degli acquisti a rate sulla carta e dell'impatto sul budget annuale.",
+      "totalYear": "Totale previsto nell'anno",
+      "totalYearHint": "Rate non ancora pagate con scadenza nel {year}.",
+      "peakMonth": "Picco mensile nell'anno",
+      "peakMonthHint": "Somma massima di rate in un solo mese del {year}.",
+      "peakMonthIn": "A {month} — pianifica la liquidità in quel mese.",
+      "monthlyCommitment": "Impegno mensile attivo",
+      "monthlyCommitmentHint": "Somma delle rate ancora aperte.",
+      "monthlyDistribution": "Distribuzione mensile",
+      "monthlyDistributionHint": "Importi ancora da pagare, mese per mese.",
+      "byCard": "Per carta",
+      "byCardHint": "Impegno mensile e residuo nell'anno, raggruppati per carta.",
+      "activePlans": "{count, plural, one {# acquisto attivo} other {# acquisti attivi}}",
+      "plansTitle": "Acquisti a rate",
+      "plansHint": "Segui i progressi. Per aggiungere o modificare, usa Carta di credito.",
+      "empty": "Nessun acquisto a rate registrato.",
+      "emptyCta": "Vai a Carta di credito",
+      "progressPaid": "{paid}/{total} pagate",
+      "remainingCount": "{count, plural, =0 {Nessuna rata residua quest'anno} one {1 rata prevista} other {# rate previste}}",
+      "inYear": "Nell'anno {year}",
+      "firstInstallment": "1ª rata il {date}",
+      "completed": "Completato"
     },
     "recurringPayments": {
       "title": "Pagamenti ricorrenti",
@@ -424,13 +465,13 @@
     },
     "subscription": {
       "activateTitle": "Attiva il tuo abbonamento",
-      "activateDescription": "Dopo la prova, solo R$10/month. Nessuna sorpresa.",
-      "afterTrial": "Dopo i primi 2 mesi gratuiti.",
-      "trialBadge": "2 mesi gratuiti",
+      "activateDescription": "Dopo la prova, solo €5/mese. Nessuna sorpresa.",
+      "afterTrial": "Dopo i primi 30 giorni gratuiti.",
+      "trialBadge": "30 giorni gratuiti",
       "syncFailed": "Impossibile confermare automaticamente l'abbonamento. Configura il webhook Stripe o prova ad aprire il portale clienti nelle Impostazioni.",
       "checkoutError": "Errore durante l'avvio del pagamento",
       "unexpectedError": "Errore imprevisto",
-      "startTrial": "Inizia con 2 mesi gratuiti",
+      "startTrial": "Inizia con 30 giorni gratuiti",
       "starting": "Avvio..."
     },
     "trialBanner": {
@@ -483,11 +524,11 @@
       "balanceLabel": "saldo",
       "investmentDefault": "Investimento",
       "creditCardSpendingTitle": "Spesa con carta",
-      "creditCardSpendingHint": "Acquisti con carta questo mese (fuori dal budget in contanti fino al pagamento della fattura)",
+      "creditCardSpendingHint": "Acquisti con carta questo mese (fuori dal budget di cassa)",
       "recentCreditCardSpending": "Spesa recente",
       "noCreditCardSpending": "Nessuna spesa con carta questo mese",
-      "cardsClosingHint": "Le date di chiusura e scadenza sono riferimento nella configurazione; scaduto con saldo aperto può attivare un avviso",
-      "creditCardCategoriesHint": "Distribuzione degli acquisti con carta raggruppati per categorie principali registrate",
+      "cardsClosingHint": "Chiusura e scadenza sono solo un riferimento nel profilo della carta",
+      "creditCardCategoriesHint": "Distribuzione degli acquisti con carta di questo mese per categorie principali",
       "recurringPaymentsNote": "I pagamenti ricorrenti e le spese fisse condividono gli stessi dati. Le modifiche qui aggiornano anche le voci fisse.",
       "recurringPaymentsEmpty": "Nessuna fattura ricorrente registrata. Utilizza \"Aggiungi fattura\" per includere elementi che si ripetono ogni mese.",
       "recurringPaymentsNoFilter": "Nessun risultato per i filtri selezionati.",
@@ -522,7 +563,7 @@
       "annualTableMobileDescription": "La Tabella annuale è disponibile solo su PC o tablet. Usa un dispositivo con uno schermo più grande per accedere a questa funzionalità.",
       "subscriptionWait": "Attendi...",
       "subscriptionCancelAnytime": "Annulla in qualsiasi momento · Nessun impegno",
-      "subscriptionPrice": "R$10",
+      "subscriptionPrice": "€5",
       "subscriptionPerMonth": "/month"
     }
   },
@@ -602,7 +643,8 @@
     "paymentMethod": {
       "label": "Metodo di pagamento",
       "cash": "Contanti (contanti/PIX)",
-      "available": "disponibile"
+      "available": "disponibile",
+      "limit": "limite"
     },
     "investment": {
       "useCash": "Usa il saldo in contanti",
@@ -721,7 +763,7 @@
   },
   "marketing": {
     "hero": {
-      "trialBadge": "2 mesi gratuiti: inizia oggi",
+      "trialBadge": "30 giorni gratuiti: inizia oggi",
       "headline1": "Prendi il controllo",
       "headline2": "delle tue finanze",
       "headline3": "personalmente.",
@@ -772,11 +814,11 @@
     "pricing": {
       "eyebrow": "Prezzi",
       "title": "Semplice e prevedibile.",
-      "trialBadge": "2 mesi gratuiti inclusi",
-      "price": "R$10",
+      "trialBadge": "30 giorni gratuiti inclusi",
+      "price": "€5",
       "perMonth": "/month",
-      "afterTrial": "Dopo i primi 2 mesi. Nessun addebito durante il periodo di prova.",
-      "cta": "Inizia con 2 mesi gratuiti",
+      "afterTrial": "Dopo i primi 30 giorni. Nessun addebito durante il periodo di prova.",
+      "cta": "Inizia con 30 giorni gratuiti",
       "trust": "Annulla in qualsiasi momento · Nessun impegno · Nessun costo di installazione",
       "features": [
         "Cruscotto finanziario completo",
@@ -796,12 +838,12 @@
       "subtitle": "Hai ancora domande? Contatta l'assistenza tramite e-mail.",
       "items": [
         {
-          "question": "Cosa succede dopo i 2 mesi gratuiti?",
-          "answer": "Dopo il periodo di prova, l'abbonamento verrà automaticamente addebitato sulla carta registrata presso R$10/month. Riceverai un'e-mail di promemoria prima della fine del periodo di prova."
+          "question": "Cosa succede dopo i 30 giorni gratuiti?",
+          "answer": "Dopo il periodo di prova, l'abbonamento verrà automaticamente addebitato sulla carta registrata al costo di €5/mese. Riceverai un'e-mail di promemoria prima della fine del periodo di prova."
         },
         {
           "question": "Devo inserire una carta di credito per iniziare?",
-          "answer": "Sì, è necessaria una carta al momento dell'iscrizione per attivare la prova. Ma per i primi 2 mesi non ci sono costi. Il primo addebito avviene solo al termine del periodo gratuito."
+          "answer": "Sì, è necessaria una carta al momento dell'iscrizione per attivare la prova. Ma per i primi 30 giorni non ci sono costi. Il primo addebito avviene solo al termine del periodo gratuito."
         },
         {
           "question": "Posso annullare in qualsiasi momento?",
@@ -824,7 +866,7 @@
     "cta": {
       "title1": "Pronto a organizzare",
       "title2": "le tue finanze?",
-      "description": "Inizia con 2 mesi gratuiti. Nessun problema, nessuna sorpresa.",
+      "description": "Inizia con 30 giorni gratuiti. Nessun problema, nessuna sorpresa.",
       "button": "Crea un account gratuito",
       "trust": "Annulla in qualsiasi momento · Nessun impegno"
     },
@@ -838,11 +880,11 @@
     },
     "stats": {
       "trial": {
-        "value": "2 mesi",
+        "value": "30 giorni",
         "label": "di prova gratuita"
       },
       "price": {
-        "value": "R$10",
+        "value": "€5",
         "label": "al mese dopo la prova"
       },
       "loyalty": {

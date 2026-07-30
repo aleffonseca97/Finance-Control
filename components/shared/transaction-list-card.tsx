@@ -16,7 +16,6 @@ type TransactionItem = {
   date: Date | string
   category: { name: string; color: string | null; icon: string }
   creditCard?: { name: string; lastFour: string | null } | null
-  paysCreditCard?: { name: string; lastFour: string | null } | null
 }
 
 type Props = {
@@ -81,14 +80,6 @@ export function TransactionListCard({
                           {' '}• {t('cardPrefix')} {item.creditCard.name}
                           {item.creditCard.lastFour
                             ? ` •••• ${item.creditCard.lastFour}`
-                            : ''}
-                        </span>
-                      )}
-                      {item.paysCreditCard && (
-                        <span className="text-emerald-600 dark:text-emerald-500">
-                          {' '}• {t('invoicePaymentPrefix')} {item.paysCreditCard.name}
-                          {item.paysCreditCard.lastFour
-                            ? ` •••• ${item.paysCreditCard.lastFour}`
                             : ''}
                         </span>
                       )}

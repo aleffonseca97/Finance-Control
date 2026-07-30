@@ -4,8 +4,6 @@ import { prisma } from '@/lib/db'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { getLastTransactions, getMonthlyEvolution } from '@/app/actions/analytics'
 import { ensureFixedExpensesForMonth } from '@/app/actions/transactions'
-import { getCreditCardOverdueNotices } from '@/app/actions/credit-cards'
-import { serializeOverdueNotices } from '@/lib/credit-card-overdue'
 import { budgetExpenseWhere } from '@/lib/budget-expense'
 import { formatCurrency } from '@/lib/i18n/format'
 import { getCurrentCurrency } from '@/lib/i18n/get-currency'
@@ -16,12 +14,11 @@ import { SummaryCards } from '@/components/dashboard/summary-cards'
 import { CreditCardSpending } from '@/components/dashboard/credit-card-spending'
 import { DashboardPageHeader } from '@/components/dashboard/dashboard-page-header'
 import { chartCardClassName } from '@/components/charts/chart-shared'
-import { OverdueBanner } from '@/components/shared/overdue-banner'
 import type { TransactionWithCategory } from '@/lib/transaction-types'
 import { getTranslations, getLocale } from 'next-intl/server'
 import type { AppLocale } from '@/i18n/routing'
 
-async function getDashboardData(userId: string, locale: AppLocale) {
+async function getDashboardData(userId: string) {
   const now = new Date()
   await ensureFixedExpensesForMonth(userId, now.getMonth(), now.getFullYear())
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -34,7 +31,6 @@ async function getDashboardData(userId: string, locale: AppLocale) {
     creditCardExpenses,
     creditCardTransactions,
     creditCards,
-    overdueRaw,
   ] = await Promise.all([
     prisma.transaction.aggregate({
       where: { userId, type: 'income', date: { gte: startOfMonth, lte: endOfMonth } },
@@ -73,18 +69,18 @@ async function getDashboardData(userId: string, locale: AppLocale) {
       take: 5,
     }),
     prisma.creditCard.findMany({ where: { userId } }),
-    getCreditCardOverdueNotices(userId),
   ])
 
   const totalIncome = incomes._sum.amount ?? 0
   const totalExpense = expenses._sum.amount ?? 0
   const cashInvestment = investmentsAffectingCash._sum.amount ?? 0
   const creditCardTotal = creditCardExpenses._sum.amount ?? 0
-  const creditCardLimit = creditCards.reduce((acc, cc) => acc + cc.limit, 0)
   const creditCardTotalLine = creditCards.reduce(
-    (acc, cc) => acc + ((cc as { totalLimit?: number }).totalLimit ?? cc.limit),
+    (acc, cc) => acc + (cc.totalLimit ?? cc.limit),
     0,
   )
+  // Summary shows month spending on cards; footnote shows contracted limit.
+  const creditCardLimit = creditCardTotal
 
   return {
     totalIncome,
@@ -95,7 +91,6 @@ async function getDashboardData(userId: string, locale: AppLocale) {
     creditCardTotalLine,
     creditCardTransactions,
     balance: totalIncome - totalExpense - cashInvestment,
-    overdueNotices: serializeOverdueNotices(overdueRaw, locale),
   }
 }
 
@@ -107,7 +102,7 @@ export default async function DashboardPage() {
   const currency = await getCurrentCurrency()
 
   const [data, lastTransactions, evolution, t] = await Promise.all([
-    getDashboardData(session.user.id, locale),
+    getDashboardData(session.user.id),
     getLastTransactions(10, true),
     getMonthlyEvolution(6),
     getTranslations('dashboard.overview'),
@@ -165,7 +160,6 @@ export default async function DashboardPage() {
         description={t('description')}
       />
 
-      <OverdueBanner notices={data.overdueNotices} />
       <section className="space-y-3">
         <p className="dashboard-section-label">{t('monthSummary')}</p>
         <SummaryCards

@@ -132,14 +132,15 @@ model CreditCard {
   userId       String
   name         String
   lastFour     String?       // últimos 4 dígitos (ex: "1234")
-  limit        Float         // limite disponível (só sobe após pagamento da fatura)
+  limit        Float         // espelha totalLimit (legado; UI usa gasto do mês vs totalLimit)
   totalLimit   Float         // limite total contratado
-  closingDay   Int           // dia do fechamento (1-31)
-  dueDay       Int           // dia do vencimento (1-31)
+  closingDay   Int           // dia do fechamento (1-31) — metadado visual
+  dueDay       Int           // dia do vencimento (1-31) — metadado visual
   color        String?       @default("#6366f1")
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   chargeTransactions  Transaction[] @relation("CardCharge")
   paymentTransactions Transaction[] @relation("CardPayment")
+  installmentPlans    InstallmentPlan[]
 
   @@index([userId])
 }
@@ -228,7 +229,7 @@ model RecurringPaymentOccurrence {
 model InstallmentPlan {
   id                   String   @id @default(cuid())
   userId               String
-  /// FINANCING_CAR | FINANCING_HOME | LOAN | GENERAL
+  /// FINANCING_CAR | FINANCING_HOME | LOAN | GENERAL | CREDIT_CARD
   kind                 String
   name                 String
   monthlyAmount        Float
@@ -236,9 +237,12 @@ model InstallmentPlan {
   paidInstallments     Int      @default(0)
   firstInstallmentDate DateTime @db.Date
   notes                String?
+  creditCardId         String?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
-  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user                 User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  creditCard           CreditCard? @relation(fields: [creditCardId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([creditCardId])
 }

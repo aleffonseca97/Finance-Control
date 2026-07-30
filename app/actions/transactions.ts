@@ -11,7 +11,6 @@ import {
   getValidationTranslations,
 } from '@/lib/i18n/validation';
 import { budgetExpenseWhere } from '@/lib/budget-expense';
-import { roundMoney } from '@/lib/credit-card-billing';
 
 const DASHBOARD_PATHS = [
   '/dashboard',
@@ -65,39 +64,18 @@ export async function createTransaction(
       where: { id: creditCardId, userId: session.user.id },
     });
     if (!card) return { error: tServer('invalidCreditCard') };
-    if (card.limit + 1e-6 < parsed.data.amount)
-      return { error: tServer('insufficientLimit') };
   }
 
-  await prisma.$transaction(async (tx) => {
-    await tx.transaction.create({
-      data: {
-        userId: session.user.id,
-        categoryId: parsed.data.categoryId,
-        amount: parsed.data.amount,
-        description: parsed.data.description || null,
-        date: new Date(parsed.data.date),
-        type,
-        creditCardId,
-      },
-    });
-
-    if (creditCardId) {
-      const card = await tx.creditCard.findUnique({
-        where: { id: creditCardId },
-      });
-      if (card) {
-        await tx.creditCard.update({
-          where: { id: creditCardId },
-          data: {
-            limit: Math.max(
-              0,
-              roundMoney(card.limit - parsed.data.amount),
-            ),
-          },
-        });
-      }
-    }
+  await prisma.transaction.create({
+    data: {
+      userId: session.user.id,
+      categoryId: parsed.data.categoryId,
+      amount: parsed.data.amount,
+      description: parsed.data.description || null,
+      date: new Date(parsed.data.date),
+      type,
+      creditCardId,
+    },
   });
 
   await revalidateLocalePaths(DASHBOARD_PATHS);
@@ -177,47 +155,13 @@ export async function deleteTransaction(id: string) {
 
   const tx = await prisma.transaction.findFirst({
     where: { id, userId: session.user.id },
-    select: { amount: true, creditCardId: true, paysCreditCardId: true },
+    select: { id: true },
   });
 
   if (!tx) return { error: tServer('transactionNotFound') };
 
-  await prisma.$transaction(async (db) => {
-    await db.transaction.deleteMany({
-      where: { id, userId: session.user.id },
-    });
-    if (tx.creditCardId) {
-      const card = await db.creditCard.findUnique({
-        where: { id: tx.creditCardId },
-      });
-      if (card) {
-        await db.creditCard.update({
-          where: { id: tx.creditCardId },
-          data: {
-            limit: Math.min(
-              card.totalLimit,
-              roundMoney(card.limit + tx.amount),
-            ),
-          },
-        });
-      }
-    }
-    if (tx.paysCreditCardId) {
-      const card = await db.creditCard.findUnique({
-        where: { id: tx.paysCreditCardId },
-      });
-      if (card) {
-        await db.creditCard.update({
-          where: { id: tx.paysCreditCardId },
-          data: {
-            limit: Math.max(
-              0,
-              roundMoney(card.limit - tx.amount),
-            ),
-          },
-        });
-      }
-    }
+  await prisma.transaction.deleteMany({
+    where: { id, userId: session.user.id },
   });
 
   await revalidateLocalePaths(DASHBOARD_PATHS);

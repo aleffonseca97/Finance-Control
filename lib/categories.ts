@@ -85,3 +85,6 @@ export const DEFAULT_CATEGORIES = {
     { group: 'Investimentos', name: 'Outros', icon: 'CircleDollarSign', color: '#6366f1' },
   ],
 } as const
+
+/** Category group used for streaming, software, and similar recurring subscriptions. */
+export const SUBSCRIPTION_CATEGORY_GROUP = 'Assinaturas'

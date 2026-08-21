@@ -26,6 +26,7 @@ import {
   LogOut,
   Repeat,
   Table2,
+  Tv,
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -79,6 +80,7 @@ const navItems: NavItem[] = [
     children: [
       { href: '/dashboard/analise', labelKey: 'analysisSummary', icon: BarChart3 },
       { href: '/dashboard/parcelamentos', labelKey: 'installments', icon: Receipt },
+      { href: '/dashboard/assinaturas', labelKey: 'subscriptions', icon: Tv },
       { href: '/dashboard/tabela-anual', labelKey: 'annualTable', icon: Table2 },
     ],
   },
@@ -115,6 +117,7 @@ export function Sidebar() {
   const [analiseOpen, setAnaliseOpen] = useState(
     pathname.startsWith('/dashboard/analise') ||
       pathname.startsWith('/dashboard/parcelamentos') ||
+      pathname.startsWith('/dashboard/assinaturas') ||
       pathname.startsWith('/dashboard/tabela-anual')
   );
   const [investimentosOpen, setInvestimentosOpen] = useState(
@@ -171,7 +174,9 @@ export function Sidebar() {
   useEffect(() => {
     if (
       pathname.startsWith('/dashboard/analise') ||
-      pathname.startsWith('/dashboard/parcelamentos')
+      pathname.startsWith('/dashboard/parcelamentos') ||
+      pathname.startsWith('/dashboard/assinaturas') ||
+      pathname.startsWith('/dashboard/tabela-anual')
     ) {
       setAnaliseOpen(true);
     }
@@ -324,7 +329,9 @@ export function Sidebar() {
               pathname.startsWith('/dashboard/recorrencia/investimentos');
             const isAnaliseActive =
               pathname.startsWith('/dashboard/analise') ||
-              pathname.startsWith('/dashboard/parcelamentos');
+              pathname.startsWith('/dashboard/parcelamentos') ||
+              pathname.startsWith('/dashboard/assinaturas') ||
+              pathname.startsWith('/dashboard/tabela-anual');
             const isConfigActive = pathname.startsWith('/dashboard/configuracoes');
             const isParentActive =
               (isRecurrenceSection && isRecurrenceActive) ||

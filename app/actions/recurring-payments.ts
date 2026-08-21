@@ -16,6 +16,7 @@ const RECURRING_PATHS = [
   '/dashboard',
   '/dashboard/saidas',
   '/dashboard/analise',
+  '/dashboard/assinaturas',
 ]
 
 async function revalidateRecurringPaths() {

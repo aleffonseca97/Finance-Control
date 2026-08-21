@@ -13,6 +13,7 @@ import { RecentTransactions } from '@/components/dashboard/recent-transactions'
 import { SummaryCards } from '@/components/dashboard/summary-cards'
 import { CreditCardSpending } from '@/components/dashboard/credit-card-spending'
 import { DashboardPageHeader } from '@/components/dashboard/dashboard-page-header'
+import { DashboardShortcuts } from '@/components/dashboard/dashboard-shortcuts'
 import { chartCardClassName } from '@/components/charts/chart-shared'
 import type { TransactionWithCategory } from '@/lib/transaction-types'
 import { getTranslations, getLocale } from 'next-intl/server'
@@ -195,6 +196,8 @@ export default async function DashboardPage() {
           </Card>
         </div>
       </section>
+
+      <DashboardShortcuts />
 
       <section className="space-y-3">
         <p className="dashboard-section-label">{t('trends')}</p>

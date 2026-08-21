@@ -3,6 +3,8 @@
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db'
 import { budgetExpenseWhere } from '@/lib/budget-expense'
+import { SUBSCRIPTION_CATEGORY_GROUP } from '@/lib/categories'
+import { ensureOccurrencesForMonth } from '@/app/actions/recurring-payments'
 import { getLocale } from 'next-intl/server'
 import type { AppLocale } from '@/i18n/routing'
 
@@ -281,4 +283,101 @@ export async function getAnnualAnalysis(yearsBack = 5): Promise<AnalysisRow[]> {
   }
 
   return addBalance(Array.from(rowsByYear.values()))
+}
+
+export type SubscriptionRow = {
+  id: string
+  categoryName: string
+  categoryGroup: string | null
+  categoryIcon: string
+  categoryColor: string | null
+  amount: number
+  amountType: 'fixed' | 'percentage'
+  percentage: number | null
+  paid: boolean
+}
+
+export type SubscriptionsPageData = {
+  items: SubscriptionRow[]
+  count: number
+  monthlyTotal: number
+  totalIncome: number
+  incomeSharePercent: number | null
+  month: number
+  year: number
+}
+
+export async function getSubscriptionsPageData(): Promise<SubscriptionsPageData | null> {
+  const session = await auth()
+  if (!session?.user?.id) return null
+
+  const userId = session.user.id
+  const now = new Date()
+  const month = now.getMonth()
+  const year = now.getFullYear()
+
+  await ensureOccurrencesForMonth(userId, month, year)
+
+  const start = new Date(year, month, 1)
+  const end = new Date(year, month + 1, 0, 23, 59, 59, 999)
+
+  const [payments, incomeAgg] = await Promise.all([
+    prisma.recurringPayment.findMany({
+      where: {
+        userId,
+        category: { group: SUBSCRIPTION_CATEGORY_GROUP },
+      },
+      include: {
+        category: true,
+        occurrences: {
+          where: { year, month },
+          take: 1,
+        },
+      },
+      orderBy: [{ sortOrder: 'asc' }, { createdAt: 'asc' }],
+    }),
+    prisma.transaction.aggregate({
+      where: {
+        userId,
+        type: 'income',
+        date: { gte: start, lte: end },
+      },
+      _sum: { amount: true },
+    }),
+  ])
+
+  const totalIncome = incomeAgg._sum.amount ?? 0
+
+  const items: SubscriptionRow[] = payments.map((p) => {
+    const occ = p.occurrences[0]
+    const effectiveAmount =
+      p.amountType === 'percentage'
+        ? (Math.max(0, totalIncome) * (p.percentage ?? 0)) / 100
+        : p.amount
+    return {
+      id: p.id,
+      categoryName: p.category.name,
+      categoryGroup: p.category.group,
+      categoryIcon: p.category.icon,
+      categoryColor: p.category.color,
+      amount: effectiveAmount,
+      amountType: p.amountType as 'fixed' | 'percentage',
+      percentage: p.percentage,
+      paid: occ?.transactionId != null,
+    }
+  })
+
+  const monthlyTotal = items.reduce((sum, item) => sum + item.amount, 0)
+  const incomeSharePercent =
+    totalIncome > 0 ? (monthlyTotal / totalIncome) * 100 : null
+
+  return {
+    items,
+    count: items.length,
+    monthlyTotal,
+    totalIncome,
+    incomeSharePercent,
+    month,
+    year,
+  }
 }
